@@ -925,8 +925,12 @@ globalkeys = awful.util.table.join(globalkeys,
     awful.key({ modkey, "Control" }, ",",          function () awful.util.spawn('mpc next'); wicked.widgets.mpd() end),
     awful.key({ modkey, "Control" }, ".",          function () awful.util.spawn('amixer -c 0 set '..sdev..' 3dB-'); getVol() end),
     awful.key({ modkey, "Control" }, "-",          function () awful.util.spawn('amixer -c 0 set '..sdev..' 3dB+'); getVol() end),
-    awful.key({ modkey }           , "Up",         function () awful.client.focus.byidx(1); if client.focus then client.focus:raise() end end),
-    awful.key({ modkey }           , "Down",       function () awful.client.focus.byidx(-1);  if client.focus then client.focus:raise() end end)
+    awful.key({ modkey, "Control" }, "Down",       function () awful.client.swap.byidx(1) end),
+    awful.key({ modkey, "Control" }, "Up",         function () awful.client.swap.byidx(-1) end),
+    awful.key({ modkey, "Control" }, "Left",       function () awful.tag.incnmaster(1) end),
+    awful.key({ modkey, "Control" }, "Right",      function () awful.tag.incnmaster(-1) end),
+    awful.key({ modkey }           , "Down",       function () awful.client.focus.byidx(1); if client.focus then client.focus:raise() end end),
+    awful.key({ modkey }           , "Up",         function () awful.client.focus.byidx(-1); if client.focus then client.focus:raise() end end)
 )
 --  Aplico los keybindings
 root.keys(globalkeys)

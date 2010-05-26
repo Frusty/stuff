@@ -5,9 +5,9 @@
 --------------------------------------------------------------------------------
 imgpath = awful.util.getdir("config")..'/imgs/'
 confdir = awful.util.getdir("config")..'/'
-setrndwall = "awsetbg -r "..awful.util.getdir("config").."/walls"
-setrndtile = "awsetbg -t -r "..awful.util.getdir("config").."/tiles"
-setwall = "awsetbg -c "..awful.util.getdir("config").."/walls/vladstudio_microbes_1920x1200.jpg"
+setrndwall = "awsetbg -u feh -r "..awful.util.getdir("config").."/walls"
+setrndtile = "awsetbg -u feh -t -r "..awful.util.getdir("config").."/tiles"
+setwall = "awsetbg -u feh -c "..awful.util.getdir("config").."/walls/vladstudio_microbes_1920x1200.jpg"
 browser = os.getenv('BROWSER') or 'chromium'
 --}}}
 --{{{    Utilidades/Funciones

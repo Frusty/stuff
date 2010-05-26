@@ -8,7 +8,7 @@
 
 -- {{{ Main
 theme = {}
-theme.wallpaper_cmd = { 'awsetbg -t -r '..os.getenv("HOME")..'/.config/awesome/tiles'}
+theme.wallpaper_cmd = { 'awsetbg -u feh -t -r '..os.getenv("HOME")..'/.config/awesome/tiles'}
 -- }}}
 
 -- {{{ Styles

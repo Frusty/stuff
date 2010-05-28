@@ -9,7 +9,9 @@ alias rdesktop='rdesktop -0 -z -g95% -uAdministrador -kes -a16'
 alias pwgen='perl -le "print map { (a..z,A..Z,0..9)[rand 62] } 1..pop"'
 alias dicks='perl -le "for (1..pop){print \"8\".\"=\"x((rand 10)+1).\"D\"}"'
 alias rsync_size='rsync -aivh --size-only --progress'
-sshmount(){ [ -d "/tmp/${1}" ] && { echo "# /tmp/${1} Existe\!"; }|| { mkdir /tmp/${1} && sshfs -o umask=333 ${1}:/ /tmp/$1 && echo "# Ok -> /tmp/${1}" || rmdir /tmp/${1}; }; }
+alias mtr='mtr -n4 --curses'
+sshmount(){ [ -d "/tmp/${1}" ] && { echo "# /tmp/${1} Existe\!"; }|| { mkdir /tmp/${1} && sshfs -o umask=333 root@${1}:/ /tmp/$1 && echo "# Ok -> /tmp/${1}" || rmdir /tmp/${1}; }; }
+findlf(){ find $PWD -xdev -ls | awk {'print $7"\t"$11'} | sort -rn | head -n 10; }
 export PATH=$PATH:$HOME/stuff/scripts:$HOME/scripts
 export EDITOR=vim
 export BROWSER=chromium

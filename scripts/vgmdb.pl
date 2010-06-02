@@ -36,8 +36,7 @@ my %cd=();
 my %vgm=();
 my @catnums=();
 my @log=();
-#my $threshold = 13;
-my $threshold = 10;
+my $threshold = 72;
 
 
 sub dprint {
@@ -150,9 +149,9 @@ sub vgmdbsearch($) {
     dprint YELLOW "\nOur DirName: '$album'\n";
     $album =~ s/^.*?\s-\s\d{4}\s-\s/+/g;
     $album =~ s/\sdis[kc]|ost|cd\w/+/gi;
-    $album =~ s/\soriginal.soundtrack(?:|s)/+/gi;
+#    $album =~ s/\soriginal.soundtrack(?:|s)/+/gi;
     $album =~ s/[\[\{\(].*?[\)\}\]]/+/gi;
-#    $album =~ s/\W/+/g;
+    $album =~ s/\W/+/g;
     $album =~ s/\++/+/g;
     $album =~ s/\+*$//g;
 #    $album = "Valkyrie+profile";
@@ -180,6 +179,7 @@ sub vgmdbsearch($) {
 
     while ($page =~ /<span class="catalog ([^"]+)">(.+?)<\/span>.+?\/album\/(\d+)" title=.(.+?).>.+?(\d+)(?:|<\/a>)<\/td><\/tr>/sg ) {
         dprint sprintf ("%-13.13s %5.5s %4.4s %-21.21s %s \n", $2, $3, $5, $types{$1}, $4);
+#        next unless $3 == 926;
         $results{$3} = {title =>$4, type =>$1};
     }
     dprint GREEN "=" x (80)."\n";
@@ -204,8 +204,7 @@ sub vgmdbid($) {
         my $asd = $1;
         $asd =~ s/<script.*?\/script>//g;   # Noscript
         $asd =~ s/<[^>]*>//g;   # Fuera tags html.
-       $asd =~ s/[\n\r]//g;    # Oneline pls
-        print $asd;
+        $asd =~ s/[\n\r]//g;    # Oneline pls
         if (my @matches = $asd =~ /(Catalog Number)(.*?)(?:|(Other Printings)(.*?))(Release Date)(.*?)(Publish Format)(.*?)(Release Price)(.*?)(Media Format)(.*?)(Classification)(.*?)(Published by)(.*?)(Composed by)(.*?)(Arranged by)(.*?)(Performed by)(.*?)$/smg) {
             while (@matches) {
                 if ($matches[0] and $matches[1]) {
@@ -221,8 +220,11 @@ sub vgmdbid($) {
     }
 
     @catnums=();
-    $vgm{TOTALDISCS} = 1;
-    $vgm{TOTALDISCS} = $1 if $vgm{'Media Format'} =~ /^(\d+).*$/;
+    if ($vgm{'Media Format'} =~ /^(\d+).*$/) { ;
+        $vgm{TOTALDISCS} = $1;
+    } else {
+        $vgm{TOTALDISCS} = 1;
+    }
 
     if ( $vgm{'Catalog Number'} =~ /(\w+\W)(\d+)~(\d+)$/) {
         my $pref = $1;

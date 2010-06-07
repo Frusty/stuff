@@ -10,7 +10,7 @@
 
 # Path to ZFS executable:
 ZFS=/sbin/zfs
-
+ZPOOL=/sbin/zpool
 # Parse arguments:
 TARGET=$1
 SNAP=$2
@@ -25,21 +25,23 @@ usage() {
     echo "  $scriptname target snap_name count"
     echo
     echo "  target:    ZFS file system to act on"
-    echo "  snap_name: Base name for snapshots, to be followed by a '.' and"
+    echo "  snap_name: Base name for snapshots, to be followed by a '_' and"
     echo "             an integer indicating relative age of the snapshot"
     echo "  count:     Number of snapshots in the snap_name.number format to"
-    echo "             keep at one time.  Newest snapshot ends in '.0'."
+    echo "             keep at one time.  Newest snapshot ends in '_00'."
     echo
-    exit:
+    exit
 }
 
 # Basic argument checks:
-if [ -z $COUNT ] ; then
+if [ -z $COUNT ] || [ ! -z $4 ]; then
     usage
 fi
 
-if [ ! -z $4 ] ; then
-    usage
+if [ ! -z "$($ZPOOL status $TARGET | grep "scrub in progress")" ] ; then
+    $ZPOOL status $TARGET
+    echo -e "\nScrub in process on ${TARGET}, skipping $SNAP snapshot...\n"
+    exit 1
 fi
 
 # Snapshots are number starting at 0; $max_snap is the highest numbered
@@ -47,19 +49,19 @@ fi
 max_snap=$(($COUNT -1))
 
 # Clean up oldest snapshot:
-if [ -d /${TARGET}/.zfs/snapshot/${SNAP}.${max_snap} ] ; then
-    $ZFS destroy -r ${TARGET}@${SNAP}.${max_snap}
+if [ -d /${TARGET}/.zfs/snapshot/${SNAP}_${max_snap} ] ; then
+    $ZFS destroy -r ${TARGET}@${SNAP}_${max_snap}
 fi
 
 # Rename existing snapshots:
-dest=$(printf "%02d" $max_snap)
+dest=$max_snap
 while [ $dest -gt 0 ] ; do
-    src=$(printf "%02d" $(($dest - 1)))
-    if [ -d /${TARGET}/.zfs/snapshot/${SNAP}.${src} ] ; then
-        $ZFS rename -r ${TARGET}@${SNAP}.${src} ${TARGET}@${SNAP}.${dest}
+    src=$(($dest - 1))
+    if [ -d /${TARGET}/.zfs/snapshot/${SNAP}_$(printf "%02d" ${src}) ] ; then
+        $ZFS rename -r ${TARGET}@${SNAP}_$(printf "%02d" ${src}) ${TARGET}@${SNAP}_$(printf "%02d" ${dest})
     fi
-    dest=$(printf "%02d" $(($dest - 1)))
+    dest=$(($dest - 1))
 done
 
 # Create new snapshot:
-$ZFS snapshot -r ${TARGET}@${SNAP}.00
+$ZFS snapshot -r ${TARGET}@${SNAP}_00

@@ -1,22 +1,12 @@
 #!/usr/bin/perl
+# Parsea cierta info de un directorio de configuración de nagios en una estructura de datos.
+# http://nagios.sourceforge.net/docs/3_0/configobject.html
+# http://nagios.sourceforge.net/docs/3_0/objectinheritance.html
 
 use strict;
 use warnings;
 use Data::Dumper;
-use Term::ANSIColor qw(:constants);
-$Term::ANSIColor::AUTORESET = 1;
 use File::Find;
-
-# command
-# contact
-# contactgroup
-# host
-# hostextinfo
-# hostgroup
-# service
-# serviceextinfo
-# servicegroup
-# timeperiod
 
 my %result     = ();
 my %commands   = ();
@@ -37,11 +27,12 @@ sub wanted {
             }
         }
         while ($slurp =~ /^\s*define (\w+)\s*{([^{]+)}/gm) {
-            my ($type, $asd)  = ($1, $2);
+            my ($type, $data)  = ($1, $2);
             my $ref;
-            $asd =~ s/#.*$//g;
-            while ($asd =~ /^\s+(\S+)\s+(.+?)\s*$/gm) {
+            $data =~ s/#.*$//g;
+            while ($data =~ /^\s+(\S+)\s+(.+?)\s*$/gm) {
                 my ($first, $second) = ($1, $2);
+                next if $first =~ /#/;
                 if ($first =~ /^(?:contact_groups|host|host_name|hostgroup|hostgroup_name|members)$/) {
                     $second =~ s/\s//g;
                     $ref->{$first} = [split (",", $second)];
@@ -52,7 +43,6 @@ sub wanted {
             next if exists $ref->{register} and $ref->{register} =~ /0/;
             if ($type eq 'hostgroup') {
                 foreach (@{$ref->{hostgroup_name}}) {
-                    die if $hostgroups{$_};
                     $hostgroups{$_}{members} = [@{$ref->{members}}];
                     $hostgroups{$_}{alias}   = $ref->{alias};
                 }
@@ -63,7 +53,6 @@ sub wanted {
                 map {$result{$_}{services}{$ref->{service_description}}{notes_url} = $ref->{notes_url}} @{$ref->{host_name}};
             }
             if ($type eq 'host') {
-                next unless defined ${$ref->{host_name}}[0];
                 $result{${$ref->{host_name}}[0]} = { use     => $ref->{use}
                                                    , address => $ref->{address}
                                                    , alias   => $ref->{alias}
@@ -93,19 +82,17 @@ foreach my $serv (@services) {
     my %hosts = ();
     map {$hosts{$_} = 1} @{$serv->{host_name}};
     @{$serv->{host_name}} = grep { !/^!/ } grep { not $hosts{"!$_"} } keys %hosts;
-    print Dumper $serv unless $serv->{check_command};
     my $cmd = $1 if $serv->{check_command} =~ /^([^!]*)(?:|!.*)$/;
     foreach my $hostname (@{$serv->{host_name}}) {
-       my $aa = $commands{$cmd};
-       next unless defined $aa;
-       my @tt = split (/!/, $serv->{check_command});
-       $aa =~ s/(\$USER\d*\$)/$resources{$1}/g;
-       $aa =~ s/\$HOSTADDRESS\$/$result{$hostname}{address}/g;
-       $aa =~ s/\$ARG(\d)\$/$tt[$1]/g;
+       my $cmdstring = $commands{$cmd} or next;
+       my @cmdarray = split (/!/, $serv->{check_command});
+       $cmdstring =~ s/(\$USER\d*\$)/$resources{$1}/g;
+       $cmdstring =~ s/\$HOSTADDRESS\$/$result{$hostname}{address}/g;
+       $cmdstring =~ s/\$ARG(\d)\$/$cmdarray[$1]/g;
        $result{$hostname}{services}{$serv->{service_description}}{check_command} = $serv->{check_command};
        $result{$hostname}{services}{$serv->{service_description}}{$cmd} = $commands{$cmd};
-       $result{$hostname}{services}{$serv->{service_description}}{CMD}  = $aa;
+       $result{$hostname}{services}{$serv->{service_description}}{CMD}  = $cmdstring;
     }
 }
 
-print Dumper %result;
+map {print Dumper $result{$_}} @ARGV or print Dumper %result;

@@ -50,7 +50,7 @@ dosfstools
 ntfsprogs
 ntfs-3g
 
-vim
+gvim
 ctags
 xorg-server
 xorg-xinit
@@ -69,6 +69,7 @@ awesome
 rxvt-unicode-256color
 xcompmgr
 feh
+acpid
 gamin
 pcmanfm
 lxde-icon-theme
@@ -80,6 +81,7 @@ mpc
 mpd
 iotop
 iftop
+iperf
 ncmpcpp
 epdfview
 pacman-contrib
@@ -92,10 +94,15 @@ ddrescue
 nfs-utils
 rpcbind
 gftp
-wireshark
-gimp
-pidgin
 inetutils
 wmname
 multitail
 inotail
+gnu-netcat
+dnsmasq
+hping
+john
+truecrypt
+pidgin
+wireshark
+gimp

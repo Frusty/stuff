@@ -75,6 +75,7 @@ core-pkgs:
 # Clean-up all work
 clean:
 	rm -rf $(WORKDIR) $(NETname) $(COREname)
+	rm -rf $(WORKDIR)/*iso
 	tar cjvf myarch.bz2 boot-files download-repo.sh instructions isomounts Makefile mkinitcpio.conf overlay packages.i686 packages.x86_64
 	mv myarch.bz2 overlay/root/myarch.bz2
 

@@ -4,7 +4,7 @@ use Data::Dumper;
 use Term::ANSIColor qw(:constants);
 $Term::ANSIColor::AUTORESET = 1;
 
-$ARGV[0] = "fw3.config";
+#$ARGV[0] = "fw3.config";
 #die "Falta fichero o es binario." unless -T $ARGV[0];
 local(*DB, $/);
 open (DB, '<', $ARGV[0]) or die "No puedo abir $ARGV[0]";

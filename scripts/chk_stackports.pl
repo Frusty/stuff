@@ -17,7 +17,7 @@ my $result = join('', $telnet->cmd('show switch stack-ports'));
 print "Null output!\n" and exit 1 unless $result;
 
 my $err=0;
-while ($result =~ /(\d)\s+(?:Up|Down)[\s\d]+(\d+)\s+\n\s+(?:Up|Down)[\s\d]+?(\d+)\s+\n/sg) {
+while ($result =~ /(\d)\s+(?:Up|Down)[\s\d]+\s(\d+)\s+\n\s+(?:Up|Down)[\s\d]+?\s(\d+)\s+\n/sg) {
     $err += ($2 + $3);
     print "SW$1(",($2 + $3),") ";
 }

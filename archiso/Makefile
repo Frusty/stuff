@@ -30,6 +30,7 @@ base-fs: root-image bootfiles initcpio overlay iso-mounts
 # Rules for make the root-image for base filesystem.
 root-image: $(WORKDIR)/root-image/.arch-chroot
 $(WORKDIR)/root-image/.arch-chroot:
+	mkarchiso -v -p base create $(WORKDIR)
 	mkarchiso -v -p $(PACKAGES) create $(WORKDIR)
 
 # Rule for make /boot
@@ -40,15 +41,19 @@ bootfiles: root-image
 	cp $(WORKDIR)/root-image/boot/memtest86+/memtest.bin $(WORKDIR)/iso/boot/memtest
 	cp $(WORKDIR)/root-image/usr/share/licenses/common/GPL2/license.txt $(WORKDIR)/iso/boot/memtest.COPYING
 	cp -r boot-files/* $(WORKDIR)/iso/boot/
-	cp $(WORKDIR)/root-image/usr/lib/syslinux/*.c32 $(WORKDIR)/iso/boot/isolinux/
-	cp $(WORKDIR)/root-image/usr/lib/syslinux/isolinux.bin $(WORKDIR)/iso/boot/isolinux/
-	cp $(WORKDIR)/root-image/usr/lib/syslinux/memdisk $(WORKDIR)/iso/boot/isolinux/
-	cp $(WORKDIR)/root-image/usr/lib/syslinux/pxelinux.0 $(WORKDIR)/iso/boot/isolinux/
-
+	cp $(WORKDIR)/root-image/usr/lib/syslinux/*.c32 $(WORKDIR)/iso/boot/syslinux/
+	cp $(WORKDIR)/root-image/usr/lib/syslinux/isolinux.bin $(WORKDIR)/iso/boot/syslinux/
+	cp $(WORKDIR)/root-image/usr/lib/syslinux/memdisk $(WORKDIR)/iso/boot/syslinux/
+	cp $(WORKDIR)/root-image/usr/lib/syslinux/pxelinux.0 $(WORKDIR)/iso/boot/syslinux/
+	cp $(WORKDIR)/root-image/usr/lib/syslinux/gpxelinux.0 $(WORKDIR)/iso/boot/syslinux/
+	# Add pci.ids and modules.alias for hdt
+	mkdir -p $(WORKDIR)/iso/boot/syslinux/hdt/
+	wget -O - http://pciids.sourceforge.net/v2.2/pci.ids | gzip -9 > $(WORKDIR)/iso/boot/syslinux/hdt/pciids.gz
+	cat $(WORKDIR)/root-image/lib/modules/$(shell grep ^ALL_kver $(kver_FILE) | cut -d= -f2)/modules.alias | gzip -9 > $(WORKDIR)/iso/boot/syslinux/hdt/modalias.gz
 
 # Rules for initcpio images
 initcpio: $(WORKDIR)/iso/boot/archiso.img
-$(WORKDIR)/iso/boot/archiso.img: mkinitcpio.conf $(WORKDIR)/root-image/.arch-chroot
+	$(WORKDIR)/iso/boot/archiso.img: mkinitcpio.conf $(WORKDIR)/root-image/.arch-chroot
 	mkdir -p $(WORKDIR)/iso/boot
 	mkinitcpio -c ./mkinitcpio.conf -b $(WORKDIR)/root-image -k $(shell grep ^ALL_kver $(kver_FILE) | cut -d= -f2) -g $@
 
@@ -57,7 +62,7 @@ $(WORKDIR)/iso/boot/archiso.img: mkinitcpio.conf $(WORKDIR)/root-image/.arch-chr
 overlay:
 	mkdir -p $(WORKDIR)/overlay/etc/pacman.d
 	cp -r overlay $(WORKDIR)/
-	wget -O $(WORKDIR)/overlay/etc/pacman.d/mirrorlist http://www.archlinux.org/mirrorlist/$(ARCH)/all/
+	wget -O $(WORKDIR)/overlay/etc/pacman.d/mirrorlist http://www.archlinux.org/mirrorlist/all/
 	sed -i "s/#Server/Server/g" $(WORKDIR)/overlay/etc/pacman.d/mirrorlist
 
 
@@ -69,15 +74,16 @@ $(WORKDIR)/isomounts: isomounts root-image
 
 # Rule for make the [core] repo packages
 core-pkgs:
-	./download-repo.sh core $(WORKDIR)/core-pkgs
+	./download-repo.sh core $(WORKDIR)/core-pkgs/src/core/pkg
 
 
 # Clean-up all work
 clean:
+	rm -rf *iso 
 	rm -rf $(WORKDIR) $(NETname) $(COREname)
-	rm -rf $(WORKDIR)/*iso
 	tar cjvf myarch.bz2 boot-files download-repo.sh instructions isomounts Makefile mkinitcpio.conf overlay packages.i686 packages.x86_64
 	mv myarch.bz2 overlay/root/myarch.bz2
+
 
 .PHONY: all core-iso net-iso
 .PHONY: base-fs

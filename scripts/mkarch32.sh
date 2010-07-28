@@ -9,9 +9,10 @@ echo -e "#\n#\tCreando/actualizando chroot en ${CHROOT}\n#"
 
 exec 3<<__EOF__
 [options]
-HoldPkg     = pacman glibc
-SyncFirst   = pacman
-XferCommand = /usr/bin/wget -c -t 3 --waitretry=3 -O %o %u
+HoldPkg      = pacman glibc
+SyncFirst    = pacman
+Architecture = i686
+
 [core]
 Server = http://sunsite.rediris.es/mirror/archlinux/core/os/i686
 [extra]
@@ -45,7 +46,7 @@ SRCEXT='.src.tar.gz'
 __EOF__
 
 # create if doesn't exist
-[ -d ${CHROOT} ] || mkarchroot -C /proc/$$/fd/3 -M /proc/$$/fd/4 ${CHROOT} base base-devel vim
+[ -d ${CHROOT} ] || mkarchroot -C /proc/$$/fd/3 -M /proc/$$/fd/4 ${CHROOT} base base-devel
 
 # update
 mkarchroot -u ${CHROOT}

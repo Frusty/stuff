@@ -53,7 +53,7 @@ bootfiles: root-image
 
 # Rules for initcpio images
 initcpio: $(WORKDIR)/iso/boot/archiso.img
-	$(WORKDIR)/iso/boot/archiso.img: mkinitcpio.conf $(WORKDIR)/root-image/.arch-chroot
+$(WORKDIR)/iso/boot/archiso.img: mkinitcpio.conf $(WORKDIR)/root-image/.arch-chroot
 	mkdir -p $(WORKDIR)/iso/boot
 	mkinitcpio -c ./mkinitcpio.conf -b $(WORKDIR)/root-image -k $(shell grep ^ALL_kver $(kver_FILE) | cut -d= -f2) -g $@
 

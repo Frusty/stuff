@@ -5,18 +5,14 @@ artwiz-fonts
 aufs2
 aufs2-util
 awesome
-b43-fwcutter
 base
 bc
 bridge-utils
 chromium
 cpio
 cpufrequtils
-crda
 ctags
 ddrescue
-dialog
-dmraid
 dnsmasq
 dnsutils
 dosfstools
@@ -44,12 +40,9 @@ iperf
 iproute2
 iptables
 iptraf
-ipw2100-fw
-ipw2200-fw
 isomaster
 john
 lftp
-linux-firmware
 lsof
 lxde-icon-theme
 macchanger
@@ -62,9 +55,6 @@ mtr
 multitail
 murrine-themes-collection
 ncmpcpp
-ndiswrapper
-ndiswrapper-utils
-netcfg
 net-snmp
 nfs-utils
 ngrep
@@ -95,8 +85,6 @@ syslinux
 tcpdump
 terminus-font
 tftp-hpa
-tiacx
-tiacx-firmware
 tree
 truecrypt
 ttf-ms-fonts
@@ -108,7 +96,6 @@ wicd
 wireless_tools
 wireshark
 wmname
-wpa_actiond
 xcompmgr
 xf86-input-synaptics
 xf86-video-intel
@@ -116,4 +103,3 @@ xf86-video-nv
 xf86-video-vesa
 xorg-server
 xorg-xinit
-zd1211-firmware

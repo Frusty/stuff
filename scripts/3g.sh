@@ -1,4 +1,5 @@
 #!/bin/bash
+# Wrapper sobre wvdial para módems 3G con Movistar.
 set +o posix
 ok() { echo -ne "\e[32m#\n#\t$1\n#\e[m\n"; }
 nk() { echo -ne "\e[31m#\n#\t$1\n#\e[m\n"; exit 1; }
@@ -6,11 +7,11 @@ nk() { echo -ne "\e[31m#\n#\t$1\n#\e[m\n"; exit 1; }
 [ -c /dev/ttyUSB0 ] && [ -c /dev/ttyUSB2 ] && {
     USB=/dev/ttyUSB0 # Sierra USB dongle
     PIN=???
-} 
+}
 [ -c /dev/ttyACM0 ] && {
     USB=/dev/ttyACM0 # Nokia E52
     PIN=???
-} 
+}
 [ $USB ] || nk "No se ha detectado el módem!"
 
 ok "Verificando binarios wvdial pppd y grep:"
@@ -20,7 +21,7 @@ which wvdial pppd grep || nk "Faltan binarios!"
     ok "Introducir PIN:"
     stty -echo # Evitamos ver el PIN por pantalla
     read -r PIN
-    stty echo	
+    stty echo
 }
 [ ${#PIN} -ne 4 ] && nk "PIN tiene que tener 4 caracteres"
 

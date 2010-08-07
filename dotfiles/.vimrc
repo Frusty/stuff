@@ -67,11 +67,11 @@ if has('gui_running')
         autocmd GUIEnter * set t_vb=            " Desactiva visualbell en GVim
     endif
 elseif (&term =~ 'xterm')
-    colorscheme zenburn     " Tema para xterm.
+    colorscheme zenburn   " Tema para xterm.
 elseif (&term =~ 'rxvt-256color')
-    colorscheme inkpot      " Tema para rxvt-256color.
+    colorscheme inkpot    " Tema para rxvt-256color.
 else
-    colorscheme desert      " Tema para el resto
+    colorscheme peachpuff " Tema para el resto
 endif
 "}}}
 "{{{   Eventos
@@ -121,19 +121,26 @@ endif
 "{{{   Plugins
 "-------------------------------------------------------------------------------
 " MiniBufExplorer
-let g:miniBufExplMapWindowNavVim      = 1 " Bindings extra:
-let g:miniBufExplMapWindowNavArrows   = 1 " ^
-let g:miniBufExplMapCTabSwitchBufs    = 1 " ^
-let g:miniBufExplMapCTabSwitchWindows = 1 " ^
-let g:miniBufExplModSelTarget         = 1 " ^
-let g:miniBufExplUseSingleClick       = 1 " Un solo click cambia buffer
-let g:miniBufExplTabWrap              = 1 " Tabs entre etiquetas
+let g:miniBufExplTabWrap = 1 " make tabs show complete (no broken on two lines)
+let g:miniBufExplModSelTarget = 1 " If you use other explorers like TagList you can (As of 6.2.8) set it at 1:
+let g:miniBufExplUseSingleClick = 1 " If you would like to single click on tabs rather than double clicking on them to goto the selected buffer.
+" for buffers that have NOT CHANGED and are NOT VISIBLE.
+highlight MBENormal guifg=LightBlue
+" for buffers that HAVE CHANGED and are NOT VISIBLE
+highlight MBEChanged guifg=Red
+" buffers that have NOT CHANGED and are VISIBLE
+highlight MBEVisibleNormal term=bold cterm=bold gui=bold guifg=Green
+" buffers that have CHANGED and are VISIBLE
+highlight MBEVisibleChanged term=bold cterm=bold gui=bold guifg=Green
+" refresh minibuffeplorer
+autocmd BufRead,BufNew,BufWrite :call UMiniBufExplorer
+
 " TagList
 let Tlist_Exit_OnlyWindow    = 1 " exit if taglist is last window open
 let Tlist_Show_One_File      = 1 " Only show tags for current buffer
 let Tlist_Enable_Fold_Column = 0 " no fold column (only showing one file)
 let Tlist_Use_Right_Window   = 1 " TagList en la derecha
-let Tlist_Compact_Format     = 1 " Modo compacto. No muestra nº de lineasi, etc...
+let Tlist_Compact_Format     = 1 " Modo compacto. No muestra nº de lineas, etc...
 let Tlist_Show_Menu          = 1 " En GVim muestra un menu 'Tags'
 map <F4> :Tlist<CR>
 " NERDTreeMapActivateNodee
@@ -144,7 +151,17 @@ map <F3> :NERDTreeToggle<CR>
 "-------------------------------------------------------------------------------
 " Ctrl-L quita highlights y redibuja la pantalla
 nnoremap <C-L> :nohls<CR>
-" Mapeo F1 a Escape
-map <F1> <Esc>
-imap <F1> <Esc> " No va
+" Cambiamos buffers con F1 y F2 cerrando Nerdtree si está activo
+noremap <F1> :NERDTreeClose<CR> :bprev!<CR>
+noremap <F2> :NERDTreeClose<CR> :bnext!<CR>
+" Smart way to move btw. windows
+map <C-j> <C-W>j
+map <C-k> <C-W>k
+map <C-h> <C-W>h
+map <C-l> <C-W>l
+" Tab shortcuts
+map <leader>tn :tabnew %<cr>
+map <leader>te :tabedit
+map <leader>tc :tabclose<cr>
+map <leader>tm :tabmove
 "}}}

@@ -10,10 +10,11 @@ HOST=""
 REALM=""
 [ $HOST ] && [ $REALM ] || nk "Falta especificar HOST y/o REALM en el script."
 
+BIN="ncsvc pgrep openssl kill sed pgrep reset"
+ok "Verificando binarios $BIN:"
 PATH=$PATH:$(dirname $0)
-ok "Verificando binarios wvdial pppd y grep:"
-which ncsvc pgrep openssl kill || nk "Faltan binarios!"
-[ $(uname -m) = "x86_64" ] && ok ": Se necesita comp. 32 bits. Arch: pacman -S lib32-glibc lib32-gcc-libs lib32-zlib"
+which $BIN || nk "Faltan binarios!"
+[ $(uname -m) = "x86_64" ] && ok "Precaución: Se necesita comp. 32 bits. Arch: pacman -S lib32-glibc lib32-gcc-libs lib32-zlib"
 
 pgrep ncsvc > /dev/null && {
     ok "Procesos ncscv corriendo, los mato..."
@@ -22,7 +23,7 @@ pgrep ncsvc > /dev/null && {
 } || {
     [ $USER ] || { ok "Usuario: "; read -r USER; }
     [ $USER ] || nk "El usuario no puede ser nulo!"
-    ok "Conectando..."
+    ok "Conectando '$USER' en '$HOST'... "
     ncsvc -u $USER -h $HOST -r $REALM -f <(openssl x509 -in <(openssl s_client -connect $HOST:443 </dev/null 2>/dev/null | sed -n '1h;1!H;${;g;s/.*\(-----BE.*TE-----\).*/\1/p;}') -outform der)
     reset
 }

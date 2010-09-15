@@ -1,0 +1,4 @@
+! Dell to Alu mappings.
+! /etc/modprobe.d/hid_apple.conf: options hid_apple fnmode=2 iso_layout=0
+keycode 191 = Insert
+keycode 194 = Print

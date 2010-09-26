@@ -36,7 +36,7 @@ my %cd=();
 my %vgm=();
 my @catnums=();
 my @log=();
-my $threshold = 72;
+my $threshold = 100;
 
 
 sub dprint {
@@ -200,6 +200,11 @@ sub vgmdbid($) {
         $vgm{ALBUM}=$1;
     }
 
+    if ($page =~ /<img id="coverart" src=.(.+?). /) {
+        $vgm{COVER}="http://vgmdb.net/$1";
+        dprint BLUE BOLD "Cover Art:\t"; dprint "'$vgm{COVER}'\n";
+    }
+
     while ($page =~ /<div id="rightfloat"(.*?)<\/div><\/div>/sg){
         my $asd = $1;
         $asd =~ s/<script.*?\/script>//g;   # Noscript
@@ -308,9 +313,11 @@ sub compare() {
                 }
             }
             if ($mark) {;
-                dprint RED BOLD"\n$vgmcd FAILED!\n"; 
+                dprint RED BOLD"\n$vgmcd FAILED!\n";
             } else {
-                dprint GREEN BOLD"\nOK! '$vgm{ALBUM}' $vgmcd passed our requirements!\n"; 
+                dprint GREEN BOLD "\nOK! '";
+                dprint "$vgm{ALBUM}";
+                dprint GREEN BOLD "' passed our requirements!\n";
                 $vgmcd =~ s/\D//g;
                 return $catnums[$vgmcd-1] unless $mark;
             }
@@ -331,14 +338,28 @@ sub rename($) {
     }
     my $dir   = shift;
     my $newdir = "$vgm{ALBUM} [$vgmcd]";
+    my $bytes = 0;
     $newdir =~ s/[\/:|]/,/g;
     $newdir =~ s/"/'/g;
     $newdir =~ s/ , /, /g;
     $newdir =~ s/[\*?<>]//g;
     $newdir =~ s/\s+/ /g;
     #print Dumper %cd;
-    dprint GREEN "Directory to Create/Use: "; dprint "'$newdir'\n";
+    dprint YELLOW "Directory to Create/Use: "; dprint "'$newdir'\n";
     mkdir "$newdir" unless -d $newdir;
+    unless (-B "$newdir/cover.jpg") {
+        my $cover = &http($vgm{COVER}, 'GET');
+        dprint YELLOW "Downloading cover.jpg from: "; dprint "'$vgm{COVER}'... ";
+        open (IMG, "> $newdir/cover.jpg") || die "Can't redirect stdout";
+        print IMG $cover;
+        close (IMG);
+        $bytes = -s "$newdir/cover.jpg";
+        if (-B "$newdir/cover.jpg") {
+            dprint BOLD GREEN "OK! ($bytes bytes).\n";
+        } else {
+            dprint BOLD RED "NOK!\n";
+        }
+    }
     foreach my $track (sort keys %cd) {
 #        $cd{$track}{NTITLE} =~ s/[\/\:*?<>|]/ /g; # NTFS Valid file?
         $cd{$track}{NTITLE} =~ s/["\*?<>]//g;  # NTFS Valid file
@@ -346,14 +367,17 @@ sub rename($) {
         $cd{$track}{NTITLE} =~ s/\s+/ /g;      # formatting
         my $destfile = "$newdir/$track $cd{$track}{NTITLE}.flac";
         $destfile =~ s/[\:*?<>|]//g; # NTFS Valid file?
-        my $bytes=-s $cd{$track}{FNAME};
+        $bytes=-s $cd{$track}{FNAME};
         dprint "\n / Inside "; dprint BLUE BOLD "'$newdir'\n";
         dprint " | We will copy "; dprint YELLOW "'$cd{$track}{NTITLE}.flac' ($bytes bytes)\n";
         dprint " | as "; dprint YELLOW "'$cd{$track}{NTITLE}.flac'\n";
-        copy ($cd{$track}{FNAME}, "$destfile") or die $!;
-        $bytes=-s $destfile;
-        dprint " | "; dprint BOLD GREEN "OK! ($bytes bytes).\n";
-
+        if (-B $destfile) {
+            dprint " | "; dprint YELLOW BOLD "WARNING! File already exists, skipping!\n";
+        } else {
+            copy ($cd{$track}{FNAME}, "$destfile") or die $!;
+            $bytes=-s $destfile;
+            dprint " | "; dprint BOLD GREEN "OK! ($bytes bytes).\n";
+        }
         if (-B $destfile) {
             dprint " | "; dprint "Now we will tag it:\n";
             my $flac = Audio::FLAC::Header->new($destfile);

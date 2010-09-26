@@ -1,7 +1,11 @@
 #!/bin/bash
-# Crea una chroot de 32 bits en arch.
+# Crea una chroot de 32 bits en arch.o
+# Depende el paquete devtools en archlinux.
 set +o posix
 #set -x
+
+[ $USER = "root" ] || { echo "requiere root"; exit 1; }
+which mkarchroot linux32 mount umount || exit 1
 
 CHROOT="/opt/arch32"
 [ $1 ] && CHROOT=$1

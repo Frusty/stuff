@@ -389,7 +389,7 @@ sub rename($) {
                 return 0;
             }
             my $genre  = $vgm{'Classification'} || 'VGM';
-            $genre =~ s/,\s/;/g;
+            $genre =~ s/,\s/;\s/g;
             my $date   = $vgm{'Release Date'}   || 'XXXX';
             #$date = $& if $date =~ /\d+$/; # Only year MAN
             my $version = "Type:$vgm{'Publish Format'}, Media:$vgm{'Media Format'}, Price:$vgm{'Release Price'}";

@@ -5,16 +5,20 @@ set +o posix
 ok() { echo -ne "\e[32m#\n#\t$1\n#\e[m\n"; }
 nk() { echo -ne "\e[31m#\n#\t$1\n#\e[m\n"; exit 1; }
 
-USER=""
-HOST=""
-REALM=""
+USER=
+HOST=
+REALM=
 [ $HOST ] && [ $REALM ] || nk "Falta especificar HOST y/o REALM en el script."
 
 BIN="ncsvc pgrep openssl kill sed pgrep reset"
 ok "Verificando binarios $BIN:"
 PATH=$PATH:$(dirname $0)
 which $BIN || nk "Faltan binarios!"
-[ $(uname -m) = "x86_64" ] && ok "Precaución: Se necesita comp. 32 bits. Arch: pacman -S lib32-glibc lib32-gcc-libs lib32-zlib"
+[ $(uname -m) = "x86_64" ] && { 
+    ok "Precaución: Se necesita comp. 32 bits. Arch: pacman -S lib32-glibc lib32-gcc-libs lib32-zlib"
+    read -sn 1 -p "Pulsa una tecla..."
+    echo
+}
 
 pgrep ncsvc > /dev/null && {
     ok "Procesos ncscv corriendo, los mato..."

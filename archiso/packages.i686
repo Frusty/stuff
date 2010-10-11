@@ -13,6 +13,7 @@ cpio
 cpufrequtils
 ctags
 ddrescue
+dialog
 dnsmasq
 dnsutils
 dosfstools
@@ -22,6 +23,7 @@ feh
 flashplugin
 fuse
 gamin
+gdisk
 gftp
 gimp
 git
@@ -43,6 +45,7 @@ iptraf
 isomaster
 john
 lftp
+linux-firmware
 lsof
 lxde-icon-theme
 macchanger
@@ -55,6 +58,7 @@ mtr
 multitail
 murrine-themes-collection
 ncmpcpp
+netcfg
 net-snmp
 nfs-utils
 ngrep
@@ -69,7 +73,6 @@ parcellite
 parted
 pcmanfm
 pidgin
-pptpclient
 rdesktop
 rfkill
 rpcbind
@@ -97,7 +100,9 @@ wireless_tools
 wireshark
 wmname
 xcompmgr
+xdiskusage
 xf86-input-synaptics
+xf86-video-ati
 xf86-video-intel
 xf86-video-nv
 xf86-video-vesa

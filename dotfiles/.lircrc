@@ -1,0 +1,44 @@
+# Bindings for awesome + apple iR
+
+begin
+    button = Menu
+    prog   = irexec
+    repeat = 0
+    config = slock
+end
+
+begin
+    button = Play
+    prog   = irexec
+    repeat = 0
+#    config = chromium --new-window http://tinyurl.com/dramaticeagle
+    config = echo "client.focus.fullscreen = not client.focus.fullscreen" | awesome-client
+end
+
+begin
+    button = Up
+    prog   = irexec
+    repeat = 0
+    config = echo 'awful.client.focus.byidx(-1)' | awesome-client
+end
+
+begin
+    button = Down
+    prog   = irexec
+    repeat = 0
+    config = echo 'awful.client.focus.byidx(1)' | awesome-client
+end
+
+begin
+    button = Left
+    prog   = irexec
+    repeat = 0
+    config = echo 'awful.tag.viewprev()' | awesome-client
+end
+
+begin
+    button = Right
+    prog   = irexec
+    repeat = 0
+    config = echo 'awful.tag.viewnext()' | awesome-client
+end

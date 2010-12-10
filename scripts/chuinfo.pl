@@ -28,14 +28,14 @@ sub td($$) {# Paso de tratar las celdas a pelo.
 sub tdn($$) {# Paso de tratar las celdas a pelo.
     my $text = shift || "";
     my $args = shift || "";
-    return "<TD $args>$text</TD>" if $text !~ /^\-/ or return '<TD bgcolor=#D9B38">'.$text.'</TD>';
+    return "<TD $args>$text</TD>" if $text !~ /^\-/ or return '<TD bgcolor=#AD4434">'.$text.'</TD>';
 }
 sub tde($$) {# Aquí devolvemos un color de alerta si el valor es verdadero (diferente de 0)
     my $text = shift || 0;
     my $args = shift || "";
     if (defined $text) {
         if ($text gt 0 or $text =~ /^-/) {
-            return "<TD bgcolor=#D9B38><I>$text</I></TD>";
+            return "<TD bgcolor=#AD4434><I>$text</I></TD>";
         } else {
             return "<TD $args>$text</TD>";
         }
@@ -133,7 +133,7 @@ my %FORM=();
 <HTML>
     <HEAD>
         <META http-equiv="Content-Type" content="text/html; charset=utf-8">
-        <TITLE>$0 // $date</TITLE>
+        <TITLE>$FORM{'input'} // $0 // $date</TITLE>
         <script type="text/javascript" src="../sorttable.js"></script>
     </HEAD>
 <BODY>
@@ -166,13 +166,14 @@ my $info = new SNMP::Info(
             BigInt      => 0,   # No se como tratar los obetos BigInt aún.
             BulkWalk    => 1,
             # The rest is passed to SNMP::Session
-            DestHost    => $FORM{'input'}, # || '192.168.238.4', # 192.168.247.80
-            Community   => 'public',
+            DestHost    => $FORM{'input'}, # || 192.168.247.80
+            Community   => 'XXXXXXX',
             Version     => 2,
             MibDirs     => [    '/usr/share/netdisco/mibs/rfc'
                            ,    '/usr/share/netdisco/mibs/net-snmp'
                            ,    '/usr/share/netdisco/mibs/cisco'
                            ,    '/usr/share/netdisco/mibs/enterasys'
+                           ,    '/usr/share/netdisco/mibs/juniper'
                            ],
 ) or print "<H2>Can't connect to device.<H2>\n" and &footer;
 
@@ -270,7 +271,7 @@ my $vtp_trunk_dyn_stat = $info->vtp_trunk_dyn_stat();
     my $netmask = $info->ip_netmask();
     my $broadcast = $info->ip_broadcast();
 
-    print "<B>Policies:</B><BR>\n";
+    print "<B>IP Adress Table:</B><BR>\n";
     print "$table<TR bgcolor=#AAAAAA>"
         .&td('Index')
         .&td('Port')
@@ -440,16 +441,24 @@ sub hashmatch(%$) { # devuelve el puerto asociado a claves de $hash cuyo valor c
     print "</TR>";
 
     foreach my $iid (sort { $a <=> $b } keys %$interfaces){
-        my $TRArgs = 'bgcolor=#DDDDDD';
         my $itime = ($info->uptime() - $i_lastchange->{$iid});
-        $TRArgs = 'bgcolor=#B3D98C' if $i_up->{$iid} ne "up";
+        my $TRArgs = 'bgcolor=#000000';
         if ($itime > 0) {
-            $TRArgs = 'bgcolor=#BBCBDB' if $itime/100 < 86400;
-            $TRArgs = 'bgcolor=#8CB3D9' if $itime/100 < 900;
+            if ($i_up->{$iid} eq "up") {
+                $TRArgs = 'bgcolor=#DDDDDD';
+                $TRArgs = 'bgcolor=#BBCBDB' if $itime/100 < 86400;
+                $TRArgs = 'bgcolor=#8CB3D9' if $itime/100 < 900;
+                $TRArgs = 'bgcolor=#D98C8C' if $i_up_admin->{$iid} eq "down";
+            } else {
+                $TRArgs = 'bgcolor=#E4C9B4';
+                $TRArgs = 'bgcolor=#B3D98C' if $itime/100 < 86400;
+                $TRArgs = 'bgcolor=#75B03B' if $itime/100 < 900;
+                $TRArgs = 'bgcolor=#EEEEEE style="color:gray; font-style:italic"' if $i_up_admin->{$iid} eq "down";
+            }
+        } else {
+                $TRArgs = 'bgcolor=#D98C80'; # Negative time
         }
-        $TRArgs = 'bgcolor=#D1D175 style="font-style:italic"' if $i_type->{$iid} ne "ethernetCsmacd";
-        $TRArgs = 'bgcolor=#8CB3D9' if $i_up_admin->{$iid} eq "down";
-        $TRArgs = 'bgcolor=#EEEEEE style="color:gray; font-style:italic"' if $i_up_admin->{$iid} eq "down" and $i_up->{$iid} eq "down";
+        $TRArgs = 'bgcolor=#DFDF9F style="font-style:italic"' if $i_type->{$iid} ne "ethernetCsmacd";
 
         my $egress = join('<BR>', &TrueSort(@{$i_vlan_membership->{$iid}})) if $i_vlan_membership->{$iid};
 
@@ -501,5 +510,16 @@ sub hashmatch(%$) { # devuelve el puerto asociado a claves de $hash cuyo valor c
     }
     print "</TABLE>\n";
 }
+
+print <<EOF;
+<B>Legend:</B><BR>
+<TABLE style="text-align: center; border-style:solid; border-width:1px;" border="0">
+    <TR bgcolor=#DDDDDD><TD bgcolor=#DDDDDD>Op & Adm UP +24h</TD><TD bgcolor=#E4C9B4>Op DOWN Adm UP +24h</TD></TR>
+    <TR bgcolor=#DDDDDD><TD bgcolor=#BBCBDB>Op & Adm UP -24h</TD><TD bgcolor=#B3D98C>Op DOWN Adm UP -24h</TD></TR>
+    <TR bgcolor=#DDDDDD><TD bgcolor=#8CB3D9>Op & Adm UP -15m</TD><TD bgcolor=#75B03B>Op DOWN Adm UP -15m</TD></TR>
+    <TR bgcolor=#DDDDDD><TD bgcolor=#B38CD9>Op UP Adm DOWN</TD><TD bgcolor=#EEEEEE style="font-style:italic">Op & Adm DOWN</TD></TR>
+    <TR bgcolor=#DDDDDD><TD bgcolor=#D98C80>Warning!</TD><TD bgcolor=#DFDF9F style="font-style:italic">Non Ethernet</TD></TR>
+</TABLE>
+EOF
 
 &footer;

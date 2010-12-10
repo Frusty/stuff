@@ -31,11 +31,11 @@ $chuis{'.1.3.6.1.4.1.9.1.559'}      = {name => 'WS-C2950T-48-SI',  user => 'XXXX
 $chuis{'.1.3.6.1.4.1.9.1.716'}      = {name => 'WS-C2960-24TT-L',  user => 'XXXX', pass => 'XXXX', runcmd => 'terminal length 0', enable => 'XXXX'};
 $chuis{'.1.3.6.1.4.1.9.1.717'}      = {name => 'WS-C2960-48TT-L',  user => 'XXXX', pass => 'XXXX', runcmd => 'terminal length 0', enable => 'XXXX'};
 $chuis{'.1.3.6.1.4.1.9.1.696'}      = {name => 'WS-C2960G-24TC-L', user => 'XXXX', pass => 'XXXX', runcmd => 'terminal length 0', enable => 'XXXX'};
-$chuis{'.1.3.6.1.4.1.5624.2.2.220'} = {name => 'C2H124-48',        user => 'XXXX',    pass => 'XXXX'};
-$chuis{'.1.3.6.1.4.1.5624.2.1.100'} = {name => 'B3G124-24',        user => 'XXXX',    pass => 'XXXX'};
-$chuis{'.1.3.6.1.4.1.5624.2.1.53'}  = {name => '7H4382-25',        user => 'XXXX',    pass => 'XXXX'};
-$chuis{'.1.3.6.1.4.1.5624.2.1.59'}  = {name => '1H582-25',         user => 'XXXX',    pass => 'XXXX',  runcmd => 'set terminal rows disable'};
-$chuis{'.1.3.6.1.4.1.5624.2.1.34'}  = {name => '1H582-51',         user => 'XXXX',    pass => 'XXXX',  runcmd => 'set terminal rows disable'};
+$chuis{'.1.3.6.1.4.1.5624.2.2.220'} = {name => 'C2H124-48',        user => 'XXXX', pass => 'XXXX'};
+$chuis{'.1.3.6.1.4.1.5624.2.1.100'} = {name => 'B3G124-24',        user => 'XXXX', pass => 'XXXX'};
+$chuis{'.1.3.6.1.4.1.5624.2.1.53'}  = {name => '7H4382-25',        user => 'XXXX', pass => 'XXXX'};
+$chuis{'.1.3.6.1.4.1.5624.2.1.59'}  = {name => '1H582-25',         user => 'XXXX', pass => 'XXXX', runcmd => 'set terminal rows disable'};
+$chuis{'.1.3.6.1.4.1.5624.2.1.34'}  = {name => '1H582-51',         user => 'XXXX', pass => 'XXXX', runcmd => 'set terminal rows disable'};
 
 sub getSNMP() {
     my $machine   = shift || 'localhost';

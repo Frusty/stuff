@@ -28,21 +28,22 @@ exit 1;
 }
 
 my %chuis =();
-$chuis{'.1.3.6.1.4.1.2467.4.7'}        = {name => 'CSS11501',         user => 'XXX' pass => 'XXX',  runcmd => 'terminal length 65535', defcmd => 'show running-config'};
-$chuis{'.1.3.6.1.4.1.9.1.359'}         = {name => 'WS-C2950T-24',     user => 'XXX' pass => 'XXX',  runcmd => 'terminal length 0', enable => 'XXX'};
-$chuis{'.1.3.6.1.4.1.9.1.559'}         = {name => 'WS-C2950T-48-SI',  user => 'XXX' pass => 'XXX',  runcmd => 'terminal length 0', enable => 'XXX'};
-$chuis{'.1.3.6.1.4.1.9.1.716'}         = {name => 'WS-C2960-24TT-L',  user => 'XXX' pass => 'XXX',  runcmd => 'terminal length 0', enable => 'XXX'};
-$chuis{'.1.3.6.1.4.1.9.1.717'}         = {name => 'WS-C2960-48TT-L',  user => 'XXX' pass => 'XXX',  runcmd => 'terminal length 0', enable => 'XXX'};
-$chuis{'.1.3.6.1.4.1.9.1.696'}         = {name => 'WS-C2960G-24TC-L', user => 'XXX' pass => 'XXX',  runcmd => 'terminal length 0', enable => 'XXX'};
-$chuis{'.1.3.6.1.4.1.5624.2.2.220'}    = {name => 'C2H124-48',        user => 'XXX' pass => 'XXX'};
-$chuis{'.1.3.6.1.4.1.5624.2.2.286'}    = {name => 'C2H124-48P',       user => 'XXX' pass => 'XXX'};
-$chuis{'.1.3.6.1.4.1.5624.2.1.100'}    = {name => 'B3G124-24',        user => 'XXX' pass => 'XXX'};
-$chuis{'.1.3.6.1.4.1.5624.2.1.53'}     = {name => '7H4382-25',        user => 'XXX' pass => 'XXX'};
-$chuis{'.1.3.6.1.4.1.5624.2.1.59'}     = {name => '1H582-25',         user => 'XXX' pass => 'XXX',  runcmd => 'set terminal rows disable'};
-$chuis{'.1.3.6.1.4.1.5624.2.1.34'}     = {name => '1H582-51',         user => 'XXX' pass => 'XXX',  runcmd => 'set terminal rows disable'};
-$chuis{'.1.3.6.1.4.1.3224.1.51'}       = {name => 'SSG-550M',         user => 'XXX' pass => 'XXX',  runcmd => 'set cli screen-length 0', defcmd => 'get config'};
-$chuis{'.1.3.6.1.4.1.2636.1.1.1.2.31'} = {name => 'ex4200-24p',       user => 'XXX' pass => 'XXX',  runcmd => 'set cli screen-length 0'};
-$chuis{'.1.3.6.1.4.1.2636.1.1.1.2.30'} = {name => 'ex3200-24p',       user => 'XXX' pass => 'XXX',  runcmd => 'set cli screen-length 0'};
+$chuis{'.1.3.6.1.4.1.2467.4.7'}        = {name => 'CSS11501',         user => 'XXX', pass => 'XXX',  runcmd => 'terminal length 65535', defcmd => 'show running-config'};
+$chuis{'.1.3.6.1.4.1.9.1.359'}         = {name => 'WS-C2950T-24',     user => 'XXX', pass => 'XXX',  runcmd => 'terminal length 0', enable => 'XXX'};
+$chuis{'.1.3.6.1.4.1.9.1.559'}         = {name => 'WS-C2950T-48-SI',  user => 'XXX', pass => 'XXX',  runcmd => 'terminal length 0', enable => 'XXX'};
+$chuis{'.1.3.6.1.4.1.9.1.716'}         = {name => 'WS-C2960-24TT-L',  user => 'XXX', pass => 'XXX',  runcmd => 'terminal length 0', enable => 'XXX'};
+$chuis{'.1.3.6.1.4.1.9.1.717'}         = {name => 'WS-C2960-48TT-L',  user => 'XXX', pass => 'XXX',  runcmd => 'terminal length 0', enable => 'XXX'};
+$chuis{'.1.3.6.1.4.1.9.1.696'}         = {name => 'WS-C2960G-24TC-L', user => 'XXX', pass => 'XXX',  runcmd => 'terminal length 0', enable => 'XXX'};
+$chuis{'.1.3.6.1.4.1.5624.2.2.220'}    = {name => 'C2H124-48',        user => 'XXX', pass => 'XXX'};
+$chuis{'.1.3.6.1.4.1.5624.2.2.286'}    = {name => 'C2H124-48P',       user => 'XXX', pass => 'XXX'};
+$chuis{'.1.3.6.1.4.1.5624.2.1.100'}    = {name => 'B3G124-24',        user => 'XXX', pass => 'XXX'};
+$chuis{'.1.3.6.1.4.1.5624.2.1.53'}     = {name => '7H4382-25',        user => 'XXX', pass => 'XXX'};
+$chuis{'.1.3.6.1.4.1.5624.2.1.59'}     = {name => '1H582-25',         user => 'XXX', pass => 'XXX',  runcmd => 'set terminal rows disable'};
+$chuis{'.1.3.6.1.4.1.5624.2.1.34'}     = {name => '1H582-51',         user => 'XXX', pass => 'XXX',  runcmd => 'set terminal rows disable'};
+$chuis{'.1.3.6.1.4.1.3224.1.51'}       = {name => 'SSG-550M',         user => 'XXX', pass => 'XXX',  runcmd => 'set cli screen-length 0', defcmd => 'get config'};
+$chuis{'.1.3.6.1.4.1.2636.1.1.1.2.31'} = {name => 'ex4200-24p',       user => 'XXX', pass => 'XXX',  runcmd => 'set cli screen-length 0'};
+$chuis{'.1.3.6.1.4.1.2636.1.1.1.2.30'} = {name => 'ex3200-24p',       user => 'XXX', pass => 'XXX',  runcmd => 'set cli screen-length 0'};
+$chuis{'.1.3.6.1.4.1.52.4.15.1.3.1.2'} = {name => 'RBT-8200',         user => 'XXX', pass => 'XXX',  runcmd => 'set length 0', enable => 'XXX'}
 
 my @communities = qw/public admin@public/;
 

@@ -10,12 +10,12 @@ fi
 # I merge
 xrdb -merge -load ~/.Xdefaults
 # Xmodmap para apple aluminum keyboard
-if ( lsusb | grep -q "Apple, Inc. Aluminum Keyboard" )
-then 
+if ( lsusb | grep -q "Apple, Inc. Aluminum Keyboard" ) ; then
     xmodmap $HOME/.Xmodmap_alu
 fi
 # nasTests
 test -f `which xcompmgr`    && xcompmgr    &
+test -f `which autocutsel`  && autocutsel -fork
 test -f `which urxvtd`      && urxvtd -o -q -f
 test -f `which parcellite`  && parcellite  &
 test -f `which wicd-client` && wicd-client &

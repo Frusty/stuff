@@ -4,6 +4,7 @@ alsa-utils
 artwiz-fonts
 aufs2
 aufs2-util
+autocutsel
 awesome
 base
 bc
@@ -37,7 +38,6 @@ hping
 htop
 iftop
 inetutils
-inotail
 iotop
 iperf
 iproute2
@@ -58,7 +58,6 @@ mpd
 mtr
 multitail
 ncmpcpp
-netcfg
 net-snmp
 nfs-utils
 ngrep
@@ -107,3 +106,5 @@ xf86-video-nv
 xf86-video-vesa
 xorg-server
 xorg-xinit
+xsel
+xterm

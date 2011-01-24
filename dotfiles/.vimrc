@@ -7,7 +7,7 @@
 set nocompatible                " Usa config por defecto de vim
 syntax on                       " Muchos colores
 set paste                       " No indentar codigo 'pasteado'
-set pdev=HP4250IN3b             " Impresora a usar
+set pdev=IRADV_C5035            " Impresora a usar
 set nobackup                    " No crea ficheros de backup *~
 set noswapfile                  " disable swapfiles
 set ignorecase                  " ignorar case en búsquedas (usando minúsculas)
@@ -51,10 +51,9 @@ set statusline+=%-14.(%l,%c%V%)\ %<%P        " offset
 "}}}
 "{{{   Temas
 "-------------------------------------------------------------------------------
-set t_Co=256                                    " porsia
 if has('gui_running')
-"    set cursorline
-    colorscheme zenburn                         " Tema para gVim
+    "colorscheme blackbeauty " Tema para gVim
+    colorscheme understated " Tema para gVim
     set gfn=Terminus\ 12                        " Fuente
     let &guicursor = &guicursor . ",a:blinkon0" " Disable cursor blinking
 "    set guioptions-=m                           " Fuera Menu
@@ -67,11 +66,11 @@ if has('gui_running')
         autocmd GUIEnter * set t_vb=            " Desactiva visualbell en GVim
     endif
 elseif (&term =~ 'xterm')
-    colorscheme zenburn   " Tema para xterm.
+    colorscheme herald      " Tema para rxvt-256color.
 elseif (&term =~ 'rxvt-256color')
-    colorscheme inkpot    " Tema para rxvt-256color.
+    colorscheme inkpot      " Tema para rxvt-256color.
 else
-    colorscheme peachpuff " Tema para el resto
+    colorscheme blackbeauty " Tema para el resto
 endif
 "}}}
 "{{{   Eventos
@@ -121,8 +120,8 @@ endif
 "{{{   Plugins
 "-------------------------------------------------------------------------------
 " MiniBufExplorer
-let g:miniBufExplTabWrap = 1 " make tabs show complete (no broken on two lines)
-let g:miniBufExplModSelTarget = 1 " If you use other explorers like TagList you can (As of 6.2.8) set it at 1:
+let g:miniBufExplTabWrap        = 1 " make tabs show complete (no broken on two lines)
+let g:miniBufExplModSelTarget   = 1 " If you use other explorers like TagList you can (As of 6.2.8) set it at 1:
 let g:miniBufExplUseSingleClick = 1 " If you would like to single click on tabs rather than double clicking on them to goto the selected buffer.
 " for buffers that have NOT CHANGED and are NOT VISIBLE.
 highlight MBENormal guifg=LightBlue
@@ -134,7 +133,6 @@ highlight MBEVisibleNormal term=bold cterm=bold gui=bold guifg=Green
 highlight MBEVisibleChanged term=bold cterm=bold gui=bold guifg=Green
 " refresh minibuffeplorer
 autocmd BufRead,BufNew,BufWrite :call UMiniBufExplorer
-
 " TagList
 let Tlist_Exit_OnlyWindow    = 1 " exit if taglist is last window open
 let Tlist_Show_One_File      = 1 " Only show tags for current buffer
@@ -149,6 +147,16 @@ map <F3> :NERDTreeToggle<CR>
 "}}}
 "{{{   Bindings y Extras
 "-------------------------------------------------------------------------------
+" Leader por defecto es "\"
+nmap <leader>sw<left>  :topleft  vnew<CR>
+nmap <leader>sw<right> :botright vnew<CR>
+nmap <leader>sw<up>    :topleft  new<CR>
+nmap <leader>sw<down>  :botright new<CR>
+" Abrir nuevo buffer
+nmap <leader>s<left>   :leftabove  vnew<CR>
+nmap <leader>s<right>  :rightbelow vnew<CR>
+nmap <leader>s<up>     :leftabove  new<CR>
+nmap <leader>s<down>   :rightbelow new<CR>
 " Ctrl-L quita highlights y redibuja la pantalla
 nnoremap <C-L> :nohls<CR>
 " Cambiamos buffers con F1 y F2 cerrando Nerdtree si está activo

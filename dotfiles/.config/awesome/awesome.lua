@@ -12,7 +12,7 @@ require("naughty")
 beautiful.init(os.getenv("HOME").."/.config/awesome/themes/oscar.lua")
 
 -- This is used later as the default terminal and editor to run.
-terminal = "urxvtc"
+terminal = os.getenv("TERMINAL") or "xterm"
 editor = os.getenv("EDITOR") or "vim"
 editor_cmd = terminal .. " -e " .. editor
 
@@ -287,6 +287,8 @@ awful.rules.rules = {
     -- Set Firefox to always map on tags number 2 of screen 1.
     -- { rule = { class = "Firefox" },
     --   properties = { tag = tags[1][2] } },
+    --{ rule = { class = "XTerm" },
+    -- properties = { opacity = 0.9} },
 }
 -- }}}
 

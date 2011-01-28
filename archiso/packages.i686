@@ -57,6 +57,7 @@ mpc
 mpd
 mtr
 multitail
+ncdu
 ncmpcpp
 net-snmp
 nfs-utils
@@ -105,6 +106,8 @@ xf86-video-intel
 xf86-video-nv
 xf86-video-vesa
 xorg-server
+xorg-xfontsel
 xorg-xinit
+xorg-xset
 xsel
 xterm

@@ -9,17 +9,20 @@ then
 fi
 # I merge
 xrdb -merge -load ~/.Xdefaults
+# Workaround to make xorg care of the terminus font
+xset +fp /usr/share/fonts/local
+xset fp rehash
 # Xmodmap para apple aluminum keyboard
 if ( lsusb | grep -q "Apple, Inc. Aluminum Keyboard" ) ; then
     xmodmap $HOME/.Xmodmap_alu
 fi
 # nasTests
-test -f `which xcompmgr`    && xcompmgr    &
-test -f `which autocutsel`  && autocutsel -fork
-test -f `which urxvtd`      && urxvtd -o -q -f
-test -f `which parcellite`  && parcellite  &
-test -f `which wicd-client` && wicd-client &
-test -f `which ipt2awe.pl`  && ipt2awe.pl
-test -f `which irexec`      && irexec -d
-test -f `which wmname`      && wmname LG3D # Java Apps Workaround
+[ -f `which xcompmgr`   ] && xcompmgr    &
+[ -f `which autocutsel` ] && autocutsel -fork
+[ -f `which urxvtd`     ] && [ "$TERMINAL" = "urxvtc" ] && urxvtd -o -q -f
+[ -f `which parcellite` ] && parcellite  &
+[ -f `which wicd-clien` ] && wicd-client &
+[ -f `which ipt2awe.pl` ] && ipt2awe.pl
+[ -f `which irexec`     ] && irexec -d
+[ -f `which wmname`     ] && wmname LG3D # Java Apps Workaround
 exec ck-launch-session awesome > ~/.awesome.err 2>&1

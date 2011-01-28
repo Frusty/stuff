@@ -24,4 +24,5 @@ ScrollingBar=TERMINAL_SCROLLBAR_NONE
 ScrollingLines=65535
 FontAntiAlias=FALSE
 ColorCursor=#ffff9de90000
+Term=xterm-256color
 

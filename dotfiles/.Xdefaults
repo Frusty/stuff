@@ -2,33 +2,30 @@
 !
 !{{{    misc
 !-------------------------------------------------------------------------------
-Xcursor*theme:  Vanilla-DMZ
+Xcursor*theme:  neutral
 Xcursor*size:   22
 !}}}
 !{{{    xft
 !-------------------------------------------------------------------------------
 Xft.dpi:       96
-Xft.antialias: 1
-Xft.hinting:   1
+Xft.antialias: true
+Xft.hinting:   true
 Xft.hintstyle: hintfull
 Xft.rgba:      rgb
 !}}}
-!{{{    urxvt: Misc & Matcher
+!{{{    urxvt
 !-------------------------------------------------------------------------------
+! Misc & Matcher
 urxvt*termName:          rxvt-256color
-urxvt*imLocale:          en_EN.UTF-8
 urxvt*loginShell:        true
-urxvt*cutchars:          \ `&()*,;<=>?@[]{|}
+urxvt*cutchars:          "()*,<>[]{}|'"
 urxvt*perl-lib:          /usr/lib/urxvt/perl/
-!urxvt*perl-ext-common:   default,matcher,clipboard
 urxvt*perl-ext-common:   default,matcher
 urxvt*urlLauncher:       chromium
 urxvt*matcher.button:    1
 urxvt*matcher.pattern.1: \bwww\.[\w-]+\.[\w./?&@#-]*[\w/-]
 urxvt*print-pipe:        cat > $(echo urxvt.dump.$(date +'%Y%M%d%H%m%S'))
-!}}}
-!{{{    urxvt: Color & Appaerance
-!-------------------------------------------------------------------------------
+! Appaerance
 urxvt*fading:       30
 urxvt*transparent:  true
 urxvt*depth:        32
@@ -38,24 +35,19 @@ urxvt*cursorColor:  #FFA500
 urxvt*cursorColor2: pink
 urxvt*foreground:   white
 urxvt*pointerColor: #919191
-!}}}
-!{{{    urxvt: Geometry & Fonts
-!-------------------------------------------------------------------------------
-urxvt*font:           xft:Terminus:pixelsize=16:antialias=false
-urxvt*boldFont:       xft:Terminus:pixelsize=16:antialias=false:bold
-urxvt*italicFont:     xft:Terminus:pixelsize=16:antialias=false:italic
-urxvt*bolditalicFont: xft:Terminus:pixelsize=16:antialias=false:bold:italic
-!}}}
-!{{{    urxvt: Border & Scrollbar
-!-------------------------------------------------------------------------------
-urxvt*borderless:      true
-urxvt*saveLines:       32767
-urxvt*jumpScroll:      true
-urxvt*scrollstyle:     plain
-urxvt*scrollBar:       false
-!}}}
-!{{{    urxvt: Tango Colors
-!-------------------------------------------------------------------------------
+! Geometry & Fonts
+urxvt*renderFont:     false
+urxvt*font:           -xos4-terminus-medium-r-*-*-16-*-*-*-*-*-*-*
+urxvt*boldFont:       -xos4-terminus-bold-r-*-*-16-*-*-*-*-*-*-*
+urxvt*italicFont:     -xos4-terminus-medium-r-*-*-16-*-*-*-*-*-*-*
+urxvt*boldItalicFont: -xos4-terminus-bold-r-*-*-16-*-*-*-*-*-*-*
+! Border & Scrollbar
+urxvt*borderless:  true
+urxvt*saveLines:   8192
+urxvt*jumpScroll:  true
+urxvt*scrollstyle: plain
+urxvt*scrollBar:   false
+! Tango Colors
 urxvt*color0:  #2E3436
 urxvt*color1:  #CC0000
 urxvt*color2:  #4E9A06
@@ -73,9 +65,9 @@ urxvt*color13: #AD7FA8
 urxvt*color14: #34E2E2
 urxvt*color15: #EEEEEE
 !}}}
-!{{{    xterm with Tango colors
+!{{{    xterm
 !-------------------------------------------------------------------------------
-xterm*termName:           xterm
+xterm*termName:           xterm-256color
 xterm*internalBorder:     0
 xterm*loginShell:         true
 xterm*scrollBar:          false
@@ -83,7 +75,7 @@ xterm*cursorBlink:        true
 xterm*metaSendsEscape:    true
 xterm*altSendsEscape:     true
 xterm*geometry:           80x26
-xterm*saveLines:          65535
+xterm*saveLines:          8192
 xterm*dynamicColors:      on
 xterm*highlightSelection: true
 ! Catch URLs
@@ -92,11 +84,10 @@ xterm*charClass: 33:48,35-38:48,39:43,42-47:48,58-59:48,61:48,63-64:48,126:48
 xterm*utf8:          2
 xterm*eightBitInput: true
 xterm*faceName:      terminus:pixelsize=16
-!xterm*cursorColor:   #FFFFFF
 xterm*cursorColor:   #FFA500
 xterm*background:    #000000
 xterm*foreground:    #dcdccc
-! Tango Color Scheme (Again)
+! Tango Color Scheme
 xterm*color0:  #2e3436
 xterm*color1:  #cc0000
 xterm*color2:  #4e9a06

@@ -7,7 +7,7 @@
 set nocompatible                " Usa config por defecto de vim
 syntax on                       " Muchos colores
 set paste                       " No indentar codigo 'pasteado'
-set pdev=IRADV_C5035            " Impresora a usar
+set pdev=HP_p3005_PCL_5E        " Impresora a usar
 set nobackup                    " No crea ficheros de backup *~
 set noswapfile                  " disable swapfiles
 set ignorecase                  " ignorar case en búsquedas (usando minúsculas)
@@ -62,13 +62,13 @@ if has('gui_running')
     set guioptions-=L                           " ^
     set guioptions-=r                           " ^
     set guioptions-=R                           " ^
-    if has("autocmd")&& has("gui")
+    if has("autocmd") && has("gui")
         autocmd GUIEnter * set t_vb=            " Desactiva visualbell en GVim
     endif
-elseif (&term =~ 'xterm')
-    colorscheme herald      " Tema para rxvt-256color.
-elseif (&term =~ 'rxvt-256color')
-    colorscheme inkpot      " Tema para rxvt-256color.
+elseif (&term =~ 'rxvt-256color') || (&term =~ 'screen-256color')
+    colorscheme inkpot      " Tema para rxvt-256color y screen-256color
+elseif (&term =~ 'xterm') || (&term =~ 'xterm-256color')
+    colorscheme herald      " Tema para xterm*.
 else
     colorscheme blackbeauty " Tema para el resto
 endif

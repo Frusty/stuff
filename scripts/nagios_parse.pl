@@ -8,13 +8,14 @@ use warnings;
 use Data::Dumper;
 use File::Find;
 
+my $cfgdir     = "/opt/local/nagios/etc/";
 my %result     = ();
 my %commands   = ();
 my %hostgroups = ();
 my %resources  = ();
 my @services   = ();
 
-find(\&wanted, "$ENV{PWD}/etc");
+find(\&wanted, $cfgdir);
 sub wanted {
     if (-f and /\.cfg$/) {
         my $file = $File::Find::name;
@@ -80,19 +81,31 @@ foreach my $serv (@services) {
         }
     }
     my %hosts = ();
+    my $cmd = "";
     map {$hosts{$_} = 1} @{$serv->{host_name}};
     @{$serv->{host_name}} = grep { !/^!/ } grep { not $hosts{"!$_"} } keys %hosts;
-    my $cmd = $1 if $serv->{check_command} =~ /^([^!]*)(?:|!.*)$/;
+    $serv->{check_command} and $serv->{check_command} =~ /^([^!]*)(?:|!.*)$/ and $cmd=$1;
     foreach my $hostname (@{$serv->{host_name}}) {
-       my $cmdstring = $commands{$cmd} or next;
-       my @cmdarray = split (/!/, $serv->{check_command});
-       $cmdstring =~ s/(\$USER\d*\$)/$resources{$1}/g;
-       $cmdstring =~ s/\$HOSTADDRESS\$/$result{$hostname}{address}/g;
-       $cmdstring =~ s/\$ARG(\d)\$/$cmdarray[$1]/g;
-       $result{$hostname}{services}{$serv->{service_description}}{check_command} = $serv->{check_command};
-       $result{$hostname}{services}{$serv->{service_description}}{$cmd} = $commands{$cmd};
-       $result{$hostname}{services}{$serv->{service_description}}{CMD}  = $cmdstring;
+        my $cmdstring = $commands{$cmd} or next;
+        my @cmdarray = split (/!/, $serv->{check_command});
+        $cmdstring =~ s/(\$USER\d*\$)/$resources{$1}/g;
+        $cmdstring =~ s/\$HOSTADDRESS\$/$result{$hostname}{address}/g;
+	my $count = 0;
+	while ($cmdstring =~ /\$ARG(\d)\$/g) { 
+		$count++;
+		unless (defined $cmdarray[$1]) {
+		    print "Problema en el chequeo '$serv->{service_description}' del host $hostname:\n";
+		    print "\$ARGV${1}\$ no tiene un valor asociado en la definición del servicio\n";
+        	    print "check_command => $cmdstring\n";
+        	    print "command_line  => ".join ("|", @cmdarray)."\n\n";
+    		    $cmdarray[$1] = "ERROR";
+		}
+	}
+        $cmdstring =~ s/\$ARG(\d)\$/$cmdarray[$1]/g;
+        $result{$hostname}{services}{$serv->{service_description}}{check_command} = $serv->{check_command};
+        $result{$hostname}{services}{$serv->{service_description}}{$cmd} = $commands{$cmd};
+        $result{$hostname}{services}{$serv->{service_description}}{CMD}  = $cmdstring;
     }
 }
 
-map {print Dumper $result{$_}} @ARGV or print Dumper %result;
+map {print Dumper $result{lc($_)}} @ARGV or print Dumper %result;

@@ -17,6 +17,15 @@ $Term::ANSIColor::AUTORESET = 1;
 
 $0 =~ s/.*\///g;
 
+my $force = 0;
+my $threshold = 5;
+
+GetOptions ( 'force'     => \$force
+           , 'threshold=i' => \$threshold
+           );
+
+exit 1 if $force and $#ARGV != 0;
+
 unless (@ARGV) {
     print <<EOF;
 Usage: $0 <DIR1> <DIR2> ...
@@ -36,7 +45,6 @@ my %cd=();
 my %vgm=();
 my @catnums=();
 my @log=();
-my $threshold = 100;
 
 
 sub dprint {
@@ -104,6 +112,18 @@ sub http($$$) {
     }
 }
 
+sub escapename($$) { # http://kobesearch.cpan.org/htdocs/File-Util/File/Util.pm.html#escape_filename-
+    my($file,$escape,$also) = @_;
+    return '' unless defined $file;
+    $escape = '-' if !defined($escape);
+    if ($also) { $file =~ s/\Q$also\E/$escape/g }
+    my $DIRSPLIT    = qr/[\x5C\/\:]/;
+    my $ILLEGAL_CHR = qr/[\x5C\/\|\r\n\t\013\*\"\?\<\:\>]/;
+    $file =~ s/$ILLEGAL_CHR/$escape/g;
+    $file =~ s/$DIRSPLIT/$escape/g;
+    $file
+}
+
 sub hashfiles(@) {
     %cd=();
     my $curalbum = "NULL";
@@ -159,6 +179,7 @@ sub vgmdbsearch($) {
     dprint BLUE BOLD "=" x (23+length($album))."\n";
     dprint BLUE BOLD "Querying VGMDB with: '$album'\n";
     dprint BLUE BOLD "=" x (23+length($album))."\n";
+#    my $page = decode_entities(&http('http://vgmdb.net/search?do=results', 'POST', "action=advancedsearch&albumtitles=$album&sortby=release&orderby=ASC",'http://vgmdb.net/search'));
     my $page = decode_entities(&http('http://vgmdb.net/search?do=results', 'POST', "action=advancedsearch&albumtitles=$album&sortby=release&orderby=ASC&childmodifier=1",'http://vgmdb.net/search'));
     $page = encode('utf-8', $page); # A lo bestia.
     my %results=();
@@ -179,7 +200,7 @@ sub vgmdbsearch($) {
 
     while ($page =~ /<span class="catalog ([^"]+)">(.+?)<\/span>.+?\/album\/(\d+)" title=.(.+?).>.+?(\d+)(?:|<\/a>)<\/td><\/tr>/sg ) {
         dprint sprintf ("%-13.13s %5.5s %4.4s %-21.21s %s \n", $2, $3, $5, $types{$1}, $4);
-#        next unless $3 == 926;
+#        next unless $3 == 657;
         $results{$3} = {title =>$4, type =>$1};
     }
     dprint GREEN "=" x (80)."\n";
@@ -256,13 +277,16 @@ sub vgmdbid($) {
             dprint GREEN "TRK TITLE                                                          TIME    SECS\n";
             dprint GREEN "=" x (80)."\n";
         }
-
         $track = $1 if $_ =~ /class="smallfont"><span class="label">(\d+)<\/span><\/td>.$/;
         $name  = decode_entities($1) if $_ =~ /class="smallfont" width="100%">(.*?)<\/td>.$/;
-        if ( $_ =~ /class="time">([\d:]+)<\/span><(?:\/td|div)/ ) {
+        if ( $_ =~ /class="time">([\d:]*)<\/span><(?:\/td|div)/ ) {
+#            print $_;
             my $time = $1;
             if ($time =~ /(\d+):(\d+)/) {
                 $secs = ($1*60)+$2;
+            } else {
+                $time="NULL";
+                $secs=0;
             }
             dprint sprintf ("%-3.3s %-62.62s %-8.8s %-4.4s\n", $track, $name, $time, $secs);
             $vgm{"CD$disc"}{$track} = { TITLE => $name
@@ -297,29 +321,26 @@ sub compare() {
             foreach (sort keys %current) {
                 dprint sprintf ("(%02d) % 4d -> (%02d) % 4d ", $_, $current{$_}{SECS}, $_, $cd{$_}{TIMES});
                 my $subs = $current{$_}{SECS} - $cd{$_}{TIMES};
+                $cd{$_}{NTITLE} = $current{$_}{TITLE};
                 if ($subs == 0) {
                     dprint GREEN BOLD "(0 secs) OK!\n";
-                    $cd{$_}{NTITLE} = $current{$_}{TITLE};
                 } elsif ($subs > 0 and $subs < $threshold) {
-
                     dprint YELLOW BOLD "($subs secs) OK!\n";
-                    $cd{$_}{NTITLE} = $current{$_}{TITLE};
                 } elsif ($subs < 0 and $subs > -$threshold) {
                     dprint YELLOW BOLD "($subs secs) OK!\n";
-                    $cd{$_}{NTITLE} = $current{$_}{TITLE};
                 } else {
                     dprint RED BOLD "($subs secs) NOK!\n";
                     $mark=1;
                 }
             }
-            if ($mark) {;
+            if ($mark and not $force) {
                 dprint RED BOLD"\n$vgmcd FAILED!\n";
             } else {
                 dprint GREEN BOLD "\nOK! '";
                 dprint "$vgm{ALBUM}";
                 dprint GREEN BOLD "' passed our requirements!\n";
                 $vgmcd =~ s/\D//g;
-                return $catnums[$vgmcd-1] unless $mark;
+                return $catnums[$vgmcd-1];
             }
         }
     } # foreach keys %vgm
@@ -344,6 +365,7 @@ sub rename($) {
     $newdir =~ s/ , /, /g;
     $newdir =~ s/[\*?<>]//g;
     $newdir =~ s/\s+/ /g;
+    $newdir = &escapename($newdir, '-');
     #print Dumper %cd;
     dprint YELLOW "Directory to Create/Use: "; dprint "'$newdir'\n";
     mkdir "$newdir" unless -d $newdir;
@@ -362,7 +384,8 @@ sub rename($) {
     }
     foreach my $track (sort keys %cd) {
 #        $cd{$track}{NTITLE} =~ s/[\/\:*?<>|]/ /g; # NTFS Valid file?
-        $cd{$track}{NTITLE} =~ s/["\*?<>]//g;  # NTFS Valid file
+#        $cd{$track}{NTITLE} =~ s/["\*?<>]//g;  # NTFS Valid file
+        $cd{$track}{NTITLE} = &escapename($cd{$track}{NTITLE}, '-');
         $cd{$track}{NTITLE} =~ s/[\/:|]/, /g; # and proper
         $cd{$track}{NTITLE} =~ s/\s+/ /g;      # formatting
         my $destfile = "$newdir/$track $cd{$track}{NTITLE}.flac";

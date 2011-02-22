@@ -7,6 +7,7 @@ aufs2-util
 autocutsel
 awesome
 base
+base-devel
 bc
 bridge-utils
 ccze
@@ -25,11 +26,13 @@ feh
 flashplugin
 fuse
 gamin
+gdb
 gdisk
 gftp
 gimp
 git
 gnu-netcat
+gparted
 gqview
 gtk2_prefs
 gtk-engine-murrine
@@ -45,6 +48,7 @@ iptables
 iptraf
 isomaster
 john
+jre
 lftp
 linux-firmware
 lsof
@@ -55,6 +59,7 @@ memtest86+
 minicom
 mpc
 mpd
+mplayer
 mtr
 multitail
 ncdu
@@ -99,7 +104,6 @@ wireshark-gtk
 wmname
 wvdial
 xcompmgr
-xdiskusage
 xf86-input-synaptics
 xf86-video-ati
 xf86-video-intel
@@ -111,3 +115,4 @@ xorg-xinit
 xorg-xset
 xsel
 xterm
+yaourt

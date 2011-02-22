@@ -4,7 +4,6 @@
 use strict;
 use warnings;
 use SNMP::Info;
-use Data::Dumper;
 
 # No quiero escribir esto cada vez.
 my $table = '<TABLE class="sortable"; style="text-align: center; border-style:solid; border-width:1px;" border="0" >';
@@ -45,6 +44,13 @@ sub tde($$) {# Aquí devolvemos un color de alerta si el valor es verdadero (dif
 }
 sub non_empty(%) { # Devuelve 0 (falso) si todos los valores del hash son ""
     return grep { $_ ne "" } values %{$_[0]};
+}
+
+sub check_ip_host(@) {
+    my $validip = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\$";
+    my $validhost = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])\$";
+    @_ ? my @badhosts = grep { $_ !~ /(?:$validip|$validhost)/ } @_ : return "Empty array!\n";
+    @badhosts ? return join(", ", @badhosts)." IP o Hostname inválido/s.\n" : return 0;
 }
 
 sub convert_bytes ($$){ # Bytes a 'Human Readable'
@@ -149,10 +155,10 @@ EOF
 # Para poder usar el script sin cgi.
 $FORM{'input'} = $ARGV[0] if not $FORM{'input'};
 
-if ( $FORM{'input'} =~ /^[\w-]+(?:|(\.[\w-]+)+)$/ ) {
+unless ( &check_ip_host("$FORM{'input'}") ) {
     print "<H2>$FORM{'input'}</H2>\n";
 } elsif ($FORM{'input'}) { # Cagó la regexp
-    print "<B>($FORM{'input'}) No es una entrada válida.</B>\n";
+    print "<H2>Invalid host entry.</B>\n";
     &footer;
 } else {    # 1era vez
     &footer;
@@ -166,8 +172,8 @@ my $info = new SNMP::Info(
             BigInt      => 0,   # No se como tratar los obetos BigInt aún.
             BulkWalk    => 1,
             # The rest is passed to SNMP::Session
-            DestHost    => $FORM{'input'}, # || 192.168.247.80
-            Community   => 'XXXXXXX',
+            DestHost    => $FORM{'input'}, # || '192.168.238.4', # 192.168.247.80
+            Community   => 'public',
             Version     => 2,
             MibDirs     => [    '/usr/share/netdisco/mibs/rfc'
                            ,    '/usr/share/netdisco/mibs/net-snmp'
@@ -175,7 +181,7 @@ my $info = new SNMP::Info(
                            ,    '/usr/share/netdisco/mibs/enterasys'
                            ,    '/usr/share/netdisco/mibs/juniper'
                            ],
-) or print "<H2>Can't connect to device.<H2>\n" and &footer;
+) or print "<B>Can't connect to device.</B>\n" and &footer;
 
 my $err = $info->error();
 print "<H2>SNMP Community or Version probably wrong connecting to device. $err</H2>\n" and &footer if defined $err;
@@ -224,11 +230,6 @@ foreach (keys %$v_name) {
     $v_name->{$&} = $v_name->{$_};
     delete $v_name->{$_};
 }
-
-#print Dumper $v_name;
-
-#&footer;
-
 my $vtp_trunk_dyn = $info->vtp_trunk_dyn();
 my $vtp_trunk_dyn_stat = $info->vtp_trunk_dyn_stat();
 #   Fin del martilleo.
@@ -252,18 +253,6 @@ my $vtp_trunk_dyn_stat = $info->vtp_trunk_dyn_stat();
     print "${infoTR}Bulkwalk</TD>".&td($info->bulkwalk())."</TR>\n";
     print "</TABLE>\n";
 }
-
-# !!!!!!!
-#my @keys = grep { $i_up->{$_} ne "up" } keys %{$i_up};
-#return sort map { $interfaces->{$_} } @keys or 0;
-#
-#my %tmphash= ();
-#my @keys = grep { $i_up->{$_} ne "up" } keys %{$i_up};
-#@tmphash{@keys} = @$i_up{@keys};
-#
-#while ((my $k, my $v) = each %tmphash) {
-#    print "$k = >$v\n" ;
-#}
 
 {   # IP Address Table
     my $index = $info->ip_index();
@@ -377,9 +366,6 @@ sub hashmatch(%$) { # devuelve el puerto asociado a claves de $hash cuyo valor c
     print "${infoTR}Trunking</TD>"    .&td(join (", ", &AgrArr(@trunkports))).&td(($#trunkports+1))."</TR>\n" if @trunkports;
     print "</TABLE>\n";
 }
-
-#my @keys = grep { $i_up->{$_} ne "up" } keys %{$i_up};
-#return sort map { $interfaces->{$_} } @keys or 0;
 
 {   # Vlans
     print "<B>Vlans:</B><BR/>\n";

@@ -12,7 +12,7 @@ $SNMP::save_descriptions = 1;
 my %params = (
     host        => $ENV{host}       || 'localhost',
     port        => $ENV{port}       || 161,
-    community   => $ENV{community}  || 'uocpublic',
+    community   => $ENV{community}  || 'public',
     group       => $ENV{group}      || 'Network',
     version     => '2',
 );

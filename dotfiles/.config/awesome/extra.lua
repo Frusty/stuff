@@ -935,3 +935,7 @@ globalkeys = awful.util.table.join(globalkeys,
 --  Aplico los keybindings
 root.keys(globalkeys)
 --}}}
+--{{{    Autostart
+--  Programas a lanzar al final.
+awful.util.spawn_with_shell("wmname LG3D") -- https://awesome.naquadah.org/wiki/Problems_with_Java
+--}}}

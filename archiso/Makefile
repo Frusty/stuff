@@ -2,7 +2,7 @@ ver=$(shell date +%Y.%m.%d)
 
 WORKDIR=work
 INSTALL_DIR=arch
-COMPRESS=gzip
+COMPRESS=lzo
 
 ARCH?=$(shell uname -m)
 

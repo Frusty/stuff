@@ -25,7 +25,7 @@ find $(basename $1) -type f | sort | while read file; do
         [ "${md5_1%% *}" != "${md5_2%% *}" ] && {
             [ -d "$bckdir" ] || mkdir -p "$bckdir"
             echo "/ $file"
-            echo "| SRC ${md5_1%% *} DST ${md5_1%% *}"
+            echo "| SRC ${md5_1%% *} DST ${md5_2%% *}"
             echo "\ > Copiando en $(basename $bckdir)"
             rsync -Ra "$dirn2file" "$bckdir" && {((counter1++)); } || {((counter3++)); echo "+ ERROR!"; }
             #rsync -Raivh --progress "$dirn2file" "$bckdir"

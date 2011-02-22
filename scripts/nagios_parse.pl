@@ -108,4 +108,4 @@ foreach my $serv (@services) {
     }
 }
 
-map {print Dumper $result{lc($_)}} @ARGV or print Dumper %result;
+map {print Dumper $result{$_}} @ARGV or print Dumper %result;

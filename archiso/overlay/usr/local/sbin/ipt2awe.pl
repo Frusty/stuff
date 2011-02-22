@@ -17,7 +17,7 @@ use strict;
 fork and exit;
 
 my $log = "/var/log/iptables.log";
--f $log or die "Can't find $log\n";
+#-f $log or die "Can't find $log\n";
 my $tail = `which tail` || die "Can't find tail\n";
 chomp $tail;
 my $awe = `which awesome-client` || die "Can't find awesome-client\n";

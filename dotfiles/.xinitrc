@@ -24,5 +24,4 @@ fi
 [ -f `which wicd-clien` ] && wicd-client &
 [ -f `which ipt2awe.pl` ] && ipt2awe.pl
 [ -f `which irexec`     ] && irexec -d
-[ -f `which wmname`     ] && wmname LG3D # Java Apps Workaround
 exec ck-launch-session awesome > ~/.awesome.err 2>&1

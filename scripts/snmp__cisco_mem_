@@ -7,7 +7,7 @@ use SNMP;
 my %params = (
     host        => $ENV{'host'}       || 'localhost',
     port        => $ENV{'port'}       || 161,
-    community   => $ENV{'community'}  || 'uocpublic',
+    community   => $ENV{'community'}  || 'public',
     group       => $ENV{'group'}      || 'Network',
     version     => '2',
     memused     => '.1.3.6.1.4.1.9.9.48.1.1.1.5.1',

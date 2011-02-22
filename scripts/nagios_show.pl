@@ -13,9 +13,9 @@ my $username = "";
 my $password = "";
 
 my %colors = ( OK       => 'green'
-             , WARNING  => 'bright_yellow'
-             , UNKNOWN  => 'bright_magenta' # ANSI hates orange.
-             , CRITICAL => 'bright_red'
+             , WARNING  => 'yellow'
+             , UNKNOWN  => 'magenta' # ANSI hates orange.
+             , CRITICAL => 'red'
              );
 my $colorkeys = join("|", keys %colors);
 

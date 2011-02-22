@@ -11,9 +11,13 @@ alias rsync_size='rsync -aivh --size-only --progress'
 alias mtr='mtr -n4 --curses'
 alias nmapag='nmap -v -AT4' # Agressive scan
 alias nmaprp='nmap -n -sP -PE --reason' # Real ping scan
+alias stracefnmaprp='strace -dCvrttTs65535'
 alias beeep='echo -en "\007"'
+alias chroxy='chromium --no-first-run --user-data-dir=sss --proxy-server="localhost:8080"'
+alias burpsuite="$JAVA_HOME/bin/java -jar /usr/share/burpsuite/burpsuite.jar&"
 sshmount(){ [ -d "/tmp/${1}" ] && { echo "# /tmp/${1} Existe\!"; }|| { mkdir /tmp/${1} && sshfs -o umask=333 root@${1}:/ /tmp/$1 && echo "# Ok -> /tmp/${1}" || rmdir /tmp/${1}; }; }
 findlf(){ find $PWD -xdev -ls | awk {'print $7"\t"$11'} | sort -rn | head -n 10; }
+cprxvt256trm(){ ping -qc1 "$1" >/dev/null &&  scp /usr/share/terminfo/r/rxvt-256color root@${1}:/usr/share/terminfo/r/rxvt-256color; }
 export PATH=$PATH:/usr/local/bin:/usr/local/sbin
 export EDITOR=vim
 export TERMINAL=urxvtc

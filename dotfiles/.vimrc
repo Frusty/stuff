@@ -7,6 +7,7 @@
 set nocompatible                " Usa config por defecto de vim
 syntax on                       " Muchos colores
 set paste                       " No indentar codigo 'pasteado'
+"set pdev=IRADV_C5035            " Impresora a usar
 set pdev=HP_p3005_PCL_5E        " Impresora a usar
 set nobackup                    " No crea ficheros de backup *~
 set noswapfile                  " disable swapfiles
@@ -25,7 +26,6 @@ set tabstop=4                   " Tabs de 4 espacios
 set expandtab                   " Inserta espacios en vez de tabs
 set shiftwidth=4                " Allows the use of < and > for VISUAL indenting
 set ttyfast                     " Mejoras para terminales rápidas
-set lazyredraw                  " No redibujar pantalla durante macros
 set foldmethod=marker           " folding manual con {{{ }}}
 set hlsearch                    " Subraya las búsquedas
 set showcmd                     " Muestra comandos incompletos
@@ -34,9 +34,9 @@ set wildmode=list:longest       " Tab completion 'bash-like'
 set visualbell                  " Desactiva el beep (pero activa visualbell)
 set t_vb=                       " Anulamos la propia visualbell
 set backspace=indent,eol,start  " Permitir backspace sobre todo
-"}}}
-"{{{  Statusbar
-"-------------------------------------------------------------------------------
+""}}}
+""{{{  Statusbar
+""-------------------------------------------------------------------------------
 set laststatus=2                             " Muestra siempre la statusbar
 set statusline=                              " La creamos
 set statusline+=%2*%-3.3n%0*\                " Número de buffer

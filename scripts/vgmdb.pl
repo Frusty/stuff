@@ -8,6 +8,7 @@ use utf8;
 use Encode;
 use Audio::FLAC::Header;    # Para sub hashfiles(@)
 use LWP::UserAgent;         # Para sub http($$$)
+use HTTP::Cookies;          # Cuquis
 use HTML::Entities;         # Para decode_entities
 use File::Copy;             # para copy en &rename
 use Data::Dumper;
@@ -15,10 +16,19 @@ use Getopt::Long qw(:config bundling);
 use Term::ANSIColor qw(:constants);
 $Term::ANSIColor::AUTORESET = 1;
 
-$0 =~ s/.*\///g;
 
-my $force = 0;
+
+$0 =~ s/.*\///g;
+my $username  = "Blackheart";
+my $password  = "13415276";
+my $force     = 0;
 my $threshold = 5;
+my %cd=();
+my %vgm=();
+my @catnums=();
+my @log=();
+my $cookie_jar = HTTP::Cookies->new( autosave => 1 );
+my $vgmuserid  = 0;
 
 GetOptions ( 'force'     => \$force
            , 'threshold=i' => \$threshold
@@ -41,56 +51,11 @@ EOF
 exit 1;
 }
 
-my %cd=();
-my %vgm=();
-my @catnums=();
-my @log=();
-
-
 sub dprint {
     my ($line) = @_;
     print $line;
     push(@log, $line);
-#   print LOG $line;
 }
-
-foreach my $dir (@ARGV) {
-    if (-d $dir) {
-        @log=();
-        my $vgmcd=0;
-        my @files=();
-        opendir(DIR, $dir) || dprint RED "can't opendir $dir: $!\n";
-        @files=map {"$dir/$_"} grep { !/^\.+$/ && /^.*flac$/i } readdir(DIR);
-        closedir DIR;
-        &hashfiles(@files);
-        my ($dirname) = $dir =~ /([^\/]+)(?:|\/)$/;
-        my $ids = &vgmdbsearch($dirname);
-        unless (keys(%$ids)) {
-            dprint RED BOLD "#\n#\tNo results on VGMDB for $dirname, skipping...\n#\n";
-            open(LOG, ">> errors.txt") || die "Can't redirect stdout";
-            print LOG "# No RESULTS on VGMDB for '$dirname'\n";
-            close(LOG);
-            next;
-        }
-
-        foreach (sort { $ids->{$a}{type} cmp $ids->{$b}{type} } keys %$ids) {
-            %vgm=();
-            dprint BLUE BOLD"\nTrying ($_) - $ids->{$_}{title}\n\n";
-            &vgmdbid($_);
-            $vgmcd = &compare;
-            if ($vgmcd) {
-                my $result = &rename($vgmcd,$dir);
-                last if $result;
-            }
-        }
-        unless ($vgmcd) {
-            dprint RED BOLD "#\n#\tNo match for '$dirname' :(\n#\n";
-            open(LOG, ">> errors.txt") || die "Can't redirect stdout";
-            print LOG "# No MATCH for '$dirname'\n";
-            close(LOG);
-        }
-    } # if -d dir
-} # foreach my dir
 
 sub http($$$) {
     my $url     = shift || return 0;
@@ -100,15 +65,93 @@ sub http($$$) {
 
     my $ua = LWP::UserAgent->new;   # User Agent creation
     $ua->agent('Mozilla/5.0');      # IMMAFAKE
+    $ua->cookie_jar( $cookie_jar ); # We should have a jar somewhere
     my $req = HTTP::Request->new($method => $url); # Create a request
     $req->content_type('application/x-www-form-urlencoded');
     $req->referer($referer);
     $req->content($content) if $content;
     my $res = $ua->request($req);   # Pass request to the User Agent and get a response back
-    unless ($res->is_success) {     # Check the outcome of the response
-        return $res->status_line;
+    # We'll use the whole response hash if OK, manily for $res->decoded_content and $res->headers.
+    $res->is_success ? return $res : return $res->status_line
+}
+
+sub authenticate() {
+   return 0 unless $username and $password;
+   dprint YELLOW "Trying to authenticate to vgmdb.net... ";
+   if ($vgmuserid) {
+       dprint BOLD GREEN "Using existing cookie.\n";
+       return $vgmuserid;
+   }
+   &http( 'http://vgmdb.net/forums/login.php'
+        , 'POST'
+        , "vb_login_username=${username}&cookieuser=1&vb_login_password=${password}&securitytoken=guest&do=login"
+        );
+    #print Dumper $cookie_jar;
+    $vgmuserid = $cookie_jar->{'COOKIES'}->{'vgmdb.net'}->{'/'}->{'vgmuserid'}->[1];
+    if ($vgmuserid) {
+        dprint BOLD GREEN "OK!\n";
+        return $vgmuserid;
     } else {
-        return $res->decoded_content;
+        dprint BOLD RED "NOK!,"; dprint " We won't be able to fetch artwork,\n";
+        return 0;
+    }
+}
+
+sub prepareresp(%) {
+    my $resp = shift;
+    if ($resp->is_success) {
+        my $page = decode_entities($resp->decoded_content);
+        $page = encode('utf-8', $page);
+        return $page;
+    } else {
+        return $resp;
+    }
+}
+
+sub savefile($$$) {
+    my $url      = shift || return 0;
+    my $filename = shift || 'cover';
+    my $dir      = shift || '.';
+    unless (-f "$dir/$filename") {
+        mkdir "$dir" unless -d $dir;
+        my $resp = &http($url, "HEAD"); # Only get the headers, then download the file IF necessary.
+        if ($resp->is_success) {
+            my %my_content_types = ( 'image/gif'  => 'gif'
+                                   , 'image/jpeg' => 'jpg'
+                                   , 'image/png'  => 'png'
+                                   , 'image/tiff' => 'tif'
+                                   , 'text/html'  => 'html'
+                                   );
+            my $headers = $resp->headers;
+            #print Dumper $resp->headers;
+            my $content_length = $headers->{'content-length'};
+            my $extension = $my_content_types{$headers->{'content-type'}};
+            unless ($extension) {
+                dprint "El content-type '$headers->{'content-type'}' no està en el hash!\n";
+                return 0;
+            }
+            my $ffile = "$dir/$filename.$extension";
+            my $bytes = -s "$ffile";
+            if ($bytes and $bytes == "$content_length") {
+                dprint YELLOW BOLD "The file '$filename.$extension' ($content_length bytes)' already exists, skipping!\n";
+                return 0;
+            }
+            dprint YELLOW "Downloading '$filename.$extension' ($content_length bytes) from: "; dprint "'$url'... ";
+            my $resp = &http($url); # Now we get the full response via GET
+            if ($resp->is_success) {
+               open (IMG, "> $ffile") || die "Can't redirect stdout to $ffile";
+               print IMG $resp->decoded_content;
+               close (IMG);
+               $bytes = -s "$ffile";
+               if ("$bytes" == "$content_length") {
+                   dprint BOLD GREEN "OK! ($bytes bytes).\n";
+                   return $bytes;
+               } else {
+                   dprint BOLD RED "NOK! File should be $content_length bytes but we got $bytes!\n";
+                   return 0;
+               }
+            }
+        }
     }
 }
 
@@ -121,7 +164,7 @@ sub escapename($$) { # http://kobesearch.cpan.org/htdocs/File-Util/File/Util.pm.
     my $ILLEGAL_CHR = qr/[\x5C\/\|\r\n\t\013\*\"\?\<\:\>]/;
     $file =~ s/$ILLEGAL_CHR/$escape/g;
     $file =~ s/$DIRSPLIT/$escape/g;
-    $file
+    return $file;
 }
 
 sub hashfiles(@) {
@@ -152,7 +195,7 @@ sub hashfiles(@) {
                         };
     }
 
-    dprint BLUE BOLD "=" x (23+length($curalbum)+length(keys(%cd)))."\n";
+    dprint BLUE BOLD "\n"."=" x (23+length($curalbum)+length(keys(%cd)))."\n";
     dprint BLUE BOLD "Album: '$curalbum' with ".keys(%cd)." tracks.\n";
     dprint BLUE BOLD "=" x (23+length($curalbum)+length(keys(%cd)))."\n\n";
     dprint GREEN "TRK TITLE                                        TIME  YEAR GENRE       ARTIST\n";
@@ -175,12 +218,13 @@ sub vgmdbsearch($) {
     $album =~ s/\++/+/g;
     $album =~ s/\+*$//g;
 #    $album = "Valkyrie+profile";
-    dprint YELLOW "Parsed Name: '$album'\n\n";
-    dprint BLUE BOLD "=" x (23+length($album))."\n";
+    dprint YELLOW "Parsed Name: '$album'\n";
+    dprint BLUE BOLD "\n"."=" x (23+length($album))."\n";
     dprint BLUE BOLD "Querying VGMDB with: '$album'\n";
     dprint BLUE BOLD "=" x (23+length($album))."\n";
 #    my $page = decode_entities(&http('http://vgmdb.net/search?do=results', 'POST', "action=advancedsearch&albumtitles=$album&sortby=release&orderby=ASC",'http://vgmdb.net/search'));
-    my $page = decode_entities(&http('http://vgmdb.net/search?do=results', 'POST', "action=advancedsearch&albumtitles=$album&sortby=release&orderby=ASC&childmodifier=1",'http://vgmdb.net/search'));
+    my $response = &http('http://vgmdb.net/search?do=results', 'POST', "action=advancedsearch&albumtitles=$album&sortby=release&orderby=ASC&childmodifier=1",'http://vgmdb.net/search');
+    my $page = decode_entities($response->decoded_content);
     $page = encode('utf-8', $page); # A lo bestia.
     my %results=();
     dprint GREEN "\nCATALOG NUM    ID   YEAR TYPE                  NAME\n";
@@ -211,19 +255,30 @@ sub vgmdbid($) {
     return 0 unless $_ =~ /^\d+$/;
     %vgm=();
     $vgm{URL}="http://vgmdb.net/album/$_";
-    my $page = decode_entities(&http($vgm{URL}));
-    $page = encode('utf-8', $page); # A lo bestia.
-
-    if ($page =~ /<span class="albumtitle" lang="en" style="display:inline">(.*?)<\/span>/) {
-        dprint MAGENTA BOLD "=" x length($1)."\n";
-        dprint MAGENTA BOLD "$1\n";
-        dprint MAGENTA BOLD "=" x length($1)."\n\n";
-        $vgm{ALBUM}=$1;
-    }
+    my $page = &prepareresp(&http($vgm{URL}));
 
     if ($page =~ /<img id="coverart" src=.(.+?). /) {
         $vgm{COVER}="http://vgmdb.net/$1";
         dprint BLUE BOLD "Cover Art:\t"; dprint "'$vgm{COVER}'\n";
+    }
+
+    if (my ($coverlist) = $page =~ /<div class="covertab" id="cover_list" style="[^"]+">(.+?)<\/div>/s) {
+        while ($coverlist =~ /<a href="([^"]+)">([^<]+)<\/a>/sg){
+            my ($url, $name) = ($1, $2);
+            $name = &escapename($name, '-');
+            $name =~ s/\s/_/g;
+            my ($imgid) = $url =~ /(\d+)$/;
+            # IMG Example: http://vgmdb.net/db/covers-full.php?id=106034
+            $vgm{SCANS}{$name} = "http://vgmdb.net/db/covers-full.php?id=$imgid";
+            dprint BLUE BOLD "Scan:\t"; dprint "'$name' => http://vgmdb.net/db/covers-full.php?id=$imgid\n";
+        }
+    }
+
+    if ($page =~ /<span class="albumtitle" lang="en" style="display:inline">(.*?)<\/span>/) {
+        dprint MAGENTA BOLD "\n"."=" x length($1)."\n";
+        dprint MAGENTA BOLD "$1\n";
+        dprint MAGENTA BOLD "=" x length($1)."\n\n";
+        $vgm{ALBUM}=$1;
     }
 
     while ($page =~ /<div id="rightfloat"(.*?)<\/div><\/div>/sg){
@@ -280,7 +335,6 @@ sub vgmdbid($) {
         $track = $1 if $_ =~ /class="smallfont"><span class="label">(\d+)<\/span><\/td>.$/;
         $name  = decode_entities($1) if $_ =~ /class="smallfont" width="100%">(.*?)<\/td>.$/;
         if ( $_ =~ /class="time">([\d:]*)<\/span><(?:\/td|div)/ ) {
-#            print $_;
             my $time = $1;
             if ($time =~ /(\d+):(\d+)/) {
                 $secs = ($1*60)+$2;
@@ -304,11 +358,11 @@ sub vgmdbid($) {
 } # sub vgmdbtitle
 
 sub compare() {
-    dprint BLUE BOLD "=" x (39)."\n";
+    dprint BLUE BOLD "\n"."=" x (39)."\n";
     dprint BLUE BOLD "Comparing last results with our tracks:\n";
     dprint BLUE BOLD "=" x (39)."\n\n";
     foreach my $vgmcd (sort keys %vgm) {
-        next unless ref($vgm{$vgmcd}) eq "HASH"; # Only the CDX hashes
+        next unless ref($vgm{$vgmcd}) eq "HASH" and $vgmcd =~ /^CD\d+$/; # Only the CDX hashes
         my $mark=0;
         my %current = %{$vgm{$vgmcd}};
         dprint "$vgmcd has ".keys(%current)." tracks and I got ".keys(%cd)." files...\t";
@@ -348,7 +402,7 @@ sub compare() {
 } # compare
 
 sub rename($) {
-    dprint BLUE BOLD "=" x (20)."\n";
+    dprint BLUE BOLD "\n"."=" x (20)."\n";
     dprint BLUE BOLD "Copying and Tagging:\n";
     dprint BLUE BOLD "=" x (20)."\n\n";
     my $vgmcd = shift;
@@ -358,42 +412,32 @@ sub rename($) {
         $cdnum++;
     }
     my $dir   = shift;
-    my $newdir = "$vgm{ALBUM} [$vgmcd]";
-    my $bytes = 0;
-    $newdir =~ s/[\/:|]/,/g;
-    $newdir =~ s/"/'/g;
-    $newdir =~ s/ , /, /g;
-    $newdir =~ s/[\*?<>]//g;
-    $newdir =~ s/\s+/ /g;
-    $newdir = &escapename($newdir, '-');
+#    my $basedir = "$vgm{ALBUM} [$vgmcd]";
+    my $basedir = "$vgm{ALBUM} [$vgm{'Catalog Number'}]";
+    $basedir =~ s/[\/:|]/,/g;
+    $basedir =~ s/"/'/g;
+    $basedir =~ s/ , /, /g;
+    $basedir =~ s/[\*?<>]//g;
+    $basedir =~ s/\s+/ /g;
+    $basedir = &escapename($basedir, '-');
     #print Dumper %cd;
-    dprint YELLOW "Directory to Create/Use: "; dprint "'$newdir'\n";
-    mkdir "$newdir" unless -d $newdir;
-    unless (-B "$newdir/cover.jpg") {
-        my $cover = &http($vgm{COVER}, 'GET');
-        dprint YELLOW "Downloading cover.jpg from: "; dprint "'$vgm{COVER}'... ";
-        open (IMG, "> $newdir/cover.jpg") || die "Can't redirect stdout";
-        print IMG $cover;
-        close (IMG);
-        $bytes = -s "$newdir/cover.jpg";
-        if (-B "$newdir/cover.jpg") {
-            dprint BOLD GREEN "OK! ($bytes bytes).\n";
-        } else {
-            dprint BOLD RED "NOK!\n";
-        }
+    dprint YELLOW "Base directory to create/use: "; dprint "'$basedir'\n";
+    mkdir "$basedir" unless -d $basedir;
+    my $cddir = $basedir;
+    if ( $#catnums > 0 ) {
+        $cddir = "$basedir/".sprintf ("Disc_%.2d", $cdnum);
+        mkdir $cddir;
     }
     foreach my $track (sort keys %cd) {
-#        $cd{$track}{NTITLE} =~ s/[\/\:*?<>|]/ /g; # NTFS Valid file?
-#        $cd{$track}{NTITLE} =~ s/["\*?<>]//g;  # NTFS Valid file
         $cd{$track}{NTITLE} = &escapename($cd{$track}{NTITLE}, '-');
         $cd{$track}{NTITLE} =~ s/[\/:|]/, /g; # and proper
         $cd{$track}{NTITLE} =~ s/\s+/ /g;      # formatting
-        my $destfile = "$newdir/$track $cd{$track}{NTITLE}.flac";
+        my $destfile = "$cddir/$track $cd{$track}{NTITLE}.flac";
         $destfile =~ s/[\:*?<>|]//g; # NTFS Valid file?
-        $bytes=-s $cd{$track}{FNAME};
-        dprint "\n / Inside "; dprint BLUE BOLD "'$newdir'\n";
+        my $bytes=-s $cd{$track}{FNAME};
+        dprint "\n / Inside "; dprint BLUE BOLD "'$cddir'\n";
         dprint " | We will copy "; dprint YELLOW "'$cd{$track}{NTITLE}.flac' ($bytes bytes)\n";
-        dprint " | as "; dprint YELLOW "'$cd{$track}{NTITLE}.flac'\n";
+        dprint " | as "; dprint YELLOW "'$track $cd{$track}{NTITLE}.flac'\n";
         if (-B $destfile) {
             dprint " | "; dprint YELLOW BOLD "WARNING! File already exists, skipping!\n";
         } else {
@@ -424,7 +468,7 @@ sub rename($) {
             $aartist =~ s/\s\/.*//g;
             $tags->{TRACKNUMBER}    = $track               ; dprint " |-- TRACKNUMBER\t= '$track'\n";
             $tags->{TOTALTRACKS}    = keys(%cd)            ; dprint " |-- TOTALTRACKS\t= '".keys(%cd)."'\n";
-            $tags->{ALBUM}          = $newdir              ; dprint " |-- ALBUM\t\t= '$newdir'\n";
+            $tags->{ALBUM}          = $basedir              ; dprint " |-- ALBUM\t\t= '$basedir'\n";
             $tags->{TITLE}          = $cd{$track}{'NTITLE'}; dprint " |-- TITLE\t\t= '$cd{$track}{'NTITLE'}'\n";
             $tags->{GENRE}          = $genre               ; dprint " |-- GENRE\t\t= '$genre'\n";
             $tags->{DATE}           = $date                ; dprint " |-- DATE\t\t= '$date'\n";
@@ -450,12 +494,69 @@ sub rename($) {
         }
     } # foreach my $track
 
+
+    if ($vgm{COVER} and $cdnum == 1) {
+        dprint BLUE BOLD "\n"."=" x (15)."\n";
+        dprint BLUE BOLD "Fetching Cover:\n";
+        dprint BLUE BOLD "=" x (15)."\n\n";
+        &savefile($vgm{COVER}, 'cover', $basedir);
+    }
+
+    if ($vgmuserid and $cdnum == 1) {
+        dprint BLUE BOLD "\n"."=" x (17)."\n";
+        dprint BLUE BOLD "Fetching Artwork:\n";
+        dprint BLUE BOLD "=" x (17)."\n\n";
+        foreach my $name (sort keys %{$vgm{SCANS}}) {
+            &savefile($vgm{SCANS}{$name}, $name, "$basedir/scans");
+        }
+    }
+
     dprint GREEN BOLD "#\n#\tAll OK!\n#\n";
-    open(LOG, "> $newdir/log_ansi.txt") || die "Can't redirect stdout";
+    open(LOG, "> $basedir/log_ansi.txt") || die "Can't redirect stdout";
     map {print LOG $_} @log;
     close(LOG);
-    open(LOG, "> $newdir/log.txt") || die "Can't redirect stdout";
+    open(LOG, "> $basedir/log.txt") || die "Can't redirect stdout";
     map {s/.\[\d+m//g; print LOG $_} @log;
     close(LOG);
-    return $newdir;
+    return $basedir;
 } # sub rename
+
+# Working Stuff
+
+foreach my $dir (@ARGV) {
+    if (-d $dir) {
+        @log=();
+        my $vgmcd=0;
+        my @files=();
+        opendir(DIR, $dir) || dprint RED "can't opendir $dir: $!\n";
+        @files=map {"$dir/$_"} grep { !/^\.+$/ && /^.*flac$/i } readdir(DIR);
+        closedir DIR;
+        &hashfiles(@files);
+        my ($dirname) = $dir =~ /([^\/]+)(?:|\/)$/;
+        my $ids = &vgmdbsearch($dirname);
+        unless (keys(%$ids)) {
+            dprint RED BOLD "#\n#\tNo results on VGMDB for $dirname, skipping...\n#\n";
+            open(LOG, ">> errors.txt") || die "Can't redirect stdout";
+            print LOG "# No RESULTS on VGMDB for '$dirname'\n";
+            close(LOG);
+            next;
+        }
+        &authenticate;
+        foreach (sort { $ids->{$a}{type} cmp $ids->{$b}{type} } keys %$ids) {
+            %vgm=();
+            dprint BLUE BOLD"\nTrying ($_) - $ids->{$_}{title}\n\n";
+            &vgmdbid($_);
+            $vgmcd = &compare;
+            if ($vgmcd) {
+                my $result = &rename($vgmcd,$dir);
+                last if $result;
+            }
+        }
+        unless ($vgmcd) {
+            dprint RED BOLD "#\n#\tNo match for '$dirname' :(\n#\n";
+            open(LOG, ">> errors.txt") || die "Can't redirect stdout";
+            print LOG "# No MATCH for '$dirname'\n";
+            close(LOG);
+        }
+    } # if -d dir
+} # foreach my dir

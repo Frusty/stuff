@@ -76,7 +76,7 @@ foreach my $host (@ARGV) {
     print BOLD WHITE "#\n#\tTrying '$host'...\n#\n";
     foreach (@communities) {
         $sysObjectID = &getSNMP($host, $_, );
-            last if $sysObjectID;
+        last if $sysObjectID;
     }
     if ($sysObjectID) {
         if ($chuis{$sysObjectID}{name}) {

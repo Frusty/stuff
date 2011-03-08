@@ -1,4 +1,4 @@
-!   .Xdefaults
+   .Xdefaults
 !
 !{{{    misc
 !-------------------------------------------------------------------------------
@@ -27,10 +27,11 @@ urxvt*matcher.pattern.1: \bwww\.[\w-]+\.[\w./?&@#-]*[\w/-]
 urxvt*print-pipe:        cat > $(echo urxvt.dump.$(date +'%Y%M%d%H%m%S'))
 ! Appaerance
 urxvt*fading:       30
-urxvt*transparent:  true
 urxvt*depth:        32
 urxvt*background:   rgba:0000/0000/0000/DDDD
 urxvt*shading:      15
+! La línea anterior ha de ponerse a false para usar transparencia real
+urxvt*transparent:  true
 urxvt*cursorColor:  #FFA500
 urxvt*cursorColor2: pink
 urxvt*foreground:   white

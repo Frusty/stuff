@@ -17,11 +17,10 @@ if ( lsusb | grep -q "Apple, Inc. Aluminum Keyboard" ) ; then
     xmodmap $HOME/.Xmodmap_alu
 fi
 # nasTests
-[ -f `which xcompmgr`   ] && xcompmgr    &
-[ -f `which autocutsel` ] && autocutsel -fork
-[ -f `which urxvtd`     ] && [ "$TERMINAL" = "urxvtc" ] && urxvtd -o -q -f
-[ -f `which parcellite` ] && parcellite  &
-[ -f `which wicd-clien` ] && wicd-client &
-[ -f `which ipt2awe.pl` ] && ipt2awe.pl
-[ -f `which irexec`     ] && irexec -d
+[ -f "$(which xcompmgr)"    ] && xcompmgr    &
+[ -f "$(which urxvtd)"      ] && [ "$TERMINAL" = "urxvtc" ] && urxvtd -o -q -f
+[ -f "$(which parcellite)"  ] && parcellite  &
+[ -f "$(which wicd-client)" ] && wicd-client &
+[ -f "$(which ipt2awe.pl)"  ] && ipt2awe.pl
+[ -f "$(which irexec)"      ] && [ "$(pgrep -f irexec | wc -l)" -eq "0" ] && irexec -d
 exec ck-launch-session awesome > ~/.awesome.err 2>&1

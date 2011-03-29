@@ -23,4 +23,4 @@ fi
 [ -f "$(which wicd-client)" ] && wicd-client &
 [ -f "$(which ipt2awe.pl)"  ] && ipt2awe.pl
 [ -f "$(which irexec)"      ] && [ "$(pgrep -f irexec | wc -l)" -eq "0" ] && irexec -d
-exec ck-launch-session awesome > ~/.awesome.err 2>&1
+exec awesome > ~/.awesome.err 2>&1

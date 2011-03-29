@@ -2,6 +2,7 @@
 use strict;
 use Net::Telnet;
 use GraphViz;
+use Data::Dumper;
 
 my %chuis=( '.1.3.6.1.4.1.5624.2.2.220'    => { name   => 'C2H124-48'
                                               , user   => 'admin'
@@ -42,17 +43,24 @@ my %vpns=( 666 => { NAME  => 'VLAN 666'
                   }
          );
 
-my $g = GraphViz->new( name    => 'Troncales'
-                     , layout  => 'dot'
-                     , node    => { shape     => 'ellipse'
-                                  , style     => 'filled'
-                                  , fillcolor => 'lightgray'
-                                  }
-                     , edge    => { color     => 'blue'
-                                  }
+my @colors=sort { rand(3) - 1 } qw/669999 668099 666699 806699 996699 996680 996666 998066 999966 809966 669966 669980 8BB1B1 AFCACA B18B8B CAAFAF/;
+map {$vpns{$_}{COLOR} = "#".pop(@colors)} keys %vpns;
+
+my $g = GraphViz->new( name     => 'Troncales'
+                     , layout   => 'dot'
+                     , ratio    => 'compress'
+                     , node     => { shape     => 'box'
+                                   , style     => 'filled'
+                                   , fillcolor => 'lightgray'
+                                   , fontname  => 'terminus'
+                                   , fontsize  => 7
+                                   }
+                     , edge     => { color     => 'blue'
+                                   , fontname  => 'terminus'
+                                   }
                      );
 my %added=();
-foreach my $tron (keys %trons) {
+foreach my $tron (sort {rand() <=> 0.5} keys %trons) {
     print "# $tron ($trons{$tron}{IP})\n" unless $ARGV[0];
     my $sysObjectID = 0;
 
@@ -81,51 +89,56 @@ foreach my $tron (keys %trons) {
         if ($vpns{$vpn}{NODES}{$tron}) {
             foreach my $node (keys %{$vpns{$vpn}{NODES}}) {
                 if ($node ne $tron) {
-                    my $srcip = $vpns{$vpn}{NODES}{$tron};
-                    my $dstip = $vpns{$vpn}{NODES}{$node};
-
-                    unless (defined $trons{$node}) {
-                        print "\tAdded orphan node: ($vpn) $node $dstip\n" unless $ARGV[0];
-                        $g->add_node( $dstip
-                                    , label   => "$node\n$dstip\n PVID: $vpn"
-                                    );
-                    }
-
+                    my ($srcip, $dstip)     = ($vpns{$vpn}{NODES}{$tron}, $vpns{$vpn}{NODES}{$node});
                     my ($clustyle, $clusfc) = ('dashed', 'black');
                     ($clustyle, $clusfc) = ('filled', 'red') if $telnet->errmsg;
+
                     $g->add_node( $srcip
-                                , label   => "$srcip\n PVID: $vpn"
-                                , cluster => { name      => $tron
-                                             , fontsize  => 24
+                                , label   => "$srcip\n PVID: $vpn\n$vpns{$vpn}{NAME}"
+                                , cluster => { name      => "$tron\n($trons{$tron}{IP})"
                                              , style     => $clustyle
+                                             , fontname  => 'Arial Bold'
                                              , fillcolor => $clusfc
                                              }
                                 );
 
-                    next if defined $added{$vpn}{$dstip}{$srcip};
+                    next if defined $added{$vpn}{$dstip}{$srcip} and $added{$vpn}{$dstip}{$srcip}; # Only one pass
 
-                    $added{$vpn}{$srcip}{$dstip} = 1;
                     my $ping = join('', $telnet->cmd("$chuis{$sysObjectID}{chkcmd} $dstip"));
+                    my $edgecolor = my $fillcolor = "$vpns{$vpn}{COLOR}";
+                    my $edgestyle = 'filled';
 
                     if ($ping =~ /$chuis{$sysObjectID}{regexp}/sg) {
+                        $added{$vpn}{$srcip}{$dstip} = 1;
                         print "\t($vpn) $srcip\t-> $dstip (OK)\n" unless $ARGV[0];
-                        $g->add_edge( $srcip => $dstip );
                     } else {
                         print "\t($vpn) $srcip\t-> $dstip (NOK!)\n" unless $ARGV[0];
-                        $g->add_edge( $srcip    => $dstip
-                                    , label     => "$vpns{$vpn}{NAME}"
-                                    , style     => 'bold'
-                                    , color     => 'black'
-                                    , fontcolor => 'red'
-                                    , fontsize  => 18
-                                    );
-                        $g->add_node( $srcip
-                                    , fillcolor => 'red'
-                                    );
+                        $fillcolor = 'red';
+                        $edgecolor = 'black';
+                        $edgestyle = 'bold';
+                    }
+
+                    $g->add_node( $srcip
+                                , fillcolor => $fillcolor
+                                );
+
+                    unless (defined $trons{$node}) {
+                        print "\tAdded orphan node: ($vpn) $node $dstip\n" unless $ARGV[0];
                         $g->add_node( $dstip
-                                    , fillcolor => 'red'
+                                    , label     => "$node ($dstip)\nPVID: $vpn\n$vpns{$vpn}{NAME}"
+                                    , fillcolor => $fillcolor
+                                    );
+                    } else {
+                        $g->add_node( $dstip
+                                    , label     => "$dstip\n PVID: $vpn\n$vpns{$vpn}{NAME}"
+                                    , fillcolor => $fillcolor
                                     );
                     }
+
+                    $g->add_edge( $srcip => $dstip
+                                , color => $edgecolor
+                                , style => $edgestyle
+                                );
                 }
             }
         }

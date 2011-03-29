@@ -10,7 +10,7 @@ PWD=$(shell pwd)
 NETname=$(PWD)/archlinux-$(ver)-netinstall-$(ARCH).iso
 COREname=$(PWD)/archlinux-$(ver)-core-$(ARCH).iso
 
-PACKAGES="$(shell cat packages.$(ARCH))"
+PACKAGES="$(shell cat packages.$(ARCH)) $(shell find custompkgs/ -name '*.pkg.tar.xz' | sed -n 's/.*\/\([0-z]\+\)-.*/\1/p' | xargs)"
 
 kver_FILE=$(WORKDIR)/root-image/etc/mkinitcpio.d/kernel26.kver
 
@@ -84,8 +84,9 @@ core-pkgs:
 
 # Clean-up all work
 clean:
-	rm -rf $(WORKDIR) $(NETname) $(COREname)
-	tar cjvf myarch.bz2 boot-files download-repo.sh instructions isomounts Makefile mkinitcpio.conf overlay packages.i686 packages.x86_64
+	for i in /archiso/custompkgs/*xz; do repo-add /archiso/custompkgs/custompkgs.db.tar.gz $$i; done
+	rm -rf $(WORKDIR) $(NETname) $(COREname) overlay/root/myarch.bz2
+	tar cjvf myarch.bz2 boot-files download-repo.sh instructions isomounts Makefile mkinitcpio.conf overlay packages.i686
 	mv myarch.bz2 overlay/root/myarch.bz2
 
 .PHONY: all core-iso net-iso
@@ -93,4 +94,3 @@ clean:
 .PHONY: root-image bootfiles initcpio overlay iso-mounts
 .PHONY: core-pkgs
 .PHONY: clean
-

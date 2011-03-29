@@ -4,7 +4,6 @@ alsa-utils
 artwiz-fonts
 aufs2
 aufs2-util
-autocutsel
 awesome
 base
 base-devel
@@ -27,7 +26,6 @@ flashplugin
 fuse
 gamin
 gdb
-gdisk
 gftp
 gimp
 git
@@ -92,6 +90,7 @@ strace
 syslinux
 tcpdump
 terminus-font
+testdisk
 tftp-hpa
 tree
 truecrypt

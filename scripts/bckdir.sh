@@ -10,26 +10,34 @@ done
     exit 1
 }
 set -u
-counter1=0
-counter2=0
-counter3=0
+counter1=0 # Todos los ficheros del directorio origen
+counter2=0 # Ficheros del directorio origen presentes en el directorio destino
+counter3=0 # Ficheros copiados en el directorio de backup
+counter4=0 # Errores en la copia
 dirn1="$(dirname $(readlink -f $1))"
 bckdir="$PWD/$(basename $1)_Backup_$(date +%y-%m-%d_%H:%M:%S)"
 cd $dirn1
 find $(basename $1) -type f | sort | while read file; do
+    ((counter1++))
     dirn2file="$(dirname $(readlink -f $2))/${file/#$(basename $1)/$(basename $2)}"
     [ -f "$dirn2file" ] && {
-        ((counter1++))
+        ((counter2++))
         md5_1=$(md5sum "$dirn1/$file")
         md5_2=$(md5sum $dirn2file)
         [ "${md5_1%% *}" != "${md5_2%% *}" ] && {
-            [ -d "$bckdir" ] || mkdir -p "$bckdir"
-            echo "/ $file"
+            echo -e "\n/ $file"
             echo "| SRC ${md5_1%% *} DST ${md5_2%% *}"
             echo "\ > Copiando en $(basename $bckdir)"
-            rsync -Ra "$dirn2file" "$bckdir" && {((counter1++)); } || {((counter3++)); echo "+ ERROR!"; }
-            #rsync -Raivh --progress "$dirn2file" "$bckdir"
+            rsync -Rañih --progress "$dirn2file" "$bckdir"
+            if [ $? -eq 0 ]; then
+                ((counter3++))
+            else
+                ((counter4++))
+                echo "+ ERROR!!"
+                sleep 5
+            fi
         }
-        echo "+ $counter2 de $counter1 ficheros copiados, $counter3 errores."
     }
+    echo -en "\r+ $counter3 de $counter1/$counter2 ficheros copiados, $counter4 errores."
 done
+echo

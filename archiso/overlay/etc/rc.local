@@ -9,4 +9,4 @@
 # chromium workaround
 rm -rf /usr/lib/chromium/chromium-sandbox
 # awesome df workaround
-df > /dev/null& 2>&1
+df > /dev/null 2>&1

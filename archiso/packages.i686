@@ -43,7 +43,6 @@ iotop
 iperf
 iproute2
 iptables
-iptraf
 isomaster
 john
 jre
@@ -98,6 +97,7 @@ unrar
 unzip
 whois
 wicd
+wicd-gtk
 wireless_tools
 wireshark-gtk
 wmname

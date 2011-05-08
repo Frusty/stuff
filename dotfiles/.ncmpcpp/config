@@ -1,0 +1,10 @@
+playlist_display_mode = "columns" # (classic/columns)
+browser_display_mode = "columns" # (classic/columns)
+search_engine_display_mode = "columns" # (classic/columns)
+autocenter_mode = "yes"
+centered_cursor = "yes"
+user_interface = "alternative" # (classic/alternative)
+clock_display_seconds = "yes"
+display_bitrate = "yes"
+external_editor = "vim"
+use_console_editor = "yes" # (set to yes, if your editor is console app)

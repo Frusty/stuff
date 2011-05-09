@@ -44,14 +44,15 @@ while [ $# -gt 0 ]; do
     escaped_outfile=$(printf '%q' "$outfile") # Also escape our output file.
     # I was unable to do the whols thing at once, so i'll build and evaluate my command later.
     # I'll use an array to be able to document each flag.
-    flags[0]="-rotate '-90>'"              # Rotate the image if Height > Weight.
-    flags[1]="-resize $resolution"         # Resize the image to our resoulion keeping ratio.
-    flags[2]="-gravity center"             # Put it in the middle of a canvas.
-    flags[3]="-extent $resolution"         # Then extend the rest, we'll always have full size images.
-    flags[4]="+dither"                     # Reduce color without dithering.
-    flags[5]="-map /tmp/ct16gray.gif"      # Use our custom color table.
-    flags[6]="-compress zip"               # zip compression on the PDF.
-    flags[7]="$escaped_outfile"            # Escaped Ouput file, so it won't mess our eval.
+#    flags[10]="-fuzz '5%' -trim"       # Remove the borders of the image..
+    flags[12]="-rotate '-90>'"         # Rotate the image if Height > Weight.
+    flags[14]="-resize $resolution"    # Resize the image to our resoulion keeping ratio.
+    flags[16]="-gravity center"        # Put it in the middle of the canvas.
+    flags[18]="-extent $resolution"    # Then extend the rest, we'll always have full size images.
+    flags[22]="-map /tmp/ct16gray.gif" # Use our custom color table.
+    flags[20]="+dither"                # Reduce color without dithering.
+    flags[24]="-compress zip"          # zip compression on the PDF.
+    flags[26]="$escaped_outfile"       # Escaped output file, so it won't mess our eval.
     # Evaluate and create the pdf IF it does'nt exist.
     [ -f "$outfile" ] || eval "time convert -verbose $list ${flags[@]}"
     shift

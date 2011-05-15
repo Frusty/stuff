@@ -9,6 +9,8 @@ setrndwall = "awsetbg -u feh -r "..awful.util.getdir("config").."/walls"
 setrndtile = "awsetbg -u feh -t -r "..awful.util.getdir("config").."/tiles"
 setwall = "awsetbg -u feh -c "..awful.util.getdir("config").."/walls/vladstudio_microbes_1920x1200.jpg"
 browser = os.getenv('BROWSER') or 'chromium'
+if not theme.font_key   then theme.font_key    = 'white' end
+if not theme.font_value then theme.font_ivalue = 'white' end
 --}}}
 --{{{    Utilidades/Funciones
 function escape(text)
@@ -294,7 +296,7 @@ end
 separator = widget({ type = 'imagebox'
                    , name  = 'separator'
                    })
-separator.image = image(awful.util.getdir("config").."/imgs/separador2.png")
+separator.image = image(theme.separator)
 separator.resize = false
 --}}}
 --{{{    MPC (imagebox+textbox) requiere mpc/mpd
@@ -330,17 +332,17 @@ function mpc_info()
                 end
                 oldsong = song
                 -- ugly utf8 workaround Part 1
-                return '[Play]<span font_desc="Sans 8" color="white"> "'..song..'"</span> '..time
+                return fgc('[Play]','green')..'<span font_desc="Sans 8" color="'..theme.font_key..'"> "'..song..'"</span> '..fgc(time,theme.font_value)
             elseif state == 'paused' then
                 if song ~= '' and time ~= '' then
-                    return '[Wait] '..song..' '..time
+                    return fgc('[Wait] ',theme.font_value)..song..' '..fgc(time,theme.font_value)
                 end
             end
         else
             if now:match('^Updating%sDB') then
-                return '[Wait] Updating Database...'
+                return fgc('[Wait]',theme.font_value)..' Updating Database...'
             elseif now:match('^volume:') then
-                return '[Stop] ZZzzz...'
+                return fgc('[Stop]',theme.font_value)..' ZZzzz...'
             else
                 return fgc('[DEAD]', 'red')..' :_('
             end
@@ -429,7 +431,7 @@ function activeram()
     if membarwidget then
         membarwidget:set_value(percent/100)
     end
-    return used..'('..percent..'%)'
+    return fgc(used, theme.font_key)..fgc('('..percent..'%)', theme.font_value)
 end
 --  imagebox
 mem_ico = widget({ type = "imagebox" })
@@ -482,7 +484,7 @@ function activeswap()
         end
     end
     active = total - free
-    return string.format("%.0fMB",(active/1024))..'('..string.format("%.0f%%",(active/total)*100)..')'
+    return fgc(string.format("%.0fMB",(active/1024)), theme.font_key)..fgc('('..string.format("%.0f%%",(active/total)*100)..')', theme.font_value)
 end
 --  imagebox
 swp_ico = widget({ type = "imagebox" })
@@ -552,9 +554,9 @@ function cpu_info()
     info = ''
     for s = 0, #cpu do
         if cpu[s].res > 99 then
-            info = info..fgc('C'..s..':')..fgc('LOL', 'red')
+            info = info..fgc('C'..s..':', theme.font_key)..fgc('LOL', 'red')
         else
-            info = info..fgc('C'..s..':')..string.format("%02d",cpu[s].res)..'%'
+            info = info..fgc('C'..s..':', theme.font_key)..fgc(string.format("%02d",cpu[s].res)..'%', theme.font_value)
         end
         if s ~= #cpu then
             info = info..' '
@@ -618,9 +620,9 @@ function fs_info()
             for key, value in ipairs(mounts) do
                 if value == string.lower(mpoint) then
                     if tonumber(percent) < 90 then
-                        result = result..fgc(value..'~')..percent..'%'
+                        result = result..fgc(value..'~', theme.font_key)..fgc(percent..'%', theme.font_value)
                     else
-                        result = result..fgc(value..'~')..fgc(percent..'%', 'red')
+                        result = result..fgc(value..'~', theme.font_key)..fgc(percent..'%', 'red')
                     end
                 end
             end
@@ -689,7 +691,7 @@ function net_info()
     else
         rx,tx,rxu,txu = "0","0","B","B"
     end
-    return iface..fgc(bold('|'), 'green')..string.format("%04d%2s",rx,rxu)..fgc(bold('|'), 'red')..string.format("%04d%2s",tx,txu)
+    return fgc(iface, theme.font_key)..fgc(bold('|'), 'green')..fgc(string.format("%04d%2s",rx,rxu), theme.font_value)..fgc(bold('|'), 'red')..fgc(string.format("%04d%2s",tx,txu), theme.font_value)
 end
 --  imagebox
 net_ico = widget({ type = "imagebox" })
@@ -722,7 +724,7 @@ netwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
 function avg_load()
     local n = fread('/proc/loadavg')
     local pos = n:find(' ', n:find(' ', n:find(' ')+1)+1)
-    return  n:sub(1,pos-1)
+    return  fgc(n:sub(1,pos-1), theme.font_value)
 end
 --  imagebox
 load_ico = widget({ type = "imagebox" })
@@ -764,9 +766,9 @@ function get_vol()
     local txt = pread('amixer get '..sdev)
     if txt then
         if txt:match('%[off%]') then
-            return 'Mute'
+            return fgc('Mute', 'red')
         else
-            return txt:match('%[(%d+%%)%]')
+            return fgc(txt:match('%[(%d+%%)%]'), theme.font_value)
         end
     else
         return ''

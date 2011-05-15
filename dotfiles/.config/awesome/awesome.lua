@@ -9,7 +9,7 @@ require("naughty")
 
 -- {{{ Variable definitions
 -- Themes define colours, icons, and wallpapers
-beautiful.init(os.getenv("HOME").."/.config/awesome/themes/oscar.lua")
+beautiful.init(os.getenv("HOME").."/.config/awesome/themes/emacs.lua")
 
 -- This is used later as the default terminal and editor to run.
 terminal = os.getenv("TERMINAL") or "xterm"

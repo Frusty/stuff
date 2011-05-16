@@ -168,11 +168,10 @@ function toggle(prog,height,sticky,screen)
     end
 end
 --}}}
---
 --{{{    GMail (imagebox+textbox)
 --------------------------------------------------------------------------------
 --  Datos de gmail
-mailadd  = 'oprietop@intranet.uoc.edu'
+mailadd  = ''
 mailpass = escape(fread(confdir..mailadd..'.passwd'))
 mailurl  = 'https://mail.google.com/a/intranet.uoc.edu/feed/atom/unread'
 --  mailurl  = 'https://mail.google.com/feed/atom/unread'
@@ -810,7 +809,6 @@ end)
 --  mouse_leave
 volwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
 --}}}
---
 --{{{   Timers
 --------------------------------------------------------------------------------
 --  Hook every sec
@@ -845,7 +843,6 @@ timer60:add_signal("timeout", function()
 end)
 timer60:start()
 --}}}
---
 --{{{    Wibox
 --------------------------------------------------------------------------------
 for s = 1, screen.count() do
@@ -897,7 +894,6 @@ for s = 1, screen.count() do
     statusbar[s].screen = s
 end
 --}}}
---
 --{{{    Keybindings
 --------------------------------------------------------------------------------
 --  Actualizo la tabla globalkeys añadiendo mis keybindings.

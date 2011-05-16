@@ -40,7 +40,6 @@ layouts =
     awful.layout.suit.floating
 }
 -- }}}
-
 -- {{{ Tags
 -- Define a tag table which hold all screen tags.
 tags = {}
@@ -49,7 +48,6 @@ for s = 1, screen.count() do
     tags[s] = awful.tag({ 1, 2, 3, 4, 5, 6, 7, 8, 9 }, s, layouts[1])
 end
 -- }}}
-
 -- {{{ Wibox
 -- Create a textclock widget
 mytextclock = awful.widget.textclock({ align = "right" })
@@ -137,9 +135,6 @@ for s = 1, screen.count() do
     }
 end
 -- }}}
-
-
-
 -- {{{ Mouse bindings
 root.buttons(awful.util.table.join(
     awful.button({ }, 3, function () awful.util.spawn(terminal) end),
@@ -147,7 +142,6 @@ root.buttons(awful.util.table.join(
     awful.button({ }, 5, awful.tag.viewprev)
 ))
 -- }}}
-
 -- {{{ Key bindings
 globalkeys = awful.util.table.join(
     awful.key({ modkey,           }, "Left",   awful.tag.viewprev       ),
@@ -268,7 +262,6 @@ clientbuttons = awful.util.table.join(
 -- Set keys
 root.keys(globalkeys)
 -- }}}
-
 -- {{{ Rules
 awful.rules.rules = {
     -- All clients will match this rule.
@@ -291,7 +284,6 @@ awful.rules.rules = {
     -- properties = { opacity = 0.9} },
 }
 -- }}}
-
 -- {{{ Signals
 -- Signal function to execute when a new client appears.
 client.add_signal("manage", function (c, startup)
@@ -322,7 +314,6 @@ end)
 client.add_signal("focus", function(c) c.border_color = beautiful.border_focus end)
 client.add_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
 -- }}}
-
 
 -- Barra de widgets
 loadfile(awful.util.getdir("config").."/extra.lua")()

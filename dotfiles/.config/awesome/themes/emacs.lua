@@ -1,18 +1,12 @@
--------------------------------
---  "Zenburn" awesome theme  --
---    By Adrian C. (anrxc)   --
--------------------------------
-
--- Alternative icon sets and widget icons:
---  * http://awesome.naquadah.org/wiki/Nice_Icons
-
 -- {{{ Main
 theme = {}
 theme.wallpaper_cmd = { 'awsetbg -u feh -t -r '..os.getenv("HOME")..'/.config/awesome/tiles'}
 -- }}}
 
 -- {{{ Styles
-theme.font          = "smoothansi 9"
+theme.font        = "smoothansi 9"
+theme.font_key    = "white"
+theme.font_value  = "#F5DEB3"
 
 --bg
 theme.bg_normal     = "#222222AA"
@@ -24,7 +18,7 @@ theme.bg_minimize   = "#444444"
 theme.fg_normal     = "#F5DEB3"
 theme.fg_focus      = "#FFA500"
 theme.fg_urgent     = "#FFFF00"
-theme.fg_minimize   = "#ffffff"
+theme.fg_minimize   = "white"
 
 --border
 theme.border_width  = "2"
@@ -61,6 +55,7 @@ theme.taglist_squares_resize = "false"
 theme.awesome_icon           = "/usr/share/awesome/themes/zenburn/awesome-icon.png"
 theme.menu_submenu_icon      = "/usr/share/awesome/themes/default/submenu.png"
 theme.tasklist_floating_icon = "/usr/share/awesome/themes/default/tasklist/floatingw.png"
+theme.separator              = os.getenv("HOME")..'/.config/awesome/imgs/sep_emacs.png'
 -- }}}
 
 -- {{{ Layout

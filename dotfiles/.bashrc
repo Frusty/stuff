@@ -14,6 +14,7 @@ alias nmaprp='nmap -n -sP -PE --reason' # Real ping scan
 alias stracefn='strace -dCvrttTs65535'
 alias nmonf='NMON=lmdDntu nmon'
 alias beeep='echo -en "\007"'
+alias qemucd='qemu -m 512 -boot d -cdrom'
 alias chroxy='chromium --no-first-run --user-data-dir=sss --proxy-server="localhost:8080"'
 sshmount(){ [ -d "/tmp/${1}" ] && { echo "# /tmp/${1} Existe\!"; }|| { mkdir /tmp/${1} && sshfs -o umask=333 root@${1}:/ /tmp/$1 && echo "# Ok -> /tmp/${1}" || rmdir /tmp/${1}; }; }
 findlf(){ find $PWD -xdev -ls | awk {'print $7"\t"$11'} | sort -rn | head -n 10; }

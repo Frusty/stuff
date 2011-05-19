@@ -85,9 +85,8 @@ core-pkgs:
 # Clean-up all work
 clean:
 	for i in /archiso/custompkgs/*xz; do repo-add /archiso/custompkgs/custompkgs.db.tar.gz $$i; done
-	rm -rf $(WORKDIR) $(NETname) $(COREname) overlay/root/myarch.bz2
-	tar cjvf myarch.bz2 boot-files download-repo.sh instructions isomounts Makefile mkinitcpio.conf overlay packages.i686
-	mv myarch.bz2 overlay/root/myarch.bz2
+	rm -rf $(WORKDIR) $(NETname) $(COREname) overlay/root/archiso.bz2
+	tar -cjvf overlay/root/archiso.bz2 --exclude={archiso.bz2,*.iso,./work/} $(PWD)
 
 .PHONY: all core-iso net-iso
 .PHONY: base-fs

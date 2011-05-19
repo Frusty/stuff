@@ -57,7 +57,17 @@ function fread(cmd)
         end
     end
 end
---  esto se carga todas las notificaciones de naughty
+-- aplica un fichero de tema aleatorio
+function rndtheme()
+    local themes = {}
+    local path = os.getenv("HOME")..'/.config/awesome/themes/'
+    for file in io.popen('ls '..path):lines() do
+        table.insert(themes, path..file)
+    end
+    math.randomseed(os.time()+table.getn(themes))
+    beautiful.init(themes[math.random(#themes)])
+end
+-- esto se carga todas las notificaciones de naughty
 function desnaug()
     for p,pos in pairs(naughty.notifications[mouse.screen]) do
         for i,notification in pairs(naughty.notifications[mouse.screen][p]) do
@@ -109,7 +119,6 @@ function toggle(prog,height,sticky,screen)
     local screen = screen or capi.mouse.screen
     if not dropdown[prog] then
         dropdown[prog] = {}
-
         -- Add unmanage signal for teardrop programs
         capi.client.add_signal("unmanage", function (c)
             for scr, cl in pairs(dropdown[prog]) do
@@ -390,6 +399,7 @@ function print_mpc()
     local text = pread("mpc; echo ; mpc stats")
     pop = naughty.notify({ title    = fgc('MPC Stats\n')
                          , text     = text
+--                         , text     = io.popen('ls -1 '..os.getenv("HOME")..'/.config/awesome/themes/ | sort -R | head -1'
                          , icon     = imgpath..'mpd_logo.png'
                          , timeout  = 0
                          , position = "bottom_left"
@@ -904,6 +914,7 @@ globalkeys = awful.util.table.join(globalkeys,
     awful.key({ modkey,           }, "BackSpace",  function () awful.util.spawn('urxvt -pe tabbed') end),
     awful.key({ modkey, "Control" }, "w",          function () awful.util.spawn(setrndwall) end),
     awful.key({ modkey, "Control" }, "e",          function () awful.util.spawn(setrndtile) end),
+    awful.key({ modkey, "Control" }, "d",          function () rndtheme() end),
     awful.key({ modkey, "Control" }, "q",          function () awful.util.spawn(setwall) end),
     awful.key({ modkey, "Control" }, "t",          function () awful.util.spawn('pcmanfm') end),
     awful.key({ modkey, "Control" }, "p",          function () awful.util.spawn('pidgin') end),

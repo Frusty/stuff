@@ -7,9 +7,18 @@ require("beautiful")
 -- Notification library
 require("naughty")
 
+-- Enchufamos un tema al azar
+themes = {}
+path = os.getenv("HOME")..'/.config/awesome/themes/'
+for file in io.popen('ls '..path):lines() do
+    table.insert(themes, path..file)
+end
+math.randomseed(os.time()+table.getn(themes))
+beautiful.init(themes[math.random(#themes)])
+
 -- {{{ Variable definitions
 -- Themes define colours, icons, and wallpapers
-beautiful.init(os.getenv("HOME").."/.config/awesome/themes/emacs.lua")
+--beautiful.init(os.getenv("HOME").."/.config/awesome/themes/space_core.lua")
 
 -- This is used later as the default terminal and editor to run.
 terminal = os.getenv("TERMINAL") or "xterm"

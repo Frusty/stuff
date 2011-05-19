@@ -34,9 +34,10 @@ set wildmode=list:longest       " Tab completion 'bash-like'
 set visualbell                  " Desactiva el beep (pero activa visualbell)
 set t_vb=                       " Anulamos la propia visualbell
 set backspace=indent,eol,start  " Permitir backspace sobre todo
+set maxmempattern=10000
 ""}}}
 ""{{{  Statusbar
-""-------------------------------------------------------------------------------
+"-------------------------------------------------------------------------------
 set laststatus=2                             " Muestra siempre la statusbar
 set statusline=                              " La creamos
 set statusline+=%2*%-3.3n%0*\                " Número de buffer

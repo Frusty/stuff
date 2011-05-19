@@ -1,5 +1,5 @@
 theme = {}
-theme.wallpaper_cmd = { 'awsetbg -u feh -t '..os.getenv("HOME")..'/.config/awesome/walls/Portal_Still_Alive.jpg'}
+theme.wallpaper_cmd = { 'feh --bg-fill '..os.getenv("HOME")..'/.config/awesome/walls/Portal_Still_Alive.jpg'}
 
 -- {{{ Styles
 theme.font        = "smoothansi 9"

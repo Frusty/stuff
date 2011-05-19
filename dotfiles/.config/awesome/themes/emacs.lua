@@ -1,10 +1,10 @@
 theme = {}
-theme.wallpaper_cmd = { 'awsetbg -u feh -t -r '..os.getenv("HOME")..'/.config/awesome/tiles'}
+theme.wallpaper_cmd = {'feh --bg-fill '..os.getenv("HOME")..'/.config/awesome/walls/woodwall.jpg'}
 
 -- {{{ Styles
-theme.font        = "smoothansi 9"
-theme.font_key    = "white"
-theme.font_value  = "#F5DEB3"
+theme.font          = "smoothansi 9"
+theme.font_key      = "white"
+theme.font_value    = "#F5DEB3"
 --bg
 theme.bg_normal     = "#222222AA"
 theme.bg_focus      = "#2F4F4FAA"
@@ -26,8 +26,8 @@ theme.mouse_finder_color = "#CC9393"
 -- mouse_finder_[timeout|animate_timeout|radius|factor]
 -- }}}
 -- {{{ Taglist
-theme.taglist_squares_sel   = "/usr/share/awesome/themes/zenburn/taglist/squarefz.png"
-theme.taglist_squares_unsel = "/usr/share/awesome/themes/zenburn/taglist/squarez.png"
+theme.taglist_squares_sel    = "/usr/share/awesome/themes/zenburn/taglist/squarefz.png"
+theme.taglist_squares_unsel  = "/usr/share/awesome/themes/zenburn/taglist/squarez.png"
 theme.taglist_squares_resize = "false"
 -- }}}
 -- {{{ Misc

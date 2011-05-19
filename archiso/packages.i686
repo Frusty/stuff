@@ -1,11 +1,11 @@
 acpid
 aircrack-ng
+aircrack-ng-scripts
 alsa-utils
 artwiz-fonts
 aufs2
 aufs2-util
 awesome
-base
 base-devel
 bc
 bridge-utils
@@ -18,8 +18,10 @@ ddrescue
 dialog
 dnsmasq
 dnsutils
+dsniff
 dosfstools
 epdfview
+ettercap
 ethtool
 feh
 flashplugin
@@ -34,7 +36,6 @@ gparted
 gqview
 gtk2_prefs
 gtk-engine-murrine
-gvim
 hping
 htop
 iftop
@@ -47,8 +48,10 @@ isomaster
 john
 jre
 lftp
+lha
 linux-firmware
 lsof
+lzop
 lxde-icon-theme
 macchanger
 mc
@@ -70,11 +73,13 @@ ntfsprogs
 ntp
 openssh
 openvpn
+p7zip
 pacman-contrib
 parcellite
 parted
 pcmanfm
-pidgin
+perl-rename
+rar
 rdesktop
 rfkill
 rpcbind
@@ -95,6 +100,7 @@ tree
 truecrypt
 unrar
 unzip
+vim
 whois
 wicd
 wicd-gtk
@@ -102,6 +108,7 @@ wireless_tools
 wireshark-gtk
 wmname
 wvdial
+xarchiver
 xcompmgr
 xf86-input-synaptics
 xf86-video-ati
@@ -115,3 +122,4 @@ xorg-xset
 xsel
 xterm
 yaourt
+zip

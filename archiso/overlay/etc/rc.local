@@ -7,6 +7,8 @@
 #[ "$VGA" = "Intel" ] && cp /etc/X11/xorg.conf.intel /etc/X11/xorg.conf
 #[ "$VGA" = "nVidia" ] && cp /etc/X11/xorg.conf.nvidia /etc/X11/xorg.conf
 # chromium workaround
-rm -rf /usr/lib/chromium/chromium-sandbox
+#rm -rf /usr/lib/chromium/chromium-sandbox
 # awesome df workaround
 df > /dev/null 2>&1
+# correct home ownership
+for i in /home/* ; do chown -R $(basename $i):users $i ; done

@@ -6,7 +6,10 @@ do_makeuser ()
 {
     stat_busy "Making the default user arch"
     addgroups="audio,disk,optical,wheel,log"
-    useradd -p "" -g users -G $addgroups arch
+    useradd -p "" -u 2000 -g users -G $addgroups arch
+    stat_busy "Making the alternate crypt user"
+    addgroups="audio,disk,optical,wheel,log"
+    useradd -p "" -u 1000 -g users -G $addgroups crypt
     stat_done
 }
 
@@ -15,14 +18,6 @@ do_locale_gen ()
     stat_busy "Generating locales..."
     sed -i "s/#\(${LOCALE/[@.]*}\)/\1/" /etc/locale.gen
     /usr/sbin/locale-gen > /dev/null
-    stat_done
-}
-
-# GIT does not manage perms others thans 755 and 644, so fix here.
-do_fix_perms ()
-{
-    stat_busy "Fixing file permissions..."
-    chmod 440 /etc/sudoers
     stat_done
 }
 
@@ -50,7 +45,6 @@ case "$1" in
   start)
     do_locale_gen
     do_makeuser
-    do_fix_perms
     do_special_console
     ;;
 esac

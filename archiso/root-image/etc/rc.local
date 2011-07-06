@@ -11,4 +11,5 @@
 # awesome df workaround
 df > /dev/null 2>&1
 # correct home ownership
-for i in /home/* ; do chown -R $(basename $i):users $i ; done
+# for i in /home/* ; do chown -R $(basename $i):users $i ; done
+chown -R arch:users /home/arch

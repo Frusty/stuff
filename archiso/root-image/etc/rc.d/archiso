@@ -2,23 +2,14 @@
 . /etc/rc.conf
 . /etc/rc.d/functions
 
-do_makeuser ()
-{
-    stat_busy "Making the default user arch"
-    addgroups="audio,disk,optical,wheel,log"
-    useradd -p "" -u 2000 -g users -G $addgroups arch
-    stat_busy "Making the alternate crypt user"
-    addgroups="audio,disk,optical,wheel,log"
-    useradd -p "" -u 1000 -g users -G $addgroups crypt
-    stat_done
-}
-
 do_locale_gen ()
 {
-    stat_busy "Generating locales..."
-    sed -i "s/#\(${LOCALE/[@.]*}\)/\1/" /etc/locale.gen
-    /usr/sbin/locale-gen > /dev/null
-    stat_done
+    if [[ ${LOCALE} != "en_US.UTF-8" ]]; then
+        stat_busy "Generating locales..."
+            sed -i "s/#\(${LOCALE/[@.]*}\)/\1/" /etc/locale.gen
+            /usr/sbin/locale-gen > /dev/null
+        stat_done
+    fi
 }
 
 # If an alternate console was specified on the kernel command line,
@@ -44,7 +35,6 @@ do_special_console()
 case "$1" in
   start)
     do_locale_gen
-    do_makeuser
     do_special_console
     ;;
 esac

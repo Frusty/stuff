@@ -5,9 +5,7 @@
 "{{{   General
 "-------------------------------------------------------------------------------
 set nocompatible                " Usa config por defecto de vim
-syntax on                       " Muchos colores
 set paste                       " No indentar codigo 'pasteado'
-"set pdev=IRADV_C5035            " Impresora a usar
 set pdev=HP_p3005_PCL_5E        " Impresora a usar
 set nobackup                    " No crea ficheros de backup *~
 set noswapfile                  " disable swapfiles
@@ -34,9 +32,8 @@ set wildmode=list:longest       " Tab completion 'bash-like'
 set visualbell                  " Desactiva el beep (pero activa visualbell)
 set t_vb=                       " Anulamos la propia visualbell
 set backspace=indent,eol,start  " Permitir backspace sobre todo
-set maxmempattern=10000
 ""}}}
-""{{{  Statusbar
+"{{{  Statusbar
 "-------------------------------------------------------------------------------
 set laststatus=2                             " Muestra siempre la statusbar
 set statusline=                              " La creamos
@@ -50,11 +47,14 @@ set statusline+=%=                           " right align
 set statusline+=%2*0x%-8B\                   " current char
 set statusline+=%-14.(%l,%c%V%)\ %<%P        " offset
 "}}}
-"{{{   Temas
+"{{{  Colorear sintaxis y temas
 "-------------------------------------------------------------------------------
+if &t_Co > 2
+    set background=dark " Usaremos backgrounds oscuros
+    syntax on           " Activamos coloreo de sintaxis
+endif
 if has('gui_running')
-    "colorscheme blackbeauty " Tema para gVim
-    colorscheme understated " Tema para gVim
+    colorscheme blackbeauty " Tema para gVim
     set gfn=Terminus\ 12                        " Fuente
     let &guicursor = &guicursor . ",a:blinkon0" " Disable cursor blinking
 "    set guioptions-=m                           " Fuera Menu

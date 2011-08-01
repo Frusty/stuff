@@ -9,6 +9,6 @@ if ($stats and $track and $artist and $title and $album) {
     $artist =~ s/\s\/\s[^,]+//g if length($artist) > 60;
     $artist = 'V.A.'if length($artist) > 60;
     my $line = sprintf("\r/me %s %02d - %s - %s, from the album \'%s\'\n", $stats, $track, $artist, $title, $album);
-    $line =~ s/\s+/ /g;
+    $line =~ s/ +/ /g;
     `tmux send-keys -t ncdc "$line" 2>/dev/null`;
 }

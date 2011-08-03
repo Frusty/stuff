@@ -109,6 +109,13 @@ if has("eval")
         echo a:msg
         echohl None
     endfunction
+    " Removing unwanted CR or LF characters
+    function! Dos2Unix()
+        %s/\r\+$//e
+        %s/\r/ /gce
+        call Say("Deleted ^M at $ and replaced with space everywhere else.")
+    endfunction
+    command! Dos2Unix call Dos2Unix()
     " Delete redundant spaces
     function! StripWhite()
         %s/[ \t]\+$//ge

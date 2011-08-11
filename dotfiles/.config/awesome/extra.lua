@@ -1,7 +1,6 @@
--- #############################################################################
--- loadfile(awful.util.getdir("config").."/extra.lua")()
--- #############################################################################
---{{{    Inicializacion
+-- Awesome widget bar for the Awesome windows manager
+--
+-- {{{ Inicializacion
 --------------------------------------------------------------------------------
 imgpath = awful.util.getdir("config")..'/imgs/'
 confdir = awful.util.getdir("config")..'/'
@@ -11,8 +10,8 @@ setwall = "awsetbg -u feh -c "..awful.util.getdir("config").."/walls/vladstudio_
 browser = os.getenv('BROWSER') or 'chromium'
 if not theme.font_key   then theme.font_key    = 'white' end
 if not theme.font_value then theme.font_ivalue = 'white' end
---}}}
---{{{    Utilidades/Funciones
+-- }}}
+-- {{{    Utilidades/Funciones
 function escape(text)
     if text then
         return awful.util.escape(text or 'UNKNOWN')
@@ -176,15 +175,86 @@ function toggle(prog,height,sticky,screen)
         end
     end
 end
---}}}
---{{{    GMail (imagebox+textbox)
+-- }}}
+-- {{{ Naughty Log Watcher
 --------------------------------------------------------------------------------
---  Datos de gmail
-mailadd  = ''
+-- http://awesome.naquadah.org/wiki/Naughty_log_watcher
+-- http://www3.telus.net/taj_khattra/luainotify.html
+-- Compile inotify.so and copy it into into /usr/lib/lua/5.1
+require("inotify") -- Compile into /usr/lib/lua/5.1/inotify.so
+local config = {}
+config.logs  = { iptables = { file = "/var/log/iptables.log" }
+               , auth     = { file = "/var/log/auth.log" }
+               , messages = { file = "/var/log/messages.log" }
+               , syslog   = { file = "/var/log/syslog.log" }
+               , awesome  = { file = os.getenv("HOME") ..'/.awesome.err'
+                            , ignore = { "^Simple mixer" -- amixer output
+                                       , "^volume: " -- mpc output
+                                       }
+                            }
+               }
+config.logs_quiet = nil
+config.logs_interval = 1
+function log_watch()
+    local events, nread, errno, errstr = inot:nbread()
+    if events then
+        for i, event in ipairs(events) do
+            for logname, log in pairs(config.logs) do
+                if event.wd == log.wd then log_changed(logname) end
+            end
+        end
+    end
+end
+function log_changed(logname)
+    local log = config.logs[logname]
+    -- read log file
+    local f, err = io.open(log.file, 'r')
+    if err then
+        logerr('log_changed can\'t open "'..log.file..'" - '..err)
+        return
+    end
+    local l = f:read("*a")
+    f:close()
+    -- first read just set length
+    if not log.len then log.len = #l
+    -- if updated
+    else
+        local diff = l:sub(log.len +1, #l-1)
+        -- check if ignored
+        local ignored = false
+        for i, phr in ipairs(log.ignore or {}) do
+            if diff:find(phr) then ignored = true; break end
+        end
+        -- display log updates
+        if diff ~= '' and not (ignored or config.logs_quiet) then
+            naughty.notify{ title = '<span color="white">' .. logname .. "</span>: " .. log.file
+                          , text = awful.util.escape(diff)
+                          , icon      = imgpath..'bomb.png'
+                          , hover_timeout = 20
+                          , timeout = 20
+--                         , run = awful.util.spawn('vim '..log.file)
+                          }
+        end
+        -- set last length
+        log.len = #l
+    end
+end
+local errno, errstr
+inot, errno, errstr = inotify.init(true)
+for logname, log in pairs(config.logs) do
+    log_changed(logname)
+    log.wd, errno, errstr = inot:add_watch(log.file, { "IN_MODIFY" })
+end
+awful.hooks.timer.register(config.logs_interval, log_watch)
+-- }}}
+-- {{{ GMail (imagebox+textbox)
+--------------------------------------------------------------------------------
+-- Datos de gmail
+mailadd  = 'oprietop@intranet.uoc.edu'
 mailpass = escape(fread(confdir..mailadd..'.passwd'))
 mailurl  = 'https://mail.google.com/a/intranet.uoc.edu/feed/atom/unread'
---  mailurl  = 'https://mail.google.com/feed/atom/unread'
---  Actualiza el estado del widget a partir de un feed de gmail bajado.
+-- mailurl  = 'https://mail.google.com/feed/atom/unread'
+-- Actualiza el estado del widget a partir de un feed de gmail bajado.
 count = 0
 function check_gmail()
     local feed = fread(confdir..mailadd)
@@ -243,8 +313,8 @@ if mailpass then
         end)
     ))
 end
---}}}
---{{{    Bateria (texto)
+-- }}}
+-- {{{ Bateria (texto)
 --------------------------------------------------------------------------------
 function bat_info()
     local cur = fread("/sys/class/power_supply/BAT0/charge_now")
@@ -298,18 +368,18 @@ if battery then
     end)
     batterywidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
 end
---}}}
---{{{    Separadores (img)
+-- }}}
+-- {{{ Separadores (img)
 --------------------------------------------------------------------------------
 separator = widget({ type = 'imagebox'
                    , name  = 'separator'
                    })
 separator.image = image(theme.separator)
 separator.resize = false
---}}}
---{{{    MPC (imagebox+textbox) requiere mpc/mpd
+-- }}}
+-- {{{ MPC (imagebox+textbox) requiere mpc/mpd
 --------------------------------------------------------------------------------
---  Devuelve estado de mpc
+-- Devuelve estado de mpc
 local oldsong
 function mpc_info()
     local now = escape(pread('mpc -f "%name%\n%artist%\n%album%\n%title%\n%track%\n%time%\n%file%"'))
@@ -412,10 +482,10 @@ mpcwidget:add_signal("mouse::enter",function()
 end)
 --  mouse_leave
 mpcwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
---}}}
---{{{    Memory (imagebox+textbox+progressbar)
+-- }}}
+-- {{{ Memory (imagebox+textbox+progressbar)
 --------------------------------------------------------------------------------
---  Devuelve la ram usada en MB(%). Tb actualiza la progressbar
+-- Devuelve la ram usada en MB(%). Tb actualiza la progressbar
 function activeram()
     local total,free,buffers,cached,active,used,percent
     for line in io.lines('/proc/meminfo') do
@@ -474,10 +544,10 @@ memwidget:add_signal("mouse::enter", function()
     end)
 --  mouse_leave
 memwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
----}}}
---{{{    Swap (imagebox+textbox)
+-- }}}
+-- {{{ Swap (imagebox+textbox)
 --------------------------------------------------------------------------------
---  Devuelve la swap usada en MB(%)
+-- Devuelve la swap usada en MB(%)
 function activeswap()
     local active, total, free
     for line in io.lines('/proc/meminfo') do
@@ -519,8 +589,8 @@ swpwidget:add_signal("mouse::enter", function()
     end)
 --  mouse_leave
 swpwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
---}}}
---{{{    Cpu (imagebox+textbox+graph)
+-- }}}
+-- {{{ Cpu (imagebox+textbox+graph)
 --------------------------------------------------------------------------------
 --  Devuelve el % de uso de cada CPU y actualiza la gráfica con la media.
 --  user + nice + system + idle = 100/second
@@ -607,8 +677,8 @@ cpuwidget:add_signal("mouse::enter", function()
 end)
 --  mouse_leave
 cpuwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
---}}}
---{{{    FileSystem (imagebox+textbox)
+-- }}}
+-- {{{    FileSystem (imagebox+textbox)
 --------------------------------------------------------------------------------
 -- Busca puntos de pontaje concreto en 'df' y lista el espacio usado.
 -- la llamada statfs de fs tarda la tira en leer mis discos FAT32 (7 segundos a veces)
@@ -664,10 +734,10 @@ fswidget:add_signal("mouse::enter", function()
 end)
 --  mouse_leave
 fswidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
---}}}
---{{{    Net (imagebox+textbox)
+-- }}}
+-- {{{ Net (imagebox+textbox)
 --------------------------------------------------------------------------------
---  Devuelve el tráfico de la interface de red usada como default GW.
+-- Devuelve el tráfico de la interface de red usada como default GW.
 function net_info()
     if not old_rx or not old_tx or not old_time then
         old_rx,old_tx,old_time = 0,0,1
@@ -726,10 +796,10 @@ netwidget:add_signal("mouse::enter", function()
 end)
 -- mouse_leave
 netwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
---}}}
---{{{    Load (magebox+textbox)
+-- }}}
+-- {{{ Load (magebox+textbox)
 --------------------------------------------------------------------------------
---  Devuelve el load average
+-- Devuelve el load average
 function avg_load()
     local n = fread('/proc/loadavg')
     local pos = n:find(' ', n:find(' ', n:find(' ')+1)+1)
@@ -759,8 +829,8 @@ loadwidget:add_signal("mouse::enter", function()
 end)
 -- mouse_leave
 loadwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
---}}}
---{{{    Volume (Custom) requiere alsa-utils
+-- }}}
+-- {{{ Volume (Custom) requiere alsa-utils
 --------------------------------------------------------------------------------
 -- Devuelve el volumen "Master" en alsa.
 amixline = pread('amixer | head -1')
@@ -818,10 +888,10 @@ volwidget:add_signal("mouse::enter", function()
 end)
 --  mouse_leave
 volwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
---}}}
---{{{   Timers
+-- }}}
+-- {{{ Timers
 --------------------------------------------------------------------------------
---  Hook every sec
+-- Hook every sec
 timer1 = timer { timeout = 1 }
 timer1:add_signal("timeout", function()
     cpuwidget.text  = cpu_info()
@@ -852,8 +922,8 @@ timer60:add_signal("timeout", function()
     fswidget.text = fs_info()
 end)
 timer60:start()
---}}}
---{{{    Wibox
+-- }}}
+-- {{{ Wibox
 --------------------------------------------------------------------------------
 for s = 1, screen.count() do
     -- Defino la barra
@@ -903,11 +973,11 @@ for s = 1, screen.count() do
     -- La asigno.
     statusbar[s].screen = s
 end
---}}}
---{{{    Keybindings
+-- }}}
+-- {{{    Keybindings
 --------------------------------------------------------------------------------
---  Actualizo la tabla globalkeys añadiendo mis keybindings.
---  Los keycodes se pueden ver con el comando 'xev'
+-- Actualizo la tabla globalkeys añadiendo mis keybindings.
+-- Los keycodes se pueden ver con el comando 'xev'
 globalkeys = awful.util.table.join(globalkeys,
     awful.key({ modkey,           }, "masculine",  function () toggle(terminal) end), -- tecla º
     awful.key({ modkey,           }, "Print",      function () toggle('scrot -e gqview') end), -- tecla Print Screen
@@ -943,8 +1013,6 @@ globalkeys = awful.util.table.join(globalkeys,
 )
 --  Aplico los keybindings
 root.keys(globalkeys)
---}}}
---{{{    Autostart
---  Programas a lanzar al final.
-awful.util.spawn_with_shell("wmname LG3D") -- https://awesome.naquadah.org/wiki/Problems_with_Java
---}}}
+-- }}}
+--
+-- vim: set filetype=lua fdm=marker tabstop=4 shiftwidth=4 nu:

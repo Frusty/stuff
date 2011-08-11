@@ -1,23 +1,45 @@
--------------------------------------------------------------------------------
--- @file rc.lua
--- @author Matthew Wild &lt;mwild1@gmail.com&gt;
--------------------------------------------------------------------------------
-
-local rc, err = loadfile(os.getenv("HOME").."/.config/awesome/awesome.lua");
-if rc then
-    rc, err = pcall(rc);
-    if rc then
-        return;
-    end
+-- https://github.com/cycojesus/awesome/raw/master/rc.lua
+--
+logfile = os.getenv("HOME") .."/.awesome.err"
+-- {{{ logerr function
+function logerr(msg)
+    if not msg then cmd = "No error message was specified" end
+    local f = io.open( logfile, "w+" )
+--  f:write("Awesome crashed during startup on ", os.date("%B %d, %H:%M:\n\n"))
+--    f:write(msg, os.date( "%d%/%m/%Y %T:\n\n"))
+--    f:write(msg, os.date("%B %d, %H:%M:\n\n"))
+    f:write("["..os.date("%Y/%m/%d %H:%M:%S").."] - "..msg.."\n")
+    f:close( )
 end
-
-dofile("/etc/xdg/awesome/rc.lua");
-
-for s = 1,screen.count() do
-    mypromptbox[s].text = awful.util.escape(err:match("[^\n]*"));
+-- }}}
+-- {{{ try function
+function try( file, backup, logfile )
+   -- if it breaks do not die in shame, just squeak gracefully
+   local rc, err = loadfile( file )
+   if rc then
+      rc, err = pcall( rc )
+      if rc then return; end
+   end
+   if backup then dofile( backup ) end
+   logerr( "AWESOME CRASH DURING STARTUP - "..err)
 end
-
-local f = io.open(os.getenv("HOME").."/.awesome.err", "w+")
-f:write("Awesome crashed during startup on ", os.date("%B %d, %H:%M:\n\n"))
-f:write(err, "\n");
-f:close();
+-- }}}
+-- {{{ Main config
+-- Programas a lanzar al final.
+try( os.getenv("HOME").."/.config/awesome/awesome.lua"
+   , "/etc/xdg/awesome/rc.lua"
+   , logfile
+   )
+-- }}}
+-- {{{ Widget Bar
+try( os.getenv("HOME").."/.config/awesome/extra.lua"
+   , "/etc/xdg/awesome/rc.lua"
+   , logfile
+   )
+-- }}}
+-- {{{ Autostart
+--  Programas a lanzar al final.
+awful.util.spawn_with_shell("wmname LG3D") -- https://awesome.naquadah.org/wiki/Problems_with_Java
+-- }}}
+--
+-- vim: set filetype=lua fdm=marker tabstop=4 shiftwidth=4 nu:

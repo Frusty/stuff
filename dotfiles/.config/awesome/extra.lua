@@ -1,4 +1,4 @@
--- Awesome widget bar for the Awesome windows manager
+- Awesome widget bar for the Awesome windows manager
 --
 -- {{{ Inicializacion
 --------------------------------------------------------------------------------
@@ -8,6 +8,7 @@ setrndwall = "awsetbg -u feh -r "..awful.util.getdir("config").."/walls"
 setrndtile = "awsetbg -u feh -t -r "..awful.util.getdir("config").."/tiles"
 setwall = "awsetbg -u feh -c "..awful.util.getdir("config").."/walls/vladstudio_microbes_1920x1200.jpg"
 browser = os.getenv('BROWSER') or 'chromium'
+editor = os.getenv('EDITOR') or 'vim'
 if not theme.font_key   then theme.font_key    = 'white' end
 if not theme.font_value then theme.font_ivalue = 'white' end
 -- }}}
@@ -28,6 +29,7 @@ end
 -- Foreground color
 function fgc(text,color)
     if not color then color = 'white' end
+    if not text  then text  = 'NULL'  end
     return '<span color="'..color..'">'..text..'</span>'
 end
 -- process_read (io.popen)
@@ -181,7 +183,7 @@ end
 -- http://awesome.naquadah.org/wiki/Naughty_log_watcher
 -- http://www3.telus.net/taj_khattra/luainotify.html
 -- Compile inotify.so and copy it into into /usr/lib/lua/5.1
-require("inotify") -- Compile into /usr/lib/lua/5.1/inotify.so
+require("inotify")
 local config = {}
 config.logs  = { iptables = { file = "/var/log/iptables.log" }
                , auth     = { file = "/var/log/auth.log" }
@@ -189,6 +191,7 @@ config.logs  = { iptables = { file = "/var/log/iptables.log" }
                , syslog   = { file = "/var/log/syslog.log" }
                , awesome  = { file = os.getenv("HOME") ..'/.awesome.err'
                             , ignore = { "^Simple mixer" -- amixer output
+                                       , "pcmanfm" -- pcmanfm is really noisy
                                        , "^volume: " -- mpc output
                                        }
                             }
@@ -226,13 +229,15 @@ function log_changed(logname)
             if diff:find(phr) then ignored = true; break end
         end
         -- display log updates
-        if diff ~= '' and not (ignored or config.logs_quiet) then
+        if diff and not (ignored or config.logs_quiet) then
             naughty.notify{ title = '<span color="white">' .. logname .. "</span>: " .. log.file
                           , text = awful.util.escape(diff)
-                          , icon      = imgpath..'bomb.png'
-                          , hover_timeout = 20
-                          , timeout = 20
---                         , run = awful.util.spawn('vim '..log.file)
+                          , icon = imgpath..'bomb.png'
+                          , timeout = 10
+                          , run = function (n)
+                                awful.util.spawn(terminal..' -e '..editor..' '..log.file)
+                                n.die()
+                            end
                           }
         end
         -- set last length
@@ -243,7 +248,7 @@ local errno, errstr
 inot, errno, errstr = inotify.init(true)
 for logname, log in pairs(config.logs) do
     log_changed(logname)
-    log.wd, errno, errstr = inot:add_watch(log.file, { "IN_MODIFY" })
+    log.wd, errno, errstr = inot:add_watch(log.file, {"IN_MODIFY"})
 end
 awful.hooks.timer.register(config.logs_interval, log_watch)
 -- }}}
@@ -262,6 +267,7 @@ function check_gmail()
     if feed:match('fullcount>%d+<') then
         lcount = feed:match('fullcount>(%d+)<')
     end
+    --pop = naughty.notify({ title = fgc(lcount)..count, timeout = 20})
     if lcount ~= count then
         for title,summary,name,email in feed:gmatch('<entry>\n<title>(.-)</title>\n<summary>(.-)</summary>.-<name>(.-)</name>\n<email>(.-)</email>') do
             pop = naughty.notify({ title    = fgc('New mail on ')..mailadd
@@ -837,7 +843,6 @@ amixline = pread('amixer | head -1')
 if amixline then
     sdev = amixline:match(".-%s%'(%w+)%',0")
 end
-
 function get_vol()
     if not sdev then
         return ''
@@ -902,6 +907,7 @@ timer1:start()
 -- Hook called every 5 secs
 timer5 = timer { timeout = 5 }
 timer5:add_signal("timeout", function()
+    if mailpass then mailwidget.text = check_gmail() end
     volwidget.text = get_vol()
     memwidget.text = activeram()
     swpwidget.text = activeswap()
@@ -912,7 +918,6 @@ timer5:start()
 timer30 = timer { timeout = 30 }
 timer30:add_signal("timeout", function()
     if batterywidget then batterywidget.text = bat_info() end
-    if mailpass then mailwidget.text = check_gmail() end
 end)
 timer30:start()
 -- Hook called every minute

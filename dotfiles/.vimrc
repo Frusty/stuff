@@ -28,6 +28,7 @@ set expandtab                   " Don't use tabs, use spaces instead
 set tabstop=4                   " 4 spaces tabs
 set shiftwidth=4                " Allows the use of < and > for VISUAL indenting
 set backspace=indent,eol,start  " Allow backspace over everything
+set equalalways                 " Make splits equal size
 set ttyfast                     " Enable features for fast ttys
 set foldmethod=marker           " Manual folding with {{{ and }}}
 set incsearch                   " Show results while searching
@@ -97,7 +98,6 @@ if has("autocmd")
     " Show redundant spaces with a red background
     highlight RedundantSpaces ctermbg=red guibg=red
     match RedundantSpaces /\s\+$\| \+\ze\t\|\t/
-
 endif
 " }}}
 " {{{   Functions
@@ -156,6 +156,7 @@ let Tlist_Show_Menu          = 1 " Show a 'Tags' menu in gVim
 map <F4> :Tlist<CR>
 " NERDTree http://www.vim.org/scripts/script.php?script_id=1658
 let NERDTreeMapActivateNode  = '<CR>'  " Enter will open nodes
+let NERDTreeShowHidden = 1             " Show hidden files
 map <F3> :NERDTreeToggle<CR>
 " }}}
 " {{{   Keybindings

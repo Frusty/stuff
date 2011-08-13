@@ -1,4 +1,4 @@
-- Awesome widget bar for the Awesome windows manager
+-- Awesome widget bar for the Awesome windows manager
 --
 -- {{{ Inicializacion
 --------------------------------------------------------------------------------
@@ -185,14 +185,17 @@ end
 -- Compile inotify.so and copy it into into /usr/lib/lua/5.1
 require("inotify")
 local config = {}
-config.logs  = { iptables = { file = "/var/log/iptables.log" }
-               , auth     = { file = "/var/log/auth.log" }
-               , messages = { file = "/var/log/messages.log" }
-               , syslog   = { file = "/var/log/syslog.log" }
-               , awesome  = { file = os.getenv("HOME") ..'/.awesome.err'
+config.logs  = { IPTABLES = { file = "/var/log/iptables.log" }
+               , AUTH     = { file = "/var/log/auth.log" }
+               , ERROR    = { file = "/var/log/error.log" }
+               , XORG     = { file = "/var/log/Xorg.0.log" }
+               , DAEMON   = { file = "/var/log/daemon.log" }
+               , KERNEL   = { file = "/var/log/kernel.log" }
+               , AWESOME  = { file = logfile
                             , ignore = { "^Simple mixer" -- amixer output
                                        , "pcmanfm" -- pcmanfm is really noisy
                                        , "^volume: " -- mpc output
+                                       , "draw_text_context_init:108:" -- A MUST
                                        }
                             }
                }
@@ -388,7 +391,9 @@ separator.resize = false
 -- Devuelve estado de mpc
 local oldsong
 function mpc_info()
-    local now = escape(pread('mpc -f "%name%\n%artist%\n%album%\n%title%\n%track%\n%time%\n%file%"'))
+    local now = pread('mpc -f "%name%\n%artist%\n%album%\n%title%\n%track%\n%time%\n%file%"')
+--    now = string.gsub(now, "[^\1-\127]+", "")
+--    now = string.gsub(now, "%s/%s", "")
     if now and now ~= '' then
         local name,artist,album,title,track,total,file,state,time = now:match('^(.-)\n(.-)\n(.-)\n(.-)\n(.-)\n(.-)\n(.-)\n%[(%w+)%]%s+#%d+/%d+%s+(.-%(%d+%%%))')
         if state and state ~= '' then
@@ -415,8 +420,7 @@ function mpc_info()
                                    }
                 end
                 oldsong = song
-                -- ugly utf8 workaround Part 1
-                return fgc('[Play]','green')..'<span font_desc="Sans 8" color="'..theme.font_key..'"> "'..song..'"</span> '..fgc(time,theme.font_value)
+                return fgc('[Play]','green')..' "'..fgc(song, theme.font_key)..'" '..fgc(time,theme.font_value)
             elseif state == 'paused' then
                 if song ~= '' and time ~= '' then
                     return fgc('[Wait] ',theme.font_value)..song..' '..fgc(time,theme.font_value)
@@ -443,7 +447,7 @@ mpcwidget = widget({ type    = 'textbox'
                    , name    = 'mpcwidget'
                    })
 -- ugly utf8 workaround Part 2
-awful.widget.layout.margins[mpcwidget] = { top = 1, bottom = 0, left = 0, right = 0 }
+--awful.widget.layout.margins[mpcwidget] = { top = 1, bottom = 0, left = 0, right = 0 }
 -- llamada inicial a la función
 mpcwidget.text = mpc_info()
 -- textbox buttons
@@ -475,7 +479,6 @@ function print_mpc()
     local text = pread("mpc; echo ; mpc stats")
     pop = naughty.notify({ title    = fgc('MPC Stats\n')
                          , text     = text
---                         , text     = io.popen('ls -1 '..os.getenv("HOME")..'/.config/awesome/themes/ | sort -R | head -1'
                          , icon     = imgpath..'mpd_logo.png'
                          , timeout  = 0
                          , position = "bottom_left"
@@ -776,7 +779,7 @@ function net_info()
     else
         rx,tx,rxu,txu = "0","0","B","B"
     end
-    return fgc(iface, theme.font_key)..fgc(bold('|'), 'green')..fgc(string.format("%04d%2s",rx,rxu), theme.font_value)..fgc(bold('|'), 'red')..fgc(string.format("%04d%2s",tx,txu), theme.font_value)
+    return fgc(iface, theme.font_key)..fgc('↑', 'green')..fgc(string.format("%04d%2s",rx,rxu), theme.font_value)..fgc(bold('↓'), 'red')..fgc(string.format("%04d%2s",tx,txu), theme.font_value)
 end
 --  imagebox
 net_ico = widget({ type = "imagebox" })

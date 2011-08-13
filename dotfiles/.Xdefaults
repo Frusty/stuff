@@ -1,4 +1,4 @@
-   .Xdefaults
+!   .Xdefaults
 !
 !{{{    misc
 !-------------------------------------------------------------------------------
@@ -32,9 +32,6 @@ urxvt*background:   rgba:0000/0000/0000/DDDD
 urxvt*shading:      15
 ! La línea anterior ha de ponerse a false para usar transparencia real
 urxvt*transparent:  true
-urxvt*cursorColor:  #FFA500
-urxvt*cursorColor2: pink
-urxvt*foreground:   white
 urxvt*pointerColor: #919191
 ! Geometry & Fonts
 urxvt*renderFont:     false
@@ -49,22 +46,27 @@ urxvt*jumpScroll:  true
 urxvt*scrollstyle: plain
 urxvt*scrollBar:   false
 ! Tango Colors
-urxvt*color0:  #2E3436
-urxvt*color1:  #CC0000
-urxvt*color2:  #4E9A06
-urxvt*color3:  #C4A000
-urxvt*color4:  #3465A4
-urxvt*color5:  #75507B
-urxvt*color6:  #16989A
-urxvt*color7:  #D3D7CF
-urxvt*color8:  #555753
-urxvt*color9:  #EF2929
-urxvt*color10: #8AE234
-urxvt*color11: #FCE94F
-urxvt*color12: #729FCF
-urxvt*color13: #AD7FA8
-urxvt*color14: #34E2E2
-urxvt*color15: #EEEEEE
+urxvt*foreground:   white
+urxvt*borderColor:  #151515
+urxvt*colorBD:      #FFFFFF
+urxvt*cursorColor:  #FFA500
+urxvt*cursorColor2: pink
+urxvt*color0:       #2E3436
+urxvt*color1:       #CC0000
+urxvt*color2:       #4E9A06
+urxvt*color3:       #C4A000
+urxvt*color4:       #3465A4
+urxvt*color5:       #75507B
+urxvt*color6:       #16989A
+urxvt*color7:       #D3D7CF
+urxvt*color8:       #555753
+urxvt*color9:       #EF2929
+urxvt*color10:      #8AE234
+urxvt*color11:      #FCE94F
+urxvt*color12:      #729FCF
+urxvt*color13:      #AD7FA8
+urxvt*color14:      #34E2E2
+urxvt*color15:      #EEEEEE
 !}}}
 !{{{    xterm
 !-------------------------------------------------------------------------------
@@ -106,3 +108,5 @@ xterm*color13: #ad7fa8
 xterm*color14: #00f5e9
 xterm*color15: #eeeeec
 !}}}
+!
+! vim: set filetype=xdefaults

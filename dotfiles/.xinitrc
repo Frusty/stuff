@@ -21,7 +21,6 @@ fi
 [ -f "$(which urxvtd)"      ] && [ "$TERMINAL" = "urxvtc" ] && urxvtd -o -q -f
 [ -f "$(which parcellite)"  ] && parcellite  &
 [ -f "$(which wicd-client)" ] && wicd-client &
-[ -f "$(which ipt2awe.pl)"  ] && ipt2awe.pl
 [ -f "$(which irexec)"      ] && [ "$(pgrep -f irexec | wc -l)" -eq "0" ] && irexec -d
 # Exec WM
 exec ck-launch-session dbus-launch awesome > ~/.awesome.err 2>&1

@@ -183,7 +183,6 @@ end
 -- http://awesome.naquadah.org/wiki/Naughty_log_watcher
 -- http://www3.telus.net/taj_khattra/luainotify.html
 -- Compile inotify.so and copy it into into /usr/lib/lua/5.1
-require("inotify")
 local config = {}
 config.logs  = { IPTABLES = { file = "/var/log/iptables.log" }
                , AUTH     = { file = "/var/log/auth.log" }
@@ -191,13 +190,13 @@ config.logs  = { IPTABLES = { file = "/var/log/iptables.log" }
                , XORG     = { file = "/var/log/Xorg.0.log" }
                , DAEMON   = { file = "/var/log/daemon.log" }
                , KERNEL   = { file = "/var/log/kernel.log" }
-               , AWESOME  = { file = logfile
-                            , ignore = { "^Simple mixer" -- amixer output
-                                       , "pcmanfm" -- pcmanfm is really noisy
-                                       , "^volume: " -- mpc output
-                                       , "draw_text_context_init:108:" -- A MUST
-                                       }
-                            }
+--               , AWESOME  = { file = logfile
+--                            , ignore = { "^Simple mixer" -- amixer output
+--                                       , "pcmanfm" -- pcmanfm is really noisy
+--                                       , "^volume: " -- mpc output
+--                                       , "draw_text_context_init:108:" -- A MUST
+--                                       }
+--                            }
                }
 config.logs_quiet = nil
 config.logs_interval = 1
@@ -232,7 +231,7 @@ function log_changed(logname)
             if diff:find(phr) then ignored = true; break end
         end
         -- display log updates
-        if diff and not (ignored or config.logs_quiet) then
+        if diff and diff ~= '' and not (ignored or config.logs_quiet) then
             naughty.notify{ title = '<span color="white">' .. logname .. "</span>: " .. log.file
                           , text = awful.util.escape(diff)
                           , icon = imgpath..'bomb.png'
@@ -247,13 +246,16 @@ function log_changed(logname)
         log.len = #l
     end
 end
-local errno, errstr
-inot, errno, errstr = inotify.init(true)
-for logname, log in pairs(config.logs) do
-    log_changed(logname)
-    log.wd, errno, errstr = inot:add_watch(log.file, {"IN_MODIFY"})
+if exists('/usr/lib/lua/5.1/inotify.so') then
+    require("inotify")
+    local errno, errstr
+    inot, errno, errstr = inotify.init(true)
+    for logname, log in pairs(config.logs) do
+        log_changed(logname)
+        log.wd, errno, errstr = inot:add_watch(log.file, {"IN_MODIFY"})
+    end
+    awful.hooks.timer.register(config.logs_interval, log_watch)
 end
-awful.hooks.timer.register(config.logs_interval, log_watch)
 -- }}}
 -- {{{ GMail (imagebox+textbox)
 --------------------------------------------------------------------------------
@@ -564,7 +566,9 @@ function activeswap()
             if key == "SwapTotal" then
                 total = tonumber(value)
                 if total == 0 then
-                    return '' -- No hay Swap!
+                    swp_ico.visible = false
+                    swpwidget.text = '' -- No hay Swap!
+                    return nil
                 end
             elseif key == "SwapFree" then
                 free = tonumber(value)
@@ -572,7 +576,10 @@ function activeswap()
         end
     end
     active = total - free
-    return fgc(string.format("%.0fMB",(active/1024)), theme.font_key)..fgc('('..string.format("%.0f%%",(active/total)*100)..')', theme.font_value)
+    if active then
+        swp_ico.visible = true
+        swpwidget.text = fgc(string.format("%.0fMB",(active/1024)), theme.font_key)..fgc('('..string.format("%.0f%%",(active/total)*100)..')', theme.font_value)
+    end
 end
 --  imagebox
 swp_ico = widget({ type = "imagebox" })
@@ -582,7 +589,7 @@ swpwidget = widget({ type = 'textbox'
                    , name = 'swpwidget'
                    })
 --  llamada inicial a la función
-swpwidget.text = activeswap()
+activeswap()
 --  mouse_enter
 swpwidget:add_signal("mouse::enter", function()
     naughty.destroy(pop)
@@ -779,17 +786,35 @@ function net_info()
     else
         rx,tx,rxu,txu = "0","0","B","B"
     end
-    return fgc(iface, theme.font_key)..fgc('↑', 'green')..fgc(string.format("%04d%2s",rx,rxu), theme.font_value)..fgc(bold('↓'), 'red')..fgc(string.format("%04d%2s",tx,txu), theme.font_value)
+--    return fgc(iface, theme.font_key)..fgc(bold('|'), 'green')..fgc(string.format("%04d%2s",rx,rxu), theme.font_value)..fgc(bold('|'), 'red')..fgc(string.format("%04d%2s",tx,txu), theme.font_value)
+    netwidget.text = fgc(iface, theme.font_value)
+    netwidget_up.text = fgc(string.format("%04d%2s",tx,txu), theme.font_value)
+    netwidget_down.text = fgc(string.format("%04d%2s",rx,rxu), theme.font_value)
 end
---  imagebox
+--  imagebox iface
 net_ico = widget({ type = "imagebox" })
 createIco(net_ico,'net-wired.png', terminal..' -e screen -S awesome watch -n5 "lsof -ni"')
---  textbox
+--  imagebox up
+up_ico = widget({ type = "imagebox" })
+createIco(up_ico,'up.png', terminal..' -e screen -S awesome watch -n5 "lsof -ni"')
+--  imagebox down
+down_ico = widget({ type = "imagebox" })
+createIco(down_ico,'down.png', terminal..' -e screen -S awesome watch -n5 "lsof -ni"')
+--  textbox iface
 netwidget = widget({ type = 'textbox'
-                   , name = 'netwidget'
-                   })
+                  , name = 'netwidget'
+                  })
+--  imagebox up
+netwidget_up = widget({ type = 'textbox'
+                  , name = 'netwidget'
+                  })
+--  imagebox down
+netwidget_down = widget({ type = 'textbox'
+                  , name = 'netwidget'
+                  })
 --  primera llamada a la función
-netwidget.text = net_info()
+--netwidget.text = net_info()
+net_info()
 --  mouse_enter
 netwidget:add_signal("mouse::enter", function()
     naughty.destroy(pop)
@@ -904,7 +929,8 @@ timer1 = timer { timeout = 1 }
 timer1:add_signal("timeout", function()
     cpuwidget.text  = cpu_info()
     loadwidget.text = avg_load()
-    netwidget.text  = net_info()
+--    netwidget.text  = net_info()
+    net_info()
 end)
 timer1:start()
 -- Hook called every 5 secs
@@ -913,7 +939,7 @@ timer5:add_signal("timeout", function()
     if mailpass then mailwidget.text = check_gmail() end
     volwidget.text = get_vol()
     memwidget.text = activeram()
-    swpwidget.text = activeswap()
+    activeswap()
     mpcwidget.text = mpc_info()
 end)
 timer5:start()
@@ -952,6 +978,10 @@ for s = 1, screen.count() do
                                 , mpcwidget
                                 , layout = awful.widget.layout.horizontal.leftright
                                 }
+                           , netwidget_down
+                           , down_ico
+                           , netwidget_up
+                           , up_ico
                            , netwidget
                            , net_ico
                            , separator

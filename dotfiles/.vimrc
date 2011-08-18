@@ -186,9 +186,9 @@ map <C-h> <C-W>h
 map <C-l> <C-W>l
 " Remove highlights and redraw screen
 nnoremap <C-L> :nohls<CR>
-" Switch buffers with F1 and F2, close Nerdtree if active
-noremap <F1> :NERDTreeClose<CR> :bprev!<CR>
-noremap <F2> :NERDTreeClose<CR> :bnext!<CR>
+" Switch buffers with F1 and F2
+noremap <F1> :bprev!<CR>
+noremap <F2> :bnext!<CR>
 " }}}
 
 " vim: filetype=vim

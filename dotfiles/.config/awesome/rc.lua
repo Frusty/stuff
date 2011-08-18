@@ -1,11 +1,25 @@
 -- https://github.com/cycojesus/awesome/raw/master/rc.lua
---
-logfile = os.getenv("HOME") .."/.awesome.err"
-confdir = os.getenv("HOME").."/.config/awesome/"
--- {{{ Functions
-function logerr(msg)
+-- {{{ Base Variables
+homedir    = os.getenv("HOME")..'/'
+logfile    = homedir..'.awesome.err'
+confdir    = homedir..'.config/awesome/'
+luadir     = confdir..'lua/'
+themedir   = confdir..'themes/'
+imgdir     = confdir..'imgs/'
+tiledir    = confdir..'tiles/'
+walldir    = confdir..'walls/'
+browser    = os.getenv("BROWSER") or "chromium"
+terminal   = os.getenv("TERMINAL") or "xterm"
+editor     = os.getenv("EDITOR") or "vim"
+editor_cmd = terminal.." -e "..editor
+
+setrndwall = "awsetbg -u feh -r "..walldir
+setrndtile = "awsetbg -u feh -t -r "..tiledir
+-- }}}
+-- {{{ Base Functions
+function loglua(msg)
     if not msg then cmd = "No error message was specified." end
-    local f = io.open(logfile, "w+")
+    local f = io.open(logfile, "a")
     f:write("["..os.date("%Y/%m/%d %H:%M:%S").."] - "..msg.."\n")
     f:close()
 end
@@ -14,11 +28,11 @@ function exists(fname)
     if (f and f:read()) then
         return true
     else
-        print("Couldn't open '"..fname.."'")
+        loglua("(WW) Couldn't open '"..fname.."'")
     end
 end
 function try(file, backup, logfile)
-    if exists(file) and exists(logfile) then
+--    if exists(file) and exists(logfile) then
         -- if it breaks do not die in shame, just squeak gracefully
         local rc, err = loadfile(file)
         if rc then
@@ -26,25 +40,23 @@ function try(file, backup, logfile)
            if rc then return; end
         end
         if backup then dofile(backup) end
-        logerr("AWESOME CRASH DURING STARTUP - "..err)
-    end
+        loglua("(EE) Couldn't load '"..file.."', reverting to '"..backup.."'. The error was: "..err)
+--    end
 end
 -- }}}
--- {{{ Main config
-try( confdir.."awesome.lua"
-   , "/etc/xdg/awesome/rc.lua"
-   , logfile
-   )
+loglua("(II) AWESOME STARTING")
+-- {{{ Evaluate and load config files
+for file in io.popen('ls '..luadir..'*lua'):lines() do
+    loglua("(II) Loading config files: "..file)
+    try( file
+       , "/etc/xdg/awesome/rc.lua"
+       , logfile
+       )
+end
 -- }}}
--- {{{ Widget Bar
-try( confdir.."extra.lua"
-   , "/etc/xdg/awesome/rc.lua"
-   , logfile
-   )
+-- {{{ Programs to execute on startup
+loglua("(II) Launching external aplications.")
+os.execute("wmname LG3D&") -- https://awesome.naquadah.org/wiki/Problems_with_Java
 -- }}}
--- {{{ Autostart
---  Programas a lanzar al final.
-awful.util.spawn_with_shell("wmname LG3D") -- https://awesome.naquadah.org/wiki/Problems_with_Java
--- }}}
---
+loglua("(II) STARTUP FINISHED")
 -- vim: set filetype=lua fdm=marker tabstop=4 shiftwidth=4 nu:

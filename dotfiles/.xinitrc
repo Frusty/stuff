@@ -1,14 +1,12 @@
 #!/bin/sh
 # I log
 errorlog="$HOME/.xsession.err"
-if ( cp /dev/null "$errorlog" 2> /dev/null )
+if (cp /dev/null "$errorlog" 2> /dev/null)
 then
     chmod 600 "$errorlog"
     exec > "$errorlog" 2>&1
     break
 fi
-# I merge
-xrdb -merge -load ~/.Xdefaults
 # Workaround to make xorg care of the terminus font
 xset +fp /usr/share/fonts/local
 xset fp rehash

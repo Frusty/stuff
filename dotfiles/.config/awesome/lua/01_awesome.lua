@@ -2,28 +2,6 @@
 require("awful")
 require("awful.autofocus")
 require("awful.rules")
--- Theme handling library
-require("beautiful")
--- Notification library
-require("naughty")
-
--- Enchufamos un tema al azar
-themes = {}
-path = os.getenv("HOME")..'/.config/awesome/themes/'
-for file in io.popen('ls '..path):lines() do
-    table.insert(themes, path..file)
-end
-math.randomseed(os.time()+table.getn(themes))
-beautiful.init(themes[math.random(#themes)])
-
--- {{{ Variable definitions
--- Themes define colours, icons, and wallpapers
---beautiful.init(os.getenv("HOME").."/.config/awesome/themes/space_core.lua")
-
--- This is used later as the default terminal and editor to run.
-terminal = os.getenv("TERMINAL") or "xterm"
-editor = os.getenv("EDITOR") or "vim"
-editor_cmd = terminal .. " -e " .. editor
 
 -- Default modkey.
 -- Usually, Mod4 is the key with a logo between Control and Alt.
@@ -132,6 +110,7 @@ for s = 1, screen.count() do
     mywibox[s] = awful.wibox({ position = "top"
                             , screen = s
                             , border_width = 1
+--                            , height = 15
                             , border_color = beautiful.border_normal
                             })
     -- Add widgets to the wibox - order matters

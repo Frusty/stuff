@@ -1,262 +1,11 @@
 -- Awesome widget bar for the Awesome windows manager
---
--- {{{ Inicializacion
---------------------------------------------------------------------------------
-imgpath = awful.util.getdir("config")..'/imgs/'
-confdir = awful.util.getdir("config")..'/'
-setrndwall = "awsetbg -u feh -r "..awful.util.getdir("config").."/walls"
-setrndtile = "awsetbg -u feh -t -r "..awful.util.getdir("config").."/tiles"
-setwall = "awsetbg -u feh -c "..awful.util.getdir("config").."/walls/vladstudio_microbes_1920x1200.jpg"
-browser = os.getenv('BROWSER') or 'chromium'
-editor = os.getenv('EDITOR') or 'vim'
+
+-- Notification library¶
+require("naughty")
+
 if not theme.font_key   then theme.font_key    = 'white' end
 if not theme.font_value then theme.font_ivalue = 'white' end
--- }}}
--- {{{    Utilidades/Funciones
-function escape(text)
-    if text then
-        return awful.util.escape(text or 'UNKNOWN')
-    end
-end
--- Bold
-function bold(text)
-    return '<b>' .. text .. '</b>'
-end
--- Italic
-function italic(text)
-    return '<i>' .. text .. '</i>'
-end
--- Foreground color
-function fgc(text,color)
-    if not color then color = 'white' end
-    if not text  then text  = 'NULL'  end
-    return '<span color="'..color..'">'..text..'</span>'
-end
--- process_read (io.popen)
-function pread(cmd)
-    if cmd and cmd ~= '' then
-        local f, err = io.popen(cmd, 'r')
-        if f then
-            local s = f:read('*all')
-            f:close()
-            return s
-        else
-            print(err)
-        end
-    end
-end
--- file_read (io.open)
-function fread(cmd)
-    if cmd and cmd ~= '' then
-        local f, err = io.open(cmd, 'r')
-        if f then
-            local s = f:read('*all')
-            f:close()
-            return s
-        else
-            print(err)
-        end
-    end
-end
--- aplica un fichero de tema aleatorio
-function rndtheme()
-    local themes = {}
-    local path = os.getenv("HOME")..'/.config/awesome/themes/'
-    for file in io.popen('ls '..path):lines() do
-        table.insert(themes, path..file)
-    end
-    math.randomseed(os.time()+table.getn(themes))
-    beautiful.init(themes[math.random(#themes)])
-end
--- esto se carga todas las notificaciones de naughty
-function desnaug()
-    for p,pos in pairs(naughty.notifications[mouse.screen]) do
-        for i,notification in pairs(naughty.notifications[mouse.screen][p]) do
-            naughty.destroy(notification)
-            desnaug()
-        end
-    end
-end
---  menos bloat creando iconos
-function createIco(widget,file,click)
-    if not widget or not file or not click then return nil end
-    widget.image = image(imgpath..'/'..file)
-    widget.resize = false
-    awful.widget.layout.margins[widget] = { top = 1, bottom = 1, left = 1, right = 1 }
-    widget:buttons(awful.util.table.join(
-        awful.button({ }, 1, function ()
-            awful.util.spawn(click,false)
-        end)
-    ))
-end
--- Converts bytes to human-readable units, returns value (number) and unit (string)
-function bytestoh(bytes)
-    local tUnits={"K","M","G","T","P"} -- MUST be enough. :D
-    local v,u
-    for k=table.getn(tUnits),1,-1 do
-        if math.fmod(bytes,1024^k) ~= bytes then v=bytes/(1024^k); u=tUnits[k] break end
-    end
-    return v or bytes,u or "B"
-end
--- Debug Variables
-function dbg(vars)
-    local text = ""
-    for i=1, #vars do text = text .. vars[i] .. " | " end
-    naughty.notify({ text = text, timeout = 0 })
-end
--- Crea, muestra y esconde clientes flotantes
--- http://awesome.naquadah.org/wiki/Drop-down_terminal
-local capi = {
-    mouse = mouse,
-    client = client,
-    screen = screen
-}
-local dropdown = {}
--- Create a new window for the drop-down application when it doesn't
--- exist, or toggle between hidden and visible states when it does
-function toggle(prog,height,sticky,screen)
-    local height = height or 0.3 -- 30%
-    local sticky = sticky or false
-    local screen = screen or capi.mouse.screen
-    if not dropdown[prog] then
-        dropdown[prog] = {}
-        -- Add unmanage signal for teardrop programs
-        capi.client.add_signal("unmanage", function (c)
-            for scr, cl in pairs(dropdown[prog]) do
-                if cl == c then
-                    dropdown[prog][scr] = nil
-                end
-            end
-        end)
-    end
-    if not dropdown[prog][screen] then
-        spawnw = function (c)
-            dropdown[prog][screen] = c
-            -- Teardrop clients are floaters
-            awful.client.floating.set(c, true)
-            -- Client geometry
-            local screengeom = capi.screen[screen].workarea
-            if height < 1 then
-                height = screengeom.height * height
-            else
-                height = screengeom.height
-            end
-            -- Client properties
-            c:geometry({ x = screengeom.x/2, y = 0, width = screengeom.width, height = height })
-            c.ontop = true
-            c.above = true
-            c.skip_taskbar = true
-            if sticky then c.sticky = true end
-            if c.titlebar then awful.titlebar.remove(c) end
-            c:raise()
-            capi.client.focus = c
-            capi.client.remove_signal("manage", spawnw)
-        end
-        -- Add manage signal and spawn the program
-        capi.client.add_signal("manage", spawnw)
-        awful.util.spawn(prog, false)
-    else
-        -- Get a running client
-        c = dropdown[prog][screen]
-        -- Switch the client to the current workspace
-        if c:isvisible() == false then c.hidden = true;
-            awful.client.movetotag(awful.tag.selected(screen), c)
-        end
-        -- Focus and raise if hidden
-        if c.hidden then
-            c.hidden = false
-            c:raise()
-            capi.client.focus = c
-        else -- Hide and detach tags if not
-            c.hidden = true
-            local ctags = c:tags()
-            for i, v in pairs(ctags) do
-                ctags[i] = nil
-            end
-            c:tags(ctags)
-        end
-    end
-end
--- }}}
--- {{{ Naughty Log Watcher
---------------------------------------------------------------------------------
--- http://awesome.naquadah.org/wiki/Naughty_log_watcher
--- http://www3.telus.net/taj_khattra/luainotify.html
--- Compile inotify.so and copy it into into /usr/lib/lua/5.1
-local config = {}
-config.logs  = { IPTABLES = { file = "/var/log/iptables.log" }
-               , AUTH     = { file = "/var/log/auth.log" }
-               , ERROR    = { file = "/var/log/error.log" }
-               , XORG     = { file = "/var/log/Xorg.0.log" }
-               , DAEMON   = { file = "/var/log/daemon.log" }
-               , KERNEL   = { file = "/var/log/kernel.log" }
---               , AWESOME  = { file = logfile
---                            , ignore = { "^Simple mixer" -- amixer output
---                                       , "pcmanfm" -- pcmanfm is really noisy
---                                       , "^volume: " -- mpc output
---                                       , "draw_text_context_init:108:" -- A MUST
---                                       }
---                            }
-               }
-config.logs_quiet = nil
-config.logs_interval = 1
-function log_watch()
-    local events, nread, errno, errstr = inot:nbread()
-    if events then
-        for i, event in ipairs(events) do
-            for logname, log in pairs(config.logs) do
-                if event.wd == log.wd then log_changed(logname) end
-            end
-        end
-    end
-end
-function log_changed(logname)
-    local log = config.logs[logname]
-    -- read log file
-    local f, err = io.open(log.file, 'r')
-    if err then
-        logerr('log_changed can\'t open "'..log.file..'" - '..err)
-        return
-    end
-    local l = f:read("*a")
-    f:close()
-    -- first read just set length
-    if not log.len then log.len = #l
-    -- if updated
-    else
-        local diff = l:sub(log.len +1, #l-1)
-        -- check if ignored
-        local ignored = false
-        for i, phr in ipairs(log.ignore or {}) do
-            if diff:find(phr) then ignored = true; break end
-        end
-        -- display log updates
-        if diff and diff ~= '' and not (ignored or config.logs_quiet) then
-            naughty.notify{ title = '<span color="white">' .. logname .. "</span>: " .. log.file
-                          , text = awful.util.escape(diff)
-                          , icon = imgpath..'bomb.png'
-                          , timeout = 10
-                          , run = function (n)
-                                awful.util.spawn(terminal..' -e '..editor..' '..log.file)
-                                n.die()
-                            end
-                          }
-        end
-        -- set last length
-        log.len = #l
-    end
-end
-if exists('/usr/lib/lua/5.1/inotify.so') then
-    require("inotify")
-    local errno, errstr
-    inot, errno, errstr = inotify.init(true)
-    for logname, log in pairs(config.logs) do
-        log_changed(logname)
-        log.wd, errno, errstr = inot:add_watch(log.file, {"IN_MODIFY"})
-    end
-    awful.hooks.timer.register(config.logs_interval, log_watch)
-end
--- }}}
+
 -- {{{ GMail (imagebox+textbox)
 --------------------------------------------------------------------------------
 -- Datos de gmail
@@ -277,7 +26,7 @@ function check_gmail()
         for title,summary,name,email in feed:gmatch('<entry>\n<title>(.-)</title>\n<summary>(.-)</summary>.-<name>(.-)</name>\n<email>(.-)</email>') do
             pop = naughty.notify({ title    = fgc('New mail on ')..mailadd
                                  , opacity  = 1
-                                 , icon     = imgpath..'yellow_mail.png'
+                                 , icon     = imgdir..'yellow_mail.png'
                                  , text     = escape(name..' ('..email..')\n'..title..'\n'..summary)
                                  , timeout  = 20
                                  , position = "top_right"
@@ -369,7 +118,7 @@ if battery then
         local text = fread("/proc/acpi/battery/BAT0/info")
         pop = naughty.notify({ title = fgc('BAT0/info\n')
                          , text      = escape(text)
-                         , icon      = imgpath..'swp.png'
+                         , icon      = imgdir..'swp.png'
                          , icon_size = 32
                          , timeout   = 0
                          , position  = "bottom_right"
@@ -410,7 +159,7 @@ function mpc_info()
             if state == 'playing' then
                 -- Popup con el track
                 if album ~= '' and song ~= oldsong then
-                    naughty.notify { icon    = imgpath .. 'mpd_logo.png'
+                    naughty.notify { icon    = imgdir .. 'mpd_logo.png'
                                    , timeout = 3
                                    , fg      = beautiful.fg_focus
                                    , bg      = beautiful.bg_focus
@@ -481,7 +230,7 @@ function print_mpc()
     local text = pread("mpc; echo ; mpc stats")
     pop = naughty.notify({ title    = fgc('MPC Stats\n')
                          , text     = text
-                         , icon     = imgpath..'mpd_logo.png'
+                         , icon     = imgdir..'mpd_logo.png'
                          , timeout  = 0
                          , position = "bottom_left"
                          , bg       = beautiful.bg_focus
@@ -546,7 +295,7 @@ memwidget:add_signal("mouse::enter", function()
     local text = pread("free -tm")
     pop = naughty.notify({ title     = fgc('Free\n')
                          , text      = text
-                         , icon      = imgpath..'mem.png'
+                         , icon      = imgdir..'mem.png'
                          , icon_size = 32
                          , timeout   = 0
                          , position  = "bottom_right"
@@ -596,7 +345,7 @@ swpwidget:add_signal("mouse::enter", function()
     local text = fread("/proc/meminfo")
     pop = naughty.notify({ title     = fgc('/proc/meminfo\n')
                          , text      = text
-                         , icon      = imgpath..'swp.png'
+                         , icon      = imgdir..'swp.png'
                          , icon_size = 32
                          , timeout   = 0
                          , position  = "bottom_right"
@@ -684,7 +433,7 @@ cpuwidget:add_signal("mouse::enter", function()
     local text = pread("ps -eo %cpu,%mem,ruser,pid,comm --sort -%cpu | head -20")
     pop = naughty.notify({ title     = fgc('Processes\n')
                          , text      = text
-                         , icon      = imgpath..'cpu.png'
+                         , icon      = imgdir..'cpu.png'
                          , icon_size = 28
                          , timeout   = 0
                          , position  = "bottom_right"
@@ -741,7 +490,7 @@ fswidget:add_signal("mouse::enter", function()
     local text = pread("df -ha")
     pop = naughty.notify({ title     = fgc('Disk Usage\n')
                          , text      = text
-                         , icon      = imgpath..'fs.png'
+                         , icon      = imgdir..'fs.png'
                          , icon_size = 32
                          , timeout   = 0
                          , position  = "bottom_right"
@@ -821,7 +570,7 @@ netwidget:add_signal("mouse::enter", function()
     local listen = pread("netstat -patun 2>&1 | awk '/ESTABLISHED/{ if ($4 !~ /127.0.0.1|localhost/) print  \"(\"$7\")\t\"$5}'")
     pop = naughty.notify({ title     = fgc('Established\n')
                          , text      = listen
-                         , icon      = imgpath..'net-wired.png'
+                         , icon      = imgdir..'net-wired.png'
                          , icon_size = 32
                          , timeout   = 0
                          , position  = "bottom_right"
@@ -854,7 +603,7 @@ loadwidget:add_signal("mouse::enter", function()
     local text = pread("uptime; echo; who")
     pop = naughty.notify({ title     = fgc('Uptime\n')
                          , text      = text
-                         , icon      = imgpath..'load.png'
+                         , icon      = imgdir..'load.png'
                          , icon_size = 32
                          , timeout   = 0
                          , position  = "bottom_right"
@@ -912,7 +661,7 @@ volwidget:add_signal("mouse::enter", function()
     local text = pread('amixer get '..sdev)
     pop = naughty.notify({ title     = fgc('Volume\n')
                          , text      = text
-                         , icon      = imgpath..'vol.png'
+                         , icon      = imgdir..'vol.png'
                          , icon_size = 28
                          , timeout   = 0
                          , position  = "bottom_left"
@@ -922,6 +671,7 @@ end)
 --  mouse_leave
 volwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
 -- }}}
+
 -- {{{ Timers
 --------------------------------------------------------------------------------
 -- Hook every sec
@@ -957,6 +707,7 @@ timer60:add_signal("timeout", function()
 end)
 timer60:start()
 -- }}}
+
 -- {{{ Wibox
 --------------------------------------------------------------------------------
 for s = 1, screen.count() do
@@ -1012,45 +763,5 @@ for s = 1, screen.count() do
     statusbar[s].screen = s
 end
 -- }}}
--- {{{    Keybindings
---------------------------------------------------------------------------------
--- Actualizo la tabla globalkeys añadiendo mis keybindings.
--- Los keycodes se pueden ver con el comando 'xev'
-globalkeys = awful.util.table.join(globalkeys,
-    awful.key({ modkey,           }, "masculine",  function () toggle(terminal) end), -- tecla º
-    awful.key({ modkey,           }, "Print",      function () toggle('scrot -e gqview') end), -- tecla Print Screen
-    awful.key({ modkey,           }, "BackSpace",  function () awful.util.spawn('urxvt -pe tabbed') end),
-    awful.key({ modkey, "Control" }, "w",          function () awful.util.spawn(setrndwall) end),
-    awful.key({ modkey, "Control" }, "e",          function () awful.util.spawn(setrndtile) end),
-    awful.key({ modkey, "Control" }, "d",          function () rndtheme() end),
-    awful.key({ modkey, "Control" }, "q",          function () awful.util.spawn(setwall) end),
-    awful.key({ modkey, "Control" }, "t",          function () awful.util.spawn('pcmanfm') end),
-    awful.key({ modkey, "Control" }, "p",          function () awful.util.spawn('pidgin') end),
-    awful.key({ modkey, "Control" }, "c",          function () awful.util.spawn(terminal..' -e mc') end),
-    awful.key({ modkey, "Control" }, "f",          function () awful.util.spawn(browser) end),
-    awful.key({ modkey, "Control" }, "g",          function () awful.util.spawn('gvim') end),
-    awful.key({ modkey, "Control" }, "a",          function () awful.util.spawn('ruc_web_resolucio.sh') end),
-    awful.key({ modkey, "Control" }, "s",          function () awful.util.spawn('sonata') end),
-    awful.key({ modkey, "Control" }, "x",          function () awful.util.spawn('slock') end),
-    awful.key({ modkey, "Control" }, "v",          function () awful.util.spawn(terminal..' -e ncmpcpp') end),
-    awful.key({ modkey, "Control" }, "0",          function () awful.util.spawn('xrandr -o left') end),
-    awful.key({ modkey, "Control" }, "'",          function () awful.util.spawn('xrandr -o normal') end),
-    awful.key({ modkey, "Control" }, "exclamdown", function () awful.util.spawn('xrandr --output VGA1 --mode 1280x1024') end),
-    awful.key({ modkey, "Control" }, "b",          function () awful.util.spawn('mpc play') end),
-    awful.key({ modkey, "Control" }, "n",          function () awful.util.spawn('mpc pause') end),
-    awful.key({ modkey, "Control" }, "m",          function () awful.util.spawn('mpc prev'); wicked.widgets.mpd() end),
-    awful.key({ modkey, "Control" }, ",",          function () awful.util.spawn('mpc next'); wicked.widgets.mpd() end),
-    awful.key({ modkey, "Control" }, ".",          function () awful.util.spawn('amixer -c 0 set '..sdev..' 3dB-'); getVol() end),
-    awful.key({ modkey, "Control" }, "-",          function () awful.util.spawn('amixer -c 0 set '..sdev..' 3dB+'); getVol() end),
-    awful.key({ modkey, "Control" }, "Down",       function () awful.client.swap.byidx(1) end),
-    awful.key({ modkey, "Control" }, "Up",         function () awful.client.swap.byidx(-1) end),
-    awful.key({ modkey, "Control" }, "Left",       function () awful.tag.incnmaster(1) end),
-    awful.key({ modkey, "Control" }, "Right",      function () awful.tag.incnmaster(-1) end),
-    awful.key({ modkey }           , "Down",       function () awful.client.focus.byidx(1); if client.focus then client.focus:raise() end end),
-    awful.key({ modkey }           , "Up",         function () awful.client.focus.byidx(-1); if client.focus then client.focus:raise() end end)
-)
---  Aplico los keybindings
-root.keys(globalkeys)
--- }}}
---
+
 -- vim: set filetype=lua fdm=marker tabstop=4 shiftwidth=4 nu:

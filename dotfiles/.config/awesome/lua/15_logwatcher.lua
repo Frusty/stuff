@@ -1,9 +1,9 @@
---------------------------------------------------------------------------------
 -- http://awesome.naquadah.org/wiki/Naughty_log_watcher
 -- http://www3.telus.net/taj_khattra/luainotify.html
 -- Compile inotify.so and copy it into into /usr/lib/lua/5.1
-local config = {}
 
+local config = {}
+config.logs_quiet = nil
 config.logs  = { IPTABLES = { file = "/var/log/iptables.log" }
                , AUTH     = { file = "/var/log/auth.log" }
                , ERRORS   = { file = "/var/log/errors.log" }
@@ -15,12 +15,10 @@ config.logs  = { IPTABLES = { file = "/var/log/iptables.log" }
                                        , "pcmanfm" -- pcmanfm is really noisy
                                        , "^volume: " -- mpc output
                                        , "draw_text_context_init:108:" -- A MUST
+                                       , "unable to open slave" -- Youtube arguing
                                        }
                             }
                }
-
-config.logs_quiet = nil
-config.logs_interval = 1
 
 function log_watch()
     local events, nread, errno, errstr = inot:nbread()
@@ -54,8 +52,8 @@ function log_changed(logname)
             if diff:find(phr) then ignored = true; break end
         end
         -- display log updates
-        if diff and diff ~= '' and not (ignored or config.logs_quiet) then
-            naughty.notify{ title = '<span color="white">' .. logname .. "</span>: " .. log.file
+        if diff and diff ~= '' and not ignored then
+            naughty.notify{ title = '<span color="white">' .. logname .. ":</span> "..log.file
                           , text = awful.util.escape(diff)
                           , icon = imgdir..'bomb.png'
                           , timeout = 10
@@ -70,7 +68,7 @@ function log_changed(logname)
     end
 end
 
-if exists('/usr/lib/lua/5.1/inotify.so') then
+if exists('/usr/lib/lua/5.1/inotify.so') and not config.logs_quiet then
     require("inotify")
     local errno, errstr
     inot, errno, errstr = inotify.init(true)
@@ -78,7 +76,6 @@ if exists('/usr/lib/lua/5.1/inotify.so') then
         log_changed(logname)
         log.wd, errno, errstr = inot:add_watch(log.file, {"IN_MODIFY"})
     end
-    --awful.hooks.timer.register(config.logs_interval, log_watch)
     timerlog = timer { timeout = 1 }
     timerlog:add_signal("timeout", log_watch)
     timerlog:start()

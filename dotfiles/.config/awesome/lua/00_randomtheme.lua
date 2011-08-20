@@ -1,3 +1,5 @@
+-- Choose and loaf a random theme from themedir
+
 -- Theme handling library¶
 require("beautiful")
 

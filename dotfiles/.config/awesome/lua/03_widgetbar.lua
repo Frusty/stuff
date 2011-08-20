@@ -1,18 +1,11 @@
--- Awesome widget bar for the Awesome windows manager
+-- Awesome widgetbar
 
--- Notification library¶
-require("naughty")
-
-if not theme.font_key   then theme.font_key    = 'white' end
-if not theme.font_value then theme.font_ivalue = 'white' end
-
--- {{{ GMail (imagebox+textbox)
+-- {{{ GMail (imagebox+textbox) requires wget
 --------------------------------------------------------------------------------
 -- Datos de gmail
 mailadd  = 'oprietop@intranet.uoc.edu'
 mailpass = escape(fread(confdir..mailadd..'.passwd'))
 mailurl  = 'https://mail.google.com/a/intranet.uoc.edu/feed/atom/unread'
--- mailurl  = 'https://mail.google.com/feed/atom/unread'
 -- Actualiza el estado del widget a partir de un feed de gmail bajado.
 count = 0
 function check_gmail()
@@ -21,18 +14,13 @@ function check_gmail()
     if feed:match('fullcount>%d+<') then
         lcount = feed:match('fullcount>(%d+)<')
     end
-    --pop = naughty.notify({ title = fgc(lcount)..count, timeout = 20})
     if lcount ~= count then
         for title,summary,name,email in feed:gmatch('<entry>\n<title>(.-)</title>\n<summary>(.-)</summary>.-<name>(.-)</name>\n<email>(.-)</email>') do
-            pop = naughty.notify({ title    = fgc('New mail on ')..mailadd
-                                 , opacity  = 1
-                                 , icon     = imgdir..'yellow_mail.png'
-                                 , text     = escape(name..' ('..email..')\n'..title..'\n'..summary)
-                                 , timeout  = 20
-                                 , position = "top_right"
-                                 , fg       = beautiful.fg_focus
-                                 , bg       = beautiful.bg_focus
-                                 })
+            popup( fgc('New mail on ')..mailadd
+                 , name..' ('..email..')\n'..title..'\n'..summary
+                 , 20
+                 , imgdir..'yellow_mail.png'
+                 )
         end
         count = lcount
     end
@@ -90,13 +78,11 @@ function bat_info()
         elseif sta:match("Discharging") then
         dir = "-"
         if tonumber(battery) < 10 then
-            naughty.notify({ title    = fgc('Battery Warning\n')
-                           , text     = "Battery low!"..battery.."% left!"
-                           , timeout  = 10
-                           , position = "top_right"
-                           , fg       = beautiful.fg_focus
-                           , bg       = beautiful.bg_focus
-                           })
+            popup( fgc('Battery Warning\n')
+                 , "Battery low!"..battery.."% left!"
+                 , 10
+                 , imgdir..'bat.png'
+                 )
         end
     else
         dir = "="
@@ -115,21 +101,16 @@ if battery then
     batterywidget.text = bat_info()
     batterywidget:add_signal("mouse::enter",function()
         naughty.destroy(pop)
-        local text = fread("/proc/acpi/battery/BAT0/info")
-        pop = naughty.notify({ title = fgc('BAT0/info\n')
-                         , text      = escape(text)
-                         , icon      = imgdir..'swp.png'
-                         , icon_size = 32
-                         , timeout   = 0
-                         , position  = "bottom_right"
-                         , fg        = beautiful.fg_focus
-                         , bg        = beautiful.bg_focus
-                         })
+        popup( fgc('BAT0/info\n')
+             , fread("/proc/acpi/battery/BAT0/info")
+             , 0
+             , imgdir..'swp.png'
+             )
     end)
     batterywidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
 end
 -- }}}
--- {{{ Separadores (img)
+-- {{{ Separators (img)
 --------------------------------------------------------------------------------
 separator = widget({ type = 'imagebox'
                    , name  = 'separator'
@@ -137,7 +118,7 @@ separator = widget({ type = 'imagebox'
 separator.image = image(theme.separator)
 separator.resize = false
 -- }}}
--- {{{ MPC (imagebox+textbox) requiere mpc/mpd
+-- {{{ MPC (imagebox+textbox) requires mpc/mpd
 --------------------------------------------------------------------------------
 -- Devuelve estado de mpc
 local oldsong
@@ -159,16 +140,15 @@ function mpc_info()
             if state == 'playing' then
                 -- Popup con el track
                 if album ~= '' and song ~= oldsong then
-                    naughty.notify { icon    = imgdir .. 'mpd_logo.png'
-                                   , timeout = 3
-                                   , fg      = beautiful.fg_focus
-                                   , bg      = beautiful.bg_focus
-                                   , text    = string.format("\n%s %s\n%s  %s\n%s  %s"
-                                                            , 'Artist:', fgc(bold(artist))
-                                                            , 'Album:' , fgc(bold(album))
-                                                            , 'Title:' , fgc(bold(title))
-                                                            )
-                                   }
+                    popup( nil
+                         , string.format("%s %s\n%s  %s\n%s  %s"
+                                        , 'Artist:', fgc(bold(artist))
+                                        , 'Album:' , fgc(bold(album))
+                                        , 'Title:' , fgc(bold(title))
+                                        )
+                         , 5
+                         , imgdir .. 'mpd_logo.png'
+                         )
                 end
                 oldsong = song
                 return fgc('[Play]','green')..' "'..fgc(song, theme.font_key)..'" '..fgc(time,theme.font_value)
@@ -227,14 +207,12 @@ mpcwidget:buttons(awful.util.table.join(
 -- muestra el track actual
 function print_mpc()
     naughty.destroy(pop)
-    local text = pread("mpc; echo ; mpc stats")
-    pop = naughty.notify({ title    = fgc('MPC Stats\n')
-                         , text     = text
-                         , icon     = imgdir..'mpd_logo.png'
-                         , timeout  = 0
-                         , position = "bottom_left"
-                         , bg       = beautiful.bg_focus
-                         })
+    popup( fgc('MPC Stats\n')
+         , pread("mpc; echo ; mpc stats")
+         , 0
+         , imgdir..'mpd_logo.png'
+         , "bottom_left"
+         )
 end
 --  mouse_enter
 mpcwidget:add_signal("mouse::enter",function()
@@ -292,15 +270,12 @@ memwidget.text = activeram()
 --  mouse_enter
 memwidget:add_signal("mouse::enter", function()
     naughty.destroy(pop)
-    local text = pread("free -tm")
-    pop = naughty.notify({ title     = fgc('Free\n')
-                         , text      = text
-                         , icon      = imgdir..'mem.png'
-                         , icon_size = 32
-                         , timeout   = 0
-                         , position  = "bottom_right"
-                         , bg        = beautiful.bg_focus
-                         })
+    popup( fgc('Free\n')
+         , pread("free -tm")
+         , 0
+         , imgdir..'mem.png'
+         , "bottom_right"
+         )
     end)
 --  mouse_leave
 memwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
@@ -342,15 +317,12 @@ activeswap()
 --  mouse_enter
 swpwidget:add_signal("mouse::enter", function()
     naughty.destroy(pop)
-    local text = fread("/proc/meminfo")
-    pop = naughty.notify({ title     = fgc('/proc/meminfo\n')
-                         , text      = text
-                         , icon      = imgdir..'swp.png'
-                         , icon_size = 32
-                         , timeout   = 0
-                         , position  = "bottom_right"
-                         , bg        = beautiful.bg_focus
-                         })
+    popup( fgc('/proc/meminfo\n')
+         , fread("/proc/meminfo")
+         , 0
+         , imgdir..'swp.png'
+         , "bottom_right"
+         )
     end)
 --  mouse_leave
 swpwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
@@ -430,15 +402,12 @@ cpuwidget.text = cpu_info()
 --  mouse_enter
 cpuwidget:add_signal("mouse::enter", function()
     naughty.destroy(pop)
-    local text = pread("ps -eo %cpu,%mem,ruser,pid,comm --sort -%cpu | head -20")
-    pop = naughty.notify({ title     = fgc('Processes\n')
-                         , text      = text
-                         , icon      = imgdir..'cpu.png'
-                         , icon_size = 28
-                         , timeout   = 0
-                         , position  = "bottom_right"
-                         , bg        = beautiful.bg_focus
-                         })
+    popup( fgc('Processes\n')
+         , pread("ps -eo %cpu,%mem,ruser,pid,comm --sort -%cpu | head -30")
+         , 0
+         , imgdir..'cpu.png'
+         , "bottom_right"
+         )
 end)
 --  mouse_leave
 cpuwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
@@ -487,15 +456,12 @@ fswidget.text = fs_info()
 --  mouse_enter
 fswidget:add_signal("mouse::enter", function()
     naughty.destroy(pop)
-    local text = pread("df -ha")
-    pop = naughty.notify({ title     = fgc('Disk Usage\n')
-                         , text      = text
-                         , icon      = imgdir..'fs.png'
-                         , icon_size = 32
-                         , timeout   = 0
-                         , position  = "bottom_right"
-                         , bg        = beautiful.bg_focus
-                         })
+    popup ( fgc('Disk Usage\n')
+          , pread("df -ha")
+          , 0
+          , imgdir..'fs.png'
+          , 'bottom_right'
+          )
 end)
 --  mouse_leave
 fswidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
@@ -567,18 +533,39 @@ net_info()
 --  mouse_enter
 netwidget:add_signal("mouse::enter", function()
     naughty.destroy(pop)
-    local listen = pread("netstat -patun 2>&1 | awk '/ESTABLISHED/{ if ($4 !~ /127.0.0.1|localhost/) print  \"(\"$7\")\t\"$5}'")
-    pop = naughty.notify({ title     = fgc('Established\n')
-                         , text      = listen
-                         , icon      = imgdir..'net-wired.png'
-                         , icon_size = 32
-                         , timeout   = 0
-                         , position  = "bottom_right"
-                         , bg        = beautiful.bg_focus
-                         })
+    popup( fgc('Established\n')
+         , pread("netstat -patun 2>&1 | awk '/ESTABLISHED/{ if ($4 !~ /127.0.0.1|localhost/) print \"(\"$7\")\t\"$5}' | column -t")
+         , 0
+         , imgdir..'net-wired.png'
+         , "bottom_right"
+         )
+end)
+--  mouse_enter_up
+netwidget_up:add_signal("mouse::enter", function()
+    naughty.destroy(pop)
+    popup( fgc('Transfer Stats\n')
+         , pread("cat /proc/net/dev | sed -e 's/multicast/multicast\t/g' -e 's/|bytes/bytes/g' | column -t")
+         , 0
+         , imgdir..'net-wired.png'
+         , "bottom_right"
+         )
+end)
+--  mouse_enter_up
+netwidget_down:add_signal("mouse::enter", function()
+    naughty.destroy(pop)
+    popup( fgc('Transfer Stats\n')
+         , pread("cat /proc/net/dev | sed -e 's/multicast/multicast\t/g' -e 's/|bytes/bytes/g' | column -t")
+         , 0
+         , imgdir..'net-wired.png'
+         , "bottom_right"
+         )
 end)
 -- mouse_leave
 netwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
+-- mouse_leave_up
+netwidget_up:add_signal("mouse::leave", function() naughty.destroy(pop) end)
+-- mouse_leave_down
+netwidget_down:add_signal("mouse::leave", function() naughty.destroy(pop) end)
 -- }}}
 -- {{{ Load (magebox+textbox)
 --------------------------------------------------------------------------------
@@ -600,22 +587,19 @@ loadwidget.text = avg_load()
 --  mouse_enter
 loadwidget:add_signal("mouse::enter", function()
     naughty.destroy(pop)
-    local text = pread("uptime; echo; who")
-    pop = naughty.notify({ title     = fgc('Uptime\n')
-                         , text      = text
-                         , icon      = imgdir..'load.png'
-                         , icon_size = 32
-                         , timeout   = 0
-                         , position  = "bottom_right"
-                         , bg        = beautiful.bg_focus
-                         })
+    popup( fgc('Uptime\n')
+         , pread("uptime; echo; id; echo; who")
+         , 0
+         , imgdir..'load.png'
+         , 'bottom_right'
+         )
 end)
 -- mouse_leave
 loadwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
 -- }}}
--- {{{ Volume (Custom) requiere alsa-utils
+-- {{{ Volume (Custom) requires alsa-utils
 --------------------------------------------------------------------------------
--- Devuelve el volumen "Master" en alsa.
+-- Returns the "Master" volume from alsa.
 amixline = pread('amixer | head -1')
 if amixline then
     sdev = amixline:match(".-%s%'(%w+)%',0")
@@ -659,14 +643,12 @@ volwidget:buttons(awful.util.table.join(
 volwidget:add_signal("mouse::enter", function()
     naughty.destroy(pop)
     local text = pread('amixer get '..sdev)
-    pop = naughty.notify({ title     = fgc('Volume\n')
-                         , text      = text
-                         , icon      = imgdir..'vol.png'
-                         , icon_size = 28
-                         , timeout   = 0
-                         , position  = "bottom_left"
-                         , bg        = beautiful.bg_focus
-                         })
+    popup( fgc('Volume\n')
+         , pread('amixer get '..sdev)
+         , 0
+         , imgdir..'vol.png'
+         , 'bottom_left'
+         )
 end)
 --  mouse_leave
 volwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)

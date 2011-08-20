@@ -1,4 +1,5 @@
 -- https://github.com/cycojesus/awesome/raw/master/rc.lua
+
 -- {{{ Base Variables
 homedir    = os.getenv("HOME")..'/'
 logfile    = homedir..'.awesome.err'
@@ -29,29 +30,33 @@ function exists(fname)
         return true
     else
         loglua("(WW) Couldn't open '"..fname.."'")
+        return nil
     end
 end
-function try(file, backup, logfile)
---    if exists(file) and exists(logfile) then
-        -- if it breaks do not die in shame, just squeak gracefully
+-- loadfile/dofile Wrapper
+-- Evaluate and load a file or fallback to another
+function loadlua(file, backup)
+    if exists(file) then
         local rc, err = loadfile(file)
         if rc then
             rc, err = pcall(rc)
-           if rc then return; end
+            if rc then
+                return true
+            end
         end
-        if backup then dofile(backup) end
-        loglua("(EE) Couldn't load '"..file.."', reverting to '"..backup.."'. The error was: "..err)
---    end
+        loglua("(EE) loadlua couldn't load '"..file.."'. The error was: "..err)
+        if exists(backup) then
+            loglua("(II) loadlua is reverting to '"..backup.."'.")
+            dofile(backup)
+        end
+    end
 end
 -- }}}
 loglua("(II) AWESOME STARTING")
 -- {{{ Evaluate and load config files
 for file in io.popen('ls '..luadir..'*lua'):lines() do
     loglua("(II) Loading config files: "..file)
-    try( file
-       , "/etc/xdg/awesome/rc.lua"
-       , logfile
-       )
+    loadlua(file, "/etc/xdg/awesome/rc.lua")
 end
 -- }}}
 -- {{{ Programs to execute on startup
@@ -59,4 +64,5 @@ loglua("(II) Launching external aplications.")
 os.execute("wmname LG3D&") -- https://awesome.naquadah.org/wiki/Problems_with_Java
 -- }}}
 loglua("(II) STARTUP FINISHED")
+
 -- vim: set filetype=lua fdm=marker tabstop=4 shiftwidth=4 nu:

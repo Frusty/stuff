@@ -1,5 +1,6 @@
 -- I'll upgrade the keybindins merging the current "globalkeys" table with my own
 -- Keycodes can be seen using the 'xev' command
+
 globalkeys = awful.util.table.join(globalkeys,
     awful.key({ modkey,           }, "masculine",  function () toggle(terminal) end), -- tecla º
     awful.key({ modkey,           }, "Print",      function () toggle('scrot -e gqview') end), -- tecla Print Screen

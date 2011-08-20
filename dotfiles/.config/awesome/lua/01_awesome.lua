@@ -1,8 +1,12 @@
+-- A redux of the original config file from "/etc/xdg/awesome/rc.lua"
+-- I'll try to maintain the base config then add my stuff over
+
 -- Standard awesome library
 require("awful")
 require("awful.autofocus")
 require("awful.rules")
 
+-- {{{ Variable definitions
 -- Default modkey.
 -- Usually, Mod4 is the key with a logo between Control and Alt.
 -- If you do not like this or do not have such a key,

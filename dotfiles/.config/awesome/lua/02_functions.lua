@@ -1,5 +1,8 @@
 -- Global utility functions
 
+-- Notification library¶
+require("naughty")
+
 -- {{{ Escape string
 function escape(text)
     if text then
@@ -62,16 +65,6 @@ function rndtheme()
     beautiful.init(themes[math.random(#themes)])
 end
 -- }}}
--- {{{ Destroy all naughty notifications
-function desnaug()
-    for p,pos in pairs(naughty.notifications[mouse.screen]) do
-        for i,notification in pairs(naughty.notifications[mouse.screen][p]) do
-            naughty.destroy(notification)
-            desnaug()
-        end
-    end
-end
--- }}}
 -- {{{ Icon creation wrapper
 function createIco(widget,file,click)
     if not widget or not file or not click then return nil end
@@ -83,6 +76,29 @@ function createIco(widget,file,click)
             awful.util.spawn(click,false)
         end)
     ))
+end
+-- }}}
+-- {{{ popup, a naughty wrapper
+function popup(title,text,timeout,icon,position,fg,gb)
+    pop = naughty.notify({ title     = title
+                         , text      = text     or "All your base are belong to us."
+                         , timeout   = timeout  or 0
+                         , icon      = icon     or imgdir..'awesome.png'
+                         , icon_size = 39 -- 3 times our standard icon size
+                         , position  = position or nil
+                         , fg        = fg       or beautiful.fg_focus
+                         , bg        = bg       or beautiful.bg_focus
+                         })
+end
+-- }}}
+-- {{{ Destroy all naughty notifications
+function desnaug()
+    for p,pos in pairs(naughty.notifications[mouse.screen]) do
+        for i,notification in pairs(naughty.notifications[mouse.screen][p]) do
+            naughty.destroy(notification)
+            desnaug()
+        end
+    end
 end
 -- }}}
 -- {{{ Converts bytes to human-readable units, returns value (number) and unit (string)

@@ -1,11 +1,14 @@
--- Crea, muestra y esconde clientes flotantes
+-- Create, show and hide floating clients
 -- http://awesome.naquadah.org/wiki/Drop-down_terminal
+
 local capi = {
     mouse = mouse,
     client = client,
     screen = screen
 }
+
 local dropdown = {}
+
 -- Create a new window for the drop-down application when it doesn't
 -- exist, or toggle between hidden and visible states when it does
 function toggle(prog,height,sticky,screen)

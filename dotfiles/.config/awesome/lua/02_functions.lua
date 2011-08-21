@@ -36,7 +36,7 @@ function pread(cmd)
             f:close()
             return s
         else
-            loglua(err)
+            loglua("(EE) pread failed reading '"..cmd.."', the error was '"..err.."'.")
         end
     end
 end
@@ -50,7 +50,7 @@ function fread(cmd)
             f:close()
             return s
         else
-            loglua(err)
+            loglua("(EE) fread failed reading '"..cmd.."', the error was '"..err.."'.")
         end
     end
 end

@@ -9,7 +9,7 @@ mailurl  = 'https://mail.google.com/a/intranet.uoc.edu/feed/atom/unread'
 -- Actualiza el estado del widget a partir de un feed de gmail bajado.
 count = 0
 function check_gmail()
-    local feed = fread(confdir..mailadd)
+    local feed = escape(fread(confdir..mailadd))
     local lcount = count
     if feed:match('fullcount>%d+<') then
         lcount = feed:match('fullcount>(%d+)<')
@@ -135,6 +135,7 @@ function mpc_info()
                     song = '...'..string.sub(song, -57)
                  end
             else
+                loglua("(EE) mpc_info got a format error. The string was '"..now.."'.")
                 return 'ZOMFG Format Error!'
             end
             if state == 'playing' then
@@ -177,8 +178,6 @@ createIco(mpd_ico, 'mpd.png', terminal..' -e ncmpcpp')
 mpcwidget = widget({ type    = 'textbox'
                    , name    = 'mpcwidget'
                    })
--- ugly utf8 workaround Part 2
---awful.widget.layout.margins[mpcwidget] = { top = 1, bottom = 0, left = 0, right = 0 }
 -- llamada inicial a la función
 mpcwidget.text = mpc_info()
 -- textbox buttons
@@ -501,7 +500,6 @@ function net_info()
     else
         rx,tx,rxu,txu = "0","0","B","B"
     end
---    return fgc(iface, theme.font_key)..fgc(bold('|'), 'green')..fgc(string.format("%04d%2s",rx,rxu), theme.font_value)..fgc(bold('|'), 'red')..fgc(string.format("%04d%2s",tx,txu), theme.font_value)
     netwidget.text = fgc(iface, theme.font_value)
     netwidget_up.text = fgc(string.format("%04d%2s",tx,txu), theme.font_value)
     netwidget_down.text = fgc(string.format("%04d%2s",rx,rxu), theme.font_value)
@@ -573,7 +571,7 @@ netwidget_down:add_signal("mouse::leave", function() naughty.destroy(pop) end)
 function avg_load()
     local n = fread('/proc/loadavg')
     local pos = n:find(' ', n:find(' ', n:find(' ')+1)+1)
-    return  fgc(n:sub(1,pos-1), theme.font_value)
+    return fgc(n:sub(1,pos-1), theme.font_value)
 end
 --  imagebox
 load_ico = widget({ type = "imagebox" })

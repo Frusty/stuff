@@ -50,7 +50,7 @@ style "theme-default"
   {
 		menuitemstyle = 2 # 0 = flat, 1 = glassy, 2 = striped
 		glazestyle = 1 # 0 = flat hilight, 1 = curved hilight, 2 = concave style
-		scrollbar_color  = "#E6B17F"
+#		scrollbar_color  = "#E6B17F"
 		contrast 		= 1.0
 		menubarstyle = 1 # 0 = flat, 1 = glassy, 2 = gradient, 3 = striped
 		menubaritemstyle = 0 # 0 = menuitem look, 1 = button look

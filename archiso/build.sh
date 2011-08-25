@@ -12,13 +12,7 @@ install_dir=arch
 arch=$(uname -m)
 work_dir=work
 verbose="y"
-
-# This function can be called after make_basefs()
-get_linux_ver() {
-    local ALL_kver
-    eval $(grep ^ALL_kver ${work_dir}/root-image/etc/mkinitcpio.d/kernel26.kver)
-    echo ${ALL_kver}
-}
+script_path=$(dirname $(readlink -f $0))
 
 # Base installation (root-image)
 make_basefs() {
@@ -43,6 +37,7 @@ make_root_image() {
         chmod 440 ${work_dir}/root-image/etc/sudoers.d/g_wheel
         mkdir -p ${work_dir}/root-image/etc/pacman.d
         wget -O ${work_dir}/root-image/etc/pacman.d/mirrorlist http://www.archlinux.org/mirrorlist/all/
+        ok "Enabling mirrors"
         sed -i "s/#Server/Server/g" ${work_dir}/root-image/etc/pacman.d/mirrorlist
         chroot ${work_dir}/root-image /usr/sbin/locale-gen
         ok "Making the default user arch"
@@ -53,7 +48,7 @@ make_root_image() {
         ok "Making the default user crypt"
         chroot ${work_dir}/root-image /usr/sbin/useradd -p "" -u 1000 -g users -G "audio,disk,optical,wheel,log" crypt
         ok "Backup our archiso structure"
-    tar -cjvf ${work_dir}/root-image/archiso.bz2 --exclude={archiso.bz2,*.iso,${PWD}/work} "$PWD"
+        tar -cjvf ${work_dir}/root-image/archiso.bz2 --exclude={archiso.bz2,*.iso,${PWD}/work} "$PWD"
         : > ${work_dir}/build.${FUNCNAME}
     fi
 }
@@ -76,8 +71,8 @@ make_boot() {
         local _src=${work_dir}/root-image
         local _dst_boot=${work_dir}/iso/${install_dir}/boot
         mkdir -p ${_dst_boot}/${arch}
-        mkinitcpio -c ./mkinitcpio.conf -b ${_src} -k /boot/vmlinuz26 -g ${_dst_boot}/${arch}/archiso.img
-        mv ${_src}/boot/vmlinuz26 ${_dst_boot}/${arch}
+        mkinitcpio -c ./mkinitcpio.conf -b ${_src} -k /boot/vmlinuz-linux -g ${_dst_boot}/${arch}/archiso.img
+        mv ${_src}/boot/vmlinuz-linux ${_dst_boot}/${arch}/vmlinuz
         cp ${_src}/boot/memtest86+/memtest.bin ${_dst_boot}/memtest
         cp ${_src}/usr/share/licenses/common/GPL2/license.txt ${_dst_boot}/memtest.COPYING
         : > ${work_dir}/build.${FUNCNAME}
@@ -91,9 +86,9 @@ make_syslinux() {
         local _dst_syslinux=${work_dir}/iso/${install_dir}/boot/syslinux
         mkdir -p ${_dst_syslinux}
         sed "s|%ARCHISO_LABEL%|${iso_label}|g;
-             s|%INSTALL_DIR%|${install_dir}|g;
-             s|%ARCH%|${arch}|g" syslinux/syslinux.cfg > ${_dst_syslinux}/syslinux.cfg
-        cp syslinux/splash.png ${_dst_syslinux}
+            s|%INSTALL_DIR%|${install_dir}|g;
+            s|%ARCH%|${arch}|g" ${script_path}/syslinux/syslinux.cfg > ${_dst_syslinux}/syslinux.cfg
+        cp ${script_path}/syslinux/splash.png ${_dst_syslinux}
         cp ${_src_syslinux}/{*.c32,*.com,*.0,memdisk} ${_dst_syslinux}
         mkdir -p ${_dst_syslinux}/hdt
         wget -O - http://pciids.sourceforge.net/v2.2/pci.ids | gzip -9 > ${_dst_syslinux}/hdt/pciids.gz
@@ -115,7 +110,7 @@ make_isolinux() {
 # Process aitab
 make_aitab() {
     if [[ ! -e ${work_dir}/build.${FUNCNAME} ]]; then
-        sed "s|%ARCH%|${arch}|g" aitab > ${work_dir}/iso/${install_dir}/aitab
+        sed "s|%ARCH%|${arch}|g" ${script_path}/aitab > ${work_dir}/iso/${install_dir}/aitab
         : > ${work_dir}/build.${FUNCNAME}
     fi
 }
@@ -127,6 +122,7 @@ make_prepare() {
 
 # Build ISO
 make_iso() {
+    mkarchiso ${verbose} -D "${install_dir}" checksum "${work_dir}"
     mkarchiso ${verbose} -D "${install_dir}" -L "${iso_label}" iso "${work_dir}" "${name}-${version}-${arch}.iso"
 }
 
@@ -151,7 +147,7 @@ __EOF__
 }
 
 if [[ ${EUID} -ne 0 ]]; then
-    echo "This script must be run as root."
+    nk "This script must be run as root.\n"
 fi
 
 if [[ $verbose == "y" ]]; then
@@ -160,11 +156,14 @@ else
     verbose=""
 fi
 
-if [[ $# -gt 0 ]]; then
+if [[ $# -eq 0 ]]; then
+    ok "NOTE: Run this script with any extra argument to avoid the removal of temporal files"
     ok "Deleting ${work_dir}"
     rm -rf ${work_dir}
     ok "Deleting iso files"
     rm -f *-${arch}.iso
+else
+    ok "Skipping temporal file removal...les"
 fi
 
 ok make_pacman_conf      && make_pacman_conf

@@ -4,4 +4,4 @@
 # <file system>        <dir>         <type>    <options>          <dump> <pass>
 /dev/mapper/root-image /             auto      defaults           0      0
 # crypt volume
-/dev/mapper/crypt      /home/crypt   ext4      nofail,defaults    0      1
+/dev/mapper/crypt      /home/crypt   auto      nofail,defaults    0      1

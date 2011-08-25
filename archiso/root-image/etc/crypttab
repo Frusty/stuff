@@ -1,1 +1,1 @@
-crypt       /dev/sdb1       ASK
+crypt    /dev/sdb1    ASK    -t 10

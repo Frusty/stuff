@@ -61,6 +61,7 @@ motion
 mpc
 mpd
 mplayer
+mtools
 mtr
 multitail
 ncdu
@@ -86,7 +87,6 @@ rfkill
 rpcbind
 rsync
 rxvt-unicode
-screen
 scrot
 slock
 squashfs-tools
@@ -97,10 +97,12 @@ tcpdump
 terminus-font
 testdisk
 tftp-hpa
+tmux
 tree
 truecrypt
 unrar
 unzip
+valgrind
 vim
 whois
 wicd

@@ -23,12 +23,12 @@ find $(basename $1) -type f | sort | while read file; do
     [ -f "$dirn2file" ] && {
         ((counter2++))
         md5_1=$(md5sum "$dirn1/$file")
-        md5_2=$(md5sum $dirn2file)
+        md5_2=$(md5sum "$dirn2file")
         [ "${md5_1%% *}" != "${md5_2%% *}" ] && {
             echo -e "\n/ $file"
             echo "| SRC ${md5_1%% *} DST ${md5_2%% *}"
             echo "\ > Copiando en $(basename $bckdir)"
-            rsync -Rañih --progress "$dirn2file" "$bckdir"
+            rsync -Raih --progress "$dirn2file" "$bckdir"
             if [ $? -eq 0 ]; then
                 ((counter3++))
             else

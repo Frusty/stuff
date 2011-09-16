@@ -5,34 +5,60 @@ set +o posix
 ok() { echo -ne "\e[32m#\t$1\n\e[m"; }
 nk() { echo -ne "\e[31m#\t$1\n\e[m"; exit 1; }
 
-name=archlinux
+iso_name=archlinux
 iso_label="ARCH_$(date +%Y%m)"
-version=$(date +%Y.%m.%d)
+iso_version=$(date +%Y.%m.%d)
 install_dir=arch
 arch=$(uname -m)
 work_dir=work
+out_dir=out
 verbose="y"
 script_path=$(dirname $(readlink -f $0))
 
+# Write pacman.conf on a file descriptor
+make_pacman_conf() {
+exec 3<<__EOF__
+[options]
+HoldPkg      = pacman glibc
+SyncFirst    = pacman
+Architecture = i686
+[core]
+Server = ftp://ftp.rediris.es/mirror/archlinux/core/os/i686
+[extra]
+Server = ftp://ftp.rediris.es/mirror/archlinux/extra/os/i686
+[community]
+Server = ftp://ftp.rediris.es/mirror/archlinux/community/os/i686
+[archlinuxfr]
+Server = http://repo.archlinux.fr/i686
+[custompkgs]
+Server = file://${script_path}/custompkgs
+__EOF__
+}
+
 # Base installation (root-image)
 make_basefs() {
-    mkarchiso ${verbose} -D "${install_dir}" -p "base base-devel" create "${work_dir}"
-    mkarchiso ${verbose} -D "${install_dir}" -p "memtest86+ syslinux mkinitcpio-nfs-utils nbd" create "${work_dir}"
+    mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" -p "base base-devel" create
+    mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" -p "memtest86+ syslinux mkinitcpio-nfs-utils nbd" create
 }
 
 # Additional packages (root-image)
 make_packages() {
     ok "Update local custom repository"
-    for i in custompkgs/*xz; do repo-add custompkgs/custompkgs.db.tar.gz $i; done
-    arch_packages=$(grep -v ^# packages.i686 | xargs)
-    custom_packages=$(find custompkgs/ -name '*.pkg.tar.xz' | sed -n 's/.*\/\([0-z]\+\)-.*/\1 /p' | xargs)
-    mkarchiso ${verbose} -C /proc/$$/fd/3 -D "${install_dir}" -p "$arch_packages $custom_packages" create "${work_dir}"
+    for i in custompkgs/*xz; do repo-add ${script_path}/custompkgs/custompkgs.db.tar.gz $i; done
+    arch_packages=$(grep -v ^# ${script_path}/packages.i686 | xargs)
+    custom_packages=$(find ${script_path}/custompkgs/ -name '*.pkg.tar.xz' | sed -n 's/.*\/\([0-z]\+\)-.*/\1 /p' | xargs)
+    mkarchiso ${verbose} -C /proc/$$/fd/3 -w "${work_dir}" -D "${install_dir}" -p "$arch_packages $custom_packages" create
 }
 
 # Customize installation (root-image)
 make_root_image() {
     if [[ ! -e ${work_dir}/build.${FUNCNAME} ]]; then
-        cp -af root-image ${work_dir}
+        ok "Prepare overlay"
+        find ${script_path}/root-image -type f -exec chmod 644 {} \;
+        find ${script_path}/root-image -type d -exec chmod 755 {} \;
+	find ${script_path}/root-image -name '*bin' -type d | xargs -n1 -I@ find @ -type f -exec chmod +x "{}" \;
+        chown -R root:root ${script_path}/root-image
+        cp -af ${script_path}/root-image ${work_dir}
         chmod 750 ${work_dir}/root-image/etc/sudoers.d
         chmod 440 ${work_dir}/root-image/etc/sudoers.d/g_wheel
         mkdir -p ${work_dir}/root-image/etc/pacman.d
@@ -43,12 +69,13 @@ make_root_image() {
         ok "Making the default user arch"
         chroot ${work_dir}/root-image /usr/sbin/useradd -p "" -u 2000 -g users -G "audio,disk,optical,wheel,log" arch
         ok "Chown/chmod the arch folder"
+        chroot ${work_dir}/root-image /usr/bin/find /home/arch -type d -exec /bin/chmod 700 {} \;
+        chroot ${work_dir}/root-image /usr/bin/find /home/arch -type f -exec /bin/chmod 600 {} \;
         chroot ${work_dir}/root-image /bin/chown -R arch:users /home/arch
-        chroot ${work_dir}/root-image /bin/chmod -R 700 /home/arch
         ok "Making the default user crypt"
-        chroot ${work_dir}/root-image /usr/sbin/useradd -p "" -u 1000 -g users -G "audio,disk,optical,wheel,log" crypt
+        chroot ${work_dir}/root-image /usr/sbin/useradd -m -p "" -u 1000 -g users -G "audio,disk,optical,wheel,log" crypt
         ok "Backup our archiso structure"
-        tar -cjvf ${work_dir}/root-image/archiso.bz2 --exclude={archiso.bz2,*.iso,${PWD}/work} "$PWD"
+        tar -cjvf ${work_dir}/root-image/archiso.bz2 --exclude={archiso.bz2,*.iso,${PWD}/work} ${script_path}
         : > ${work_dir}/build.${FUNCNAME}
     fi
 }
@@ -61,6 +88,7 @@ make_setup_mkinitcpio() {
             cp /lib/initcpio/hooks/${_hook} ${work_dir}/root-image/lib/initcpio/hooks
             cp /lib/initcpio/install/${_hook} ${work_dir}/root-image/lib/initcpio/install
         done
+        cp /lib/initcpio/archiso_pxe_nbd ${work_dir}/root-image/lib/initcpio
         : > ${work_dir}/build.${FUNCNAME}
    fi
 }
@@ -71,7 +99,11 @@ make_boot() {
         local _src=${work_dir}/root-image
         local _dst_boot=${work_dir}/iso/${install_dir}/boot
         mkdir -p ${_dst_boot}/${arch}
-        mkinitcpio -c ./mkinitcpio.conf -b ${_src} -k /boot/vmlinuz-linux -g ${_dst_boot}/${arch}/archiso.img
+        mkinitcpio \
+            -c ${script_path}/mkinitcpio.conf \
+            -b ${_src} \
+            -k /boot/vmlinuz-linux \
+            -g ${_dst_boot}/${arch}/archiso.img
         mv ${_src}/boot/vmlinuz-linux ${_dst_boot}/${arch}/vmlinuz
         cp ${_src}/boot/memtest86+/memtest.bin ${_dst_boot}/memtest
         cp ${_src}/usr/share/licenses/common/GPL2/license.txt ${_dst_boot}/memtest.COPYING
@@ -101,13 +133,14 @@ make_syslinux() {
 make_isolinux() {
     if [[ ! -e ${work_dir}/build.${FUNCNAME} ]]; then
         mkdir -p ${work_dir}/iso/isolinux
-        sed "s|%INSTALL_DIR%|${install_dir}|g" isolinux/isolinux.cfg > ${work_dir}/iso/isolinux/isolinux.cfg
+        sed "s|%INSTALL_DIR%|${install_dir}|g" ${script_path}/isolinux/isolinux.cfg > ${work_dir}/iso/isolinux/isolinux.cfg
         cp ${work_dir}/root-image/usr/lib/syslinux/isolinux.bin ${work_dir}/iso/isolinux/
+        cp ${work_dir}/root-image/usr/lib/syslinux/isohdpfx.bin ${work_dir}/iso/isolinux/
         : > ${work_dir}/build.${FUNCNAME}
     fi
 }
 
-# Process aitab
+# Process Aitab
 make_aitab() {
     if [[ ! -e ${work_dir}/build.${FUNCNAME} ]]; then
         sed "s|%ARCH%|${arch}|g" ${script_path}/aitab > ${work_dir}/iso/${install_dir}/aitab
@@ -117,51 +150,32 @@ make_aitab() {
 
 # Build all filesystem images specified in aitab (.fs .fs.sfs .sfs)
 make_prepare() {
-    mkarchiso ${verbose} -D "${install_dir}" prepare "${work_dir}"
+    mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" prepare
 }
 
 # Build ISO
 make_iso() {
-    mkarchiso ${verbose} -D "${install_dir}" checksum "${work_dir}"
-    mkarchiso ${verbose} -D "${install_dir}" -L "${iso_label}" iso "${work_dir}" "${name}-${version}-${arch}.iso"
-}
-
-# Write pacman.conf on a file descriptor
-make_pacman_conf() {
-exec 3<<__EOF__
-[options]
-HoldPkg      = pacman glibc
-SyncFirst    = pacman
-Architecture = i686
-[core]
-Server = ftp://ftp.rediris.es/mirror/archlinux/core/os/i686
-[extra]
-Server = ftp://ftp.rediris.es/mirror/archlinux/extra/os/i686
-[community]
-Server = ftp://ftp.rediris.es/mirror/archlinux/community/os/i686
-[archlinuxfr]
-Server = http://repo.archlinux.fr/i686
-[custompkgs]
-Server = file://${PWD}/custompkgs
-__EOF__
+    mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" checksum
+    mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" -L "${iso_label}" -o "${script_path}" iso "${iso_name}-${iso_version}-${arch}.iso"
 }
 
 if [[ ${EUID} -ne 0 ]]; then
-    nk "This script must be run as root.\n"
+    nk "This script must be run as root."
 fi
 
 if [[ $verbose == "y" ]]; then
     verbose="-v"
+    ok "Verbose mode enabled"
 else
     verbose=""
 fi
 
 if [[ $# -eq 0 ]]; then
     ok "NOTE: Run this script with any extra argument to avoid the removal of temporal files"
-    ok "Deleting ${work_dir}"
-    rm -rf ${work_dir}
-    ok "Deleting iso files"
-    rm -f *-${arch}.iso
+    ok "Deleting '${script_path}/${work_dir}'"
+    rm -rf "${script_path}/${work_dir}"
+    ok "Deleting old iso files"
+    rm -rf "${out_dir}/*iso"
 else
     ok "Skipping temporal file removal...les"
 fi

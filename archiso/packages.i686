@@ -46,7 +46,6 @@ iproute2
 iptables
 isomaster
 john
-jre
 lftp
 lha
 linux-firmware
@@ -73,6 +72,7 @@ nmap
 ntfs-3g
 ntfsprogs
 ntp
+openjdk6
 openssh
 openvpn
 p7zip

@@ -9,7 +9,7 @@ mailurl  = 'https://mail.google.com/a/intranet.uoc.edu/feed/atom/unread'
 -- Actualiza el estado del widget a partir de un feed de gmail bajado.
 count = 0
 function check_gmail()
-    local feed = escape(fread(confdir..mailadd))
+    local feed = fread(confdir..mailadd)
     local lcount = count
     if feed:match('fullcount>%d+<') then
         lcount = feed:match('fullcount>(%d+)<')

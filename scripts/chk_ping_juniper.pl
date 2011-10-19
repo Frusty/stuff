@@ -2,7 +2,6 @@
 use strict;
 use Net::Telnet;
 use Getopt::Long;
-use Data::Dumper;
 
 $0 =~ s/.*\///g;
 my $ips = undef;
@@ -33,20 +32,25 @@ sub check_ip_host(@) {
 my @iplist = split (",", $ips);
 &check_ip_host(@iplist);
 
+my $errcount = 0;
 foreach my $switch (@ARGV) {
-    my $telnet = new Net::Telnet ( Timeout  => 5
+    my $telnet = new Net::Telnet ( Timeout  => 6
                              , Errmode  => 'return'
                              , Prompt   => '/rw@.*>/i'
                              );
-    $telnet->open($switch);
+    my $count = 0;
+    while ($count++ < 5) {
+        last if $telnet->open($switch);
+    }
     $telnet->login('XXXX', 'XXXXXXXXXXXX');
     $telnet->cmd('set cli screen-length 0');
     foreach (@iplist) {
         my $ping = join('', $telnet->cmd("ping routing-instance datos count 1 wait 2 $_"));
         while ($ping =~ /(\d+)% packet loss/sg) {
             $1 ? print "$switch -> $_ (NOK)\n" : print "$switch -> $_ (OK!)\n";
+            $errcount++ if $1;
         }
     }
     $telnet->close;
 }
-exit 0;
+$errcount ? exit 1 : exit 0

@@ -2,7 +2,6 @@
 use strict;
 use Net::Telnet;
 use Getopt::Long;
-use Data::Dumper;
 
 $0 =~ s/.*\///g;
 my $ips = undef;
@@ -15,7 +14,7 @@ args:
 \t<switch>\tDevice to interrogate, any extra host specified as an argument will also be queried.
 \t--ips, -i\tA single or a comma-separated list of <hosts> to ping.
 Example:
-\t$0 ent1 ent2 -i 192.168.221.1,192.168.221.2,192.168.221.3
+\t$0 ent1 ent2 -i 192.168.238.1,192.168.238.2,192.168.238.3
 EOF
 exit 1;
 }
@@ -33,18 +32,24 @@ sub check_ip_host(@) {
 my @iplist = split (",", $ips);
 &check_ip_host(@iplist);
 
+my $errcount = 0;
 foreach my $switch (@ARGV) {
-    my $telnet = new Net::Telnet ( Timeout  => 5
-                             , Errmode  => 'return'
-                             , Prompt   => '/.*\(rw\)->/i'
-                             );
-    $telnet->open($switch);
-    $telnet->login('XXXXX', 'XXXXXXX');
+    my $telnet = new Net::Telnet ( Timeout => 6
+                                 , Errmode => 'return'
+                                 , Prompt  => '/(?m:.*[\w.-]+\s?(?:\(config[^\)]*\))?\s?[\+\$#>]\s?(?:\(enable\))?\s*$)/'
+                                 );
+    my $count = 0;
+    while ($count++ < 5) {
+        last if $telnet->open($switch);
+    }
+    $telnet->login('USER', 'PASSWORD');
     $telnet->cmd('router');
     foreach (@iplist) {
         my $ping = join('', $telnet->cmd("ping $_"));
-        $ping =~ /is alive/ ? print "$switch -> $_ (OK)\n" : print "$switch -> $_ (NOK!)\n";
+        print "$ping\n";
+        $ping =~ /, 0% packet loss/ ? print "$switch -> $_ (OK)\n" : print "$switch -> $_ (NOK!)\n";
+        $errcount++ if $ping =~ /, 100% packet loss/;
     }
     $telnet->close;
 }
-exit 0;
+$errcount ? exit 1 : exit 0

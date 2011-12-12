@@ -3,13 +3,15 @@
 -- Compile inotify.so and copy it into into /usr/lib/lua/5.1
 
 local config = {}
-config.logs_quiet = nil
+config.logs_quiet = yes
 config.logs  = { IPTABLES = { file = "/var/log/iptables.log" }
                , AUTH     = { file = "/var/log/auth.log" }
                , ERRORS   = { file = "/var/log/errors.log" }
                , XORG     = { file = "/var/log/Xorg.0.log" }
                , DAEMON   = { file = "/var/log/daemon.log" }
-               , KERNEL   = { file = "/var/log/kernel.log" }
+               , KERNEL   = { file = "/var/log/kernel.log"
+                            , ignore = { "DROP" }
+                            }
                , AWESOME  = { file = logfile
                             , ignore = { "^Simple mixer" -- amixer output
                                        , "pcmanfm" -- pcmanfm is really noisy

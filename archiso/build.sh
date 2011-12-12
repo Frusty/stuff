@@ -37,7 +37,7 @@ __EOF__
 
 # Base installation (root-image)
 make_basefs() {
-    mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" -p "base base-devel" create
+    mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" -p "base" create
     mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" -p "memtest86+ syslinux mkinitcpio-nfs-utils nbd" create
 }
 
@@ -84,11 +84,14 @@ make_root_image() {
 make_setup_mkinitcpio() {
    if [[ ! -e ${work_dir}/build.${FUNCNAME} ]]; then
         local _hook
-        for _hook in archiso archiso_pxe_nbd archiso_loop_mnt; do
+        for _hook in archiso archiso_shutdown archiso_pxe_common archiso_pxe_nbd archiso_pxe_curl archiso_pxe_nfs archiso_loop_mnt; do
             cp /lib/initcpio/hooks/${_hook} ${work_dir}/root-image/lib/initcpio/hooks
             cp /lib/initcpio/install/${_hook} ${work_dir}/root-image/lib/initcpio/install
         done
+        cp /lib/initcpio/install/archiso_kms ${work_dir}/root-image/lib/initcpio/install
+        cp /lib/initcpio/archiso_shutdown ${work_dir}/root-image/lib/initcpio
         cp /lib/initcpio/archiso_pxe_nbd ${work_dir}/root-image/lib/initcpio
+        cp ${script_path}/mkinitcpio.conf ${work_dir}/root-image/etc/mkinitcpio-archiso.conf
         : > ${work_dir}/build.${FUNCNAME}
    fi
 }
@@ -99,11 +102,8 @@ make_boot() {
         local _src=${work_dir}/root-image
         local _dst_boot=${work_dir}/iso/${install_dir}/boot
         mkdir -p ${_dst_boot}/${arch}
-        mkinitcpio \
-            -c ${script_path}/mkinitcpio.conf \
-            -b ${_src} \
-            -k /boot/vmlinuz-linux \
-            -g ${_dst_boot}/${arch}/archiso.img
+        mkarchroot -n -r "mkinitcpio -c /etc/mkinitcpio-archiso.conf -k /boot/vmlinuz-linux -g /boot/archiso.img" ${_src}
+        mv ${_src}/boot/archiso.img ${_dst_boot}/${arch}/archiso.img
         mv ${_src}/boot/vmlinuz-linux ${_dst_boot}/${arch}/vmlinuz
         cp ${_src}/boot/memtest86+/memtest.bin ${_dst_boot}/memtest
         cp ${_src}/usr/share/licenses/common/GPL2/license.txt ${_dst_boot}/memtest.COPYING
@@ -117,9 +117,11 @@ make_syslinux() {
         local _src_syslinux=${work_dir}/root-image/usr/lib/syslinux
         local _dst_syslinux=${work_dir}/iso/${install_dir}/boot/syslinux
         mkdir -p ${_dst_syslinux}
-        sed "s|%ARCHISO_LABEL%|${iso_label}|g;
-            s|%INSTALL_DIR%|${install_dir}|g;
-            s|%ARCH%|${arch}|g" ${script_path}/syslinux/syslinux.cfg > ${_dst_syslinux}/syslinux.cfg
+        for _cfg in ${script_path}/syslinux/*.cfg; do
+            sed "s|%ARCHISO_LABEL%|${iso_label}|g;
+                 s|%INSTALL_DIR%|${install_dir}|g;
+                 s|%ARCH%|${arch}|g" ${_cfg} > ${_dst_syslinux}/${_cfg##*/}
+        done
         cp ${script_path}/syslinux/splash.png ${_dst_syslinux}
         cp ${_src_syslinux}/{*.c32,*.com,*.0,memdisk} ${_dst_syslinux}
         mkdir -p ${_dst_syslinux}/hdt
@@ -163,7 +165,7 @@ if [[ ${EUID} -ne 0 ]]; then
     nk "This script must be run as root."
 fi
 
-if [[ $verbose == "y" ]]; then
+if [[ ${verbose} == "y" ]]; then
     verbose="-v"
     ok "Verbose mode enabled"
 else
@@ -174,8 +176,8 @@ if [[ $# -eq 0 ]]; then
     ok "NOTE: Run this script with any extra argument to avoid the removal of temporal files"
     ok "Deleting '${script_path}/${work_dir}'"
     rm -rf "${script_path}/${work_dir}"
-    ok "Deleting old iso files"
-    rm -rf "${out_dir}/*iso"
+    ok "Deleting iso files"
+    rm -rf "${script_path}/*.iso"
 else
     ok "Skipping temporal file removal...les"
 fi

@@ -8,11 +8,11 @@ base-devel
 bc
 bridge-utils
 ccze
-chromium
 consolekit
 cpio
 cpufrequtils
 ctags
+chntpw
 ddrescue
 dialog
 dnsmasq
@@ -23,6 +23,7 @@ epdfview
 ethtool
 ettercap
 feh
+firefox
 flashplugin
 fuse
 gamin
@@ -32,6 +33,7 @@ gimp
 git
 gnu-netcat
 gparted
+gptfdisk
 gqview
 gtk2_prefs
 gtk-engine-murrine
@@ -59,7 +61,6 @@ minicom
 motion
 mpc
 mpd
-mplayer
 mtools
 mtr
 multitail

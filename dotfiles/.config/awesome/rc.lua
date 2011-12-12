@@ -1,5 +1,4 @@
 -- https://github.com/cycojesus/awesome/raw/master/rc.lua
-
 -- {{{ Base Variables
 homedir    = os.getenv("HOME")..'/'
 logfile    = homedir..'.awesome.err'
@@ -13,7 +12,6 @@ browser    = os.getenv("BROWSER") or "chromium"
 terminal   = os.getenv("TERMINAL") or "xterm"
 editor     = os.getenv("EDITOR") or "vim"
 editor_cmd = terminal.." -e "..editor
-
 setrndwall = "awsetbg -u feh -r "..walldir
 setrndtile = "awsetbg -u feh -t -r "..tiledir
 -- }}}
@@ -52,7 +50,7 @@ function loadlua(file, backup)
     end
 end
 -- }}}
-loglua("(II) AWESOME STARTING")
+loglua("(II) AWESOME STARTUP")
 -- {{{ Evaluate and load config files
 for file in io.popen('ls '..luadir..'*lua'):lines() do
     loglua("(II) Loading config files: "..file)
@@ -64,5 +62,4 @@ loglua("(II) Launching external aplications.")
 os.execute("wmname LG3D&") -- https://awesome.naquadah.org/wiki/Problems_with_Java
 -- }}}
 loglua("(II) STARTUP FINISHED")
-
 -- vim: set filetype=lua fdm=marker tabstop=4 shiftwidth=4 nu:

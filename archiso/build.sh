@@ -84,7 +84,7 @@ make_root_image() {
 make_setup_mkinitcpio() {
    if [[ ! -e ${work_dir}/build.${FUNCNAME} ]]; then
         local _hook
-        for _hook in archiso archiso_shutdown archiso_pxe_common archiso_pxe_nbd archiso_pxe_curl archiso_pxe_nfs archiso_loop_mnt; do
+        for _hook in archiso archiso_shutdown archiso_pxe_common archiso_pxe_nbd archiso_pxe_http archiso_pxe_nfs archiso_loop_mnt; do
             cp /lib/initcpio/hooks/${_hook} ${work_dir}/root-image/lib/initcpio/hooks
             cp /lib/initcpio/install/${_hook} ${work_dir}/root-image/lib/initcpio/install
         done
@@ -123,7 +123,10 @@ make_syslinux() {
                  s|%ARCH%|${arch}|g" ${_cfg} > ${_dst_syslinux}/${_cfg##*/}
         done
         cp ${script_path}/syslinux/splash.png ${_dst_syslinux}
-        cp ${_src_syslinux}/{*.c32,*.com,*.0,memdisk} ${_dst_syslinux}
+        cp ${_src_syslinux}/*.c32 ${_dst_syslinux}
+        cp ${_src_syslinux}/*.com ${_dst_syslinux}
+        cp ${_src_syslinux}/*.0 ${_dst_syslinux}
+        cp ${_src_syslinux}/memdisk ${_dst_syslinux}
         mkdir -p ${_dst_syslinux}/hdt
         wget -O - http://pciids.sourceforge.net/v2.2/pci.ids | gzip -9 > ${_dst_syslinux}/hdt/pciids.gz
         cat ${work_dir}/root-image/lib/modules/*-ARCH/modules.alias | gzip -9 > ${_dst_syslinux}/hdt/modalias.gz
@@ -176,8 +179,8 @@ if [[ $# -eq 0 ]]; then
     ok "NOTE: Run this script with any extra argument to avoid the removal of temporal files"
     ok "Deleting '${script_path}/${work_dir}'"
     rm -rf "${script_path}/${work_dir}"
-    ok "Deleting iso files"
-    rm -rf "${script_path}/*.iso"
+    ok "Deleting old iso files"
+    rm -f "${script_path}/*iso"
 else
     ok "Skipping temporal file removal...les"
 fi

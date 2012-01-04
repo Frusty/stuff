@@ -40,6 +40,7 @@ gtk-engine-murrine
 gvfs-smb
 hping
 htop
+icedtea-web
 iftop
 inetutils
 iotop
@@ -73,7 +74,6 @@ nmap
 ntfs-3g
 ntfsprogs
 ntp
-openjdk6
 openssh
 openvpn
 p7zip

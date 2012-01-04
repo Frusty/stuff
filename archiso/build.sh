@@ -180,7 +180,7 @@ if [[ $# -eq 0 ]]; then
     ok "Deleting '${script_path}/${work_dir}'"
     rm -rf "${script_path}/${work_dir}"
     ok "Deleting old iso files"
-    rm -f "${script_path}/*iso"
+    rm -f "${script_path}/"*.iso
 else
     ok "Skipping temporal file removal...les"
 fi

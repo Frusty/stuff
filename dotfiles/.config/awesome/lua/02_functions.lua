@@ -86,8 +86,8 @@ function popup(title,text,timeout,icon,position,fg,gb)
                          , icon      = icon     or imgdir..'awesome.png'
                          , icon_size = 39 -- 3 times our standard icon size
                          , position  = position or nil
-                         , fg        = fg       or beautiful.fg_focus
-                         , bg        = bg       or beautiful.bg_focus
+                         , fg        = fg       or beautiful.fg_normal
+                         , bg        = bg       or beautiful.bg_normal
                          })
 end
 -- }}}

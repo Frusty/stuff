@@ -20,6 +20,8 @@ alias chroxy='chromium --no-first-run --user-data-dir=sss --proxy-server="localh
 sshmount(){ [ -d "/tmp/${1}" ] && { echo "# /tmp/${1} Existe\!"; }|| { mkdir /tmp/${1} && sshfs -o umask=333 root@${1}:/ /tmp/$1 && echo "# Ok -> /tmp/${1}" || rmdir /tmp/${1}; }; }
 findlf(){ find $PWD -xdev -ls | awk {'print $7"\t"$11'} | sort -rn | head -n 10; }
 cprxvt256trm(){ ping -qc1 "$1" >/dev/null &&  scp /usr/share/terminfo/r/rxvt-256color root@${1}:/usr/share/terminfo/r/rxvt-256color; }
+hex2char(){ echo $1 | perl -ne 'chomp; print pack("H*", $_)."\n"'; }
+char2hex(){ echo $1 | perl -ne 'chomp; print unpack("H*", $_)."\n"'; }
 export PATH=$PATH:/usr/local/bin:/usr/local/sbin
 export EDITOR=vim
 export TERMINAL=urxvtc

@@ -16,6 +16,7 @@ exec 3<<__EOF__
 HoldPkg      = pacman glibc
 SyncFirst    = pacman
 Architecture = i686
+SigLevel     = Never
 
 [core]
 Server = http://sunsite.rediris.es/mirror/archlinux/core/os/i686
@@ -50,17 +51,18 @@ SRCEXT='.src.tar.gz'
 __EOF__
 
 # create if doesn't exist
-[ -d ${CHROOT} ] || mkarchroot -C /proc/$$/fd/3 -M /proc/$$/fd/4 ${CHROOT} base base-devel
+[ -d ${CHROOT} ] || linux32 mkarchroot -C /proc/$$/fd/3 -M /proc/$$/fd/4 ${CHROOT} base base-devel
 
 # update
-mkarchroot -u ${CHROOT}
+linux32 mkarchroot -u ${CHROOT} || exit 1
 
 # bindings
+echo "bindings"
 mount --bind /dev ${CHROOT}/dev
-mount --bind /dev/pts ${CHROOT}/dev/pts
-mount --bind /dev/shm ${CHROOT}/dev/shm
+#mount --bind /dev/pts ${CHROOT}/dev/pts
+#mount --bind /dev/shm ${CHROOT}/dev/shm
 mount --bind /proc ${CHROOT}/proc
-mount --bind /proc/bus/usb ${CHROOT}/proc/bus/usb
+#mount --bind /proc/bus/usb ${CHROOT}/proc/bus/usb
 mount --bind /sys ${CHROOT}/sys
 mount --bind /tmp ${CHROOT}/tmp
 mount --bind /home ${CHROOT}/home
@@ -69,4 +71,5 @@ mount --bind /home ${CHROOT}/home
 linux32 chroot ${CHROOT} /bin/bash
 
 # umount bindings on exit
-umount -a -O bind
+mount | sed -n "s@.*on \([^ ]*${CHROOT}[^ ]*\) .*@\1@p" | xargs -n1 umount
+mount | sed -n "s@.*on \([^ ]*${CHROOT}[^ ]*\) .*@\1@p" | xargs -n1 umount

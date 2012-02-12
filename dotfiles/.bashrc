@@ -22,6 +22,7 @@ findlf(){ find $PWD -xdev -ls | awk {'print $7"\t"$11'} | sort -rn | head -n 10;
 cprxvt256trm(){ ping -qc1 "$1" >/dev/null &&  scp /usr/share/terminfo/r/rxvt-256color root@${1}:/usr/share/terminfo/r/rxvt-256color; }
 hex2char(){ echo $1 | perl -ne 'chomp; print pack("H*", $_)."\n"'; }
 char2hex(){ echo $1 | perl -ne 'chomp; print unpack("H*", $_)."\n"'; }
+htpasswd(){ echo $1 | perl -le 'print crypt("$_", "salt")'; }
 export PATH=$PATH:/usr/local/bin:/usr/local/sbin
 export EDITOR=vim
 export TERMINAL=urxvtc

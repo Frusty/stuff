@@ -3,7 +3,7 @@
 -- Compile inotify.so and copy it into into /usr/lib/lua/5.1
 
 local config = {}
-config.logs_quiet = yes
+config.logs_quiet = true
 config.logs  = { IPTABLES = { file = "/var/log/iptables.log" }
                , AUTH     = { file = "/var/log/auth.log" }
                , ERRORS   = { file = "/var/log/errors.log" }

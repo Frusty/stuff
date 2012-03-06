@@ -7,6 +7,9 @@ alias walk='snmpwalk -c uocpublic -v 1'
 alias rdesktop='rdesktop -0 -z -g95% -uAdministrador -kes -a16'
 alias pwgen='perl -le "print map { (a..z,A..Z,0..9)[rand 62] } 1..pop"'
 alias dicks='perl -le "for (1..pop){print \"8\".\"=\"x((rand 10)+1).\"D\"}"'
+alias hex2char='perl -le "print pack(\"H*\", pop)"'
+alias char2hex='perl -le "print unpack(\"H*\", pop)"'
+alias htpasswd='perl -le "print crypt(pop, int(rand(10**10)))"'
 alias rsync_size='rsync -aivh --size-only --progress'
 alias mtr='mtr -n4 --curses'
 alias nmapag='nmap -v -AT4' # Agressive scan
@@ -15,14 +18,12 @@ alias nmappr='nmap -sV -sS -O -f -n' # Proper scan
 alias stracefn='strace -dCvrttTs65535'
 alias nmonf='NMON=lmdDntu nmon'
 alias beeep='echo -en "\007"'
-alias qemucd='qemu -m 512 -boot d -cdrom'
-alias chroxy='chromium --no-first-run --user-data-dir=sss --proxy-server="localhost:8080"'
+alias qemucd='qemu-system-i386 -m 256 -boot d -cdrom'
+alias chroxy='chromium --no-first-run --user-data-dir=/tmp/$(date +%F_%H:%M:%S:%N) --proxy-server="localhost:8080"'
+alias chromium_tmp='chromium --no-first-run --user-data-dir=/tmp/$(date +%F_%H:%M:%S:%N)'
 sshmount(){ [ -d "/tmp/${1}" ] && { echo "# /tmp/${1} Existe\!"; }|| { mkdir /tmp/${1} && sshfs -o umask=333 root@${1}:/ /tmp/$1 && echo "# Ok -> /tmp/${1}" || rmdir /tmp/${1}; }; }
 findlf(){ find $PWD -xdev -ls | awk {'print $7"\t"$11'} | sort -rn | head -n 10; }
 cprxvt256trm(){ ping -qc1 "$1" >/dev/null &&  scp /usr/share/terminfo/r/rxvt-256color root@${1}:/usr/share/terminfo/r/rxvt-256color; }
-hex2char(){ echo $1 | perl -ne 'chomp; print pack("H*", $_)."\n"'; }
-char2hex(){ echo $1 | perl -ne 'chomp; print unpack("H*", $_)."\n"'; }
-htpasswd(){ echo $1 | perl -ne 'chomp; print crypt($_, $_)."\n"'; }
 export PATH=$PATH:/usr/local/bin:/usr/local/sbin
 export EDITOR=vim
 export TERMINAL=urxvtc

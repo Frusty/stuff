@@ -44,7 +44,7 @@ gvfs-smb
 hdparm
 hping
 htop
-icedtea-web
+icedtea-web-java7
 iftop
 inetutils
 iotop
@@ -76,6 +76,7 @@ net-snmp
 nfs-utils
 ngrep
 nmap
+nmon
 ntfs-3g
 ntfsprogs
 ntp

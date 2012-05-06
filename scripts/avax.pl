@@ -12,10 +12,10 @@ use Getopt::Long qw(:config bundling);
 
 my $mech = WWW::Mechanize->new( autocheck => 0 );#, onerror => undef);
 $mech->agent_alias( 'Windows IE 6' );
-my $pagecount=0;
-my $havecount=0;
+my $pagecount = 0;
+my $havecount = 0;
 my $update = 0;
-my %hash=();
+my %hash = ();
 
 GetOptions ( 'update' => \$update );
 

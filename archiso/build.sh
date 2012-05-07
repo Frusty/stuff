@@ -44,9 +44,12 @@ make_packages() {
     mkarchiso ${verbose} -C /proc/$$/fd/3 -w "${work_dir}" -D "${install_dir}" -p "$(grep -v ^# ${script_path}/packages.${arch})" install
 }
 
-make_custom_packages() {
+make_custom_repo() {
     for i in custompkgs/*xz; do repo-add ${script_path}/custompkgs/custompkgs.db.tar.gz $i; done
     custom_packages=$(find ${script_path}/custompkgs/ -name '*.pkg.tar.xz' | sed -n 's/.*\/\([-0-z]\+\)-.*/\1 /p' | xargs)
+}
+
+make_custom_packages() {
     mkarchiso ${verbose} -C /proc/$$/fd/3 -w "${work_dir}" -D "${install_dir}" -p "$custom_packages" install
 }
 
@@ -144,7 +147,9 @@ make_customize_root_image_2() {
         find ${script_path}/root-image -type f -exec chmod 644 {} \;
         find ${script_path}/root-image -type d -exec chmod 755 {} \;
         find ${script_path}/root-image -name '*bin' -type d | xargs -n1 -I@ find @ -type f -exec chmod +x "{}" \;
-        chown -R root:root ${script_path}/root-image
+        mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" \
+            -r 'chown -R mpd /var/lib/mpd' \
+            run
         chroot ${work_dir}/root-image /usr/bin/find /home/arch -type d -exec /bin/chmod 700 {} \;
         chroot ${work_dir}/root-image /usr/bin/find /home/arch -type f -exec /bin/chmod 600 {} \;
         chroot ${work_dir}/root-image /bin/chown -R arch:users /home/arch
@@ -212,6 +217,7 @@ clean_single ()
 
 make_common_single() {
     make_pacman_conf
+    make_custom_repo
     make_basefs
     make_packages
     make_custom_packages

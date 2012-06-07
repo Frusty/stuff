@@ -46,25 +46,24 @@ my %oids = ( '.1.3.6.1.2.1.1.1'         => 'sysDescr'
 my $session = new SNMP::Session( DestHost   => $params{host}
                                , Community  => $params{community}
                                , Version    => 2 # v2 is required for Bulkwalk.
+                               , Timeout    => 5000000
                                );
-
-if ($session->{ErrorNum}) {
-    print "Error ".$session->{ErrorNum}." \"".$session->{ErrorStr}."\n en ".$session->{ErrorInd}."\n";
-    exit 1;
-}
+die "Error ".$session->{ErrorNum}." \"".$session->{ErrorStr}."\" en ".$session->{ErrorInd}."\n" if $session->{ErrorNum};
 
 my %arrays=();
 my @VarBinds =();
-foreach (keys %oids) {
-    push @VarBinds, new SNMP::Varbind([$_]);
+my @type_keys = grep { $_ ne $params{type} } keys %type2oid; # Array containing oids we don't need to poll.
+foreach my $oid (keys %oids) {
+    next if scalar grep { lc($oids{$oid}) =~ $_ } @type_keys; # Skip oids from the @type_keys array.
+    push @VarBinds, new SNMP::Varbind([$oid]);
 }
 my $VarList = new SNMP::VarList(@VarBinds);
 my $ifnum = $session->get('.1.3.6.1.2.1.2.1.0');
-die "No SNMP response from '$params{host}' using '$params{community} while getting ifNum.\n" unless $ifnum;
+die "Error ".$session->{ErrorNum}." \"".$session->{ErrorStr}."\" en ".$session->{ErrorInd}."\n" if $session->{ErrorNum};
 
 # We'll retrieve everything with a single query via SNMPv2 bulkwalk.
 my @result = $session->bulkwalk(0, $ifnum, $VarList);
-die "No SNMP response from '$params{host}' using '$params{community}' while BulkWalking.\n" unless @result;
+die "Error ".$session->{ErrorNum}." \"".$session->{ErrorStr}."\" en ".$session->{ErrorInd}."\n" if $session->{ErrorNum};
 
 my $i = 0;
 for my $vbarr (@result) {
@@ -88,7 +87,7 @@ if ($config) {
     print "graph_vlabel ".ucfirst($params{type})." in/out per \${graph_period}\n";
     foreach my $if (0..$ifs-1) {
         # http://www.iana.org/assignments/ianaiftype-mib we'll use ethernetCsmacd(6)
-        next unless $arrays{ifType}->[$if] and $arrays{ifType}->[$if] == 6;
+        next unless $arrays{ifIndex}->[$if] and $arrays{ifDescr}->[$if] and $arrays{ifType}->[$if] and $arrays{ifType}->[$if] == 6;
         # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?translate=Translate&objectInput=1.3.6.1.2.1.2.2.1.8
         next if $arrays{ifOperStatus}->[$if] gt 1;
         for my $direction ('in', 'out') {
@@ -104,7 +103,7 @@ if ($config) {
     }
 } else {
     foreach my $if (0..$ifs-1) {
-        next unless $arrays{ifType}->[$if] and $arrays{ifType}->[$if] == 6;
+        next unless $arrays{ifIndex}->[$if] and $arrays{ifDescr}->[$if] and $arrays{ifType}->[$if] and $arrays{ifType}->[$if] == 6;
         next if $arrays{ifOperStatus}->[$if] gt 1;
         print "$arrays{ifIndex}->[$if]_$params{type}_in.value\t$arrays{$type2oid{$params{type}}{IN}}->[$if]\n";
         print "$arrays{ifIndex}->[$if]_$params{type}_out.value\t$arrays{$type2oid{$params{type}}{OUT}}->[$if]\n";

@@ -78,6 +78,7 @@ foreach my $download (@downloads) {
                                 , 3 => 'Server down'
                                 , 4 => 'File marked as illegal'
                                 );
+        print RED join(', ', @reply_fields)."\n";
         print RED "Error checking '$download->{filename}': $checkfiles_status{$reply_fields[4]}.\n";
         next;
     }
@@ -95,7 +96,7 @@ foreach my $download (@downloads) {
                             , ':content_cb' => \&lwp_callback
                             );
         close(DOWN_FH);
-        &callback; # Make sure we'll update our download status after we close the file handle.
+        &lwp_callback; # Make sure we'll update our download status after we close the file handle.
         my $down_digest = uc(&md5_digest($temp_file))." $download->{filename}";
         if ("$md5hex $download->{filename}" eq $down_digest) {
             print GREEN " CHECKSUM OK!\n";

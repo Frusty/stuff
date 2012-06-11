@@ -395,6 +395,7 @@ sub vgmdbid(@) {
             last if $disc eq $vgm{TOTALDISCS};
         }
     } #foreach @result
+#    exit 0;
 } # sub vgmdbtitle
 #}}}
 #{{{    sub compare

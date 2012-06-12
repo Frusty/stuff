@@ -128,6 +128,11 @@ if has("eval")
         %s/^[\ \t]*\n//g
     endfunction
     command! RemoveBlankLines call RemoveBlankLines()
+    " Remove Ansi Escape Code
+    function! RemoveAnsi()
+        %s/\[[0-9]\+m//g
+    endfunction
+    command! RemoveAnsi call RemoveAnsi()
     " Copy full buffer into clipboard.
     function! CopyAll()
         normal mzggVG"+y'z

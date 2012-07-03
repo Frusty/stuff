@@ -3,18 +3,20 @@ aircrack-ng
 aircrack-ng-scripts
 alsa-utils
 artwiz-fonts
+atool
+atop
 awesome
 base-devel
 bc
 bridge-utils
 ccze
+chromium
 consolekit
 cpio
 cpufrequtils
 crda
 ctags
 chntpw
-chromium
 ddrescue
 dialog
 dnsmasq
@@ -41,6 +43,7 @@ gqview
 gtk2_prefs
 gtk-engine-murrine
 gvfs-smb
+haveged
 hdparm
 hping
 htop
@@ -53,8 +56,8 @@ iproute2
 iptables
 isomaster
 john
+keychain
 lftp
-lha
 linux-firmware
 lsof
 lxde-icon-theme
@@ -88,7 +91,6 @@ parcellite
 parted
 pcmanfm
 perl-rename
-rar
 rdesktop
 rfkill
 rpcbind
@@ -122,7 +124,6 @@ wireshark-gtk
 wmname
 wpa_actiond
 wvdial
-xarchiver
 xcompmgr
 xf86-input-synaptics
 xf86-video-ati
@@ -131,8 +132,9 @@ xf86-video-vesa
 xorg-server
 xorg-xfontsel
 xorg-xinit
+xorg-xmodmap
+xorg-xrandr
 xorg-xset
 xsel
 xterm
-yaourt
 zip

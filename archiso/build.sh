@@ -11,6 +11,7 @@ work_dir=work
 out_dir=out
 verbose="-v"
 script_path=$(readlink -f ${0%/*})
+pacman_conf="/proc/$$/fd/3"
 
 # Write pacman.conf on a file descriptor
 make_pacman_conf() {
@@ -19,29 +20,37 @@ exec 3<<__EOF__
 HoldPkg      = pacman glibc
 SyncFirst    = pacman
 Architecture = i686
-SigLevel     = Never
 [core]
-Server = http://mir1.archlinux.fr/archlinux/core/os/i686
+SigLevel = PackageRequired
+Include  = /etc/pacman.d/mirrorlist
 [extra]
-Server = http://mir1.archlinux.fr/archlinux/extra/os/i686
+SigLevel = PackageRequired
+Include  = /etc/pacman.d/mirrorlist
 [community]
-Server = http://mir1.archlinux.fr/archlinux/community/os/i686
-[archlinuxfr]
-Server = http://repo.archlinux.fr/i686
+SigLevel = PackageRequired
+Include  = /etc/pacman.d/mirrorlist
 [custompkgs]
+SigLevel = Optional TrustAll
 Server = file://${script_path}/custompkgs
 __EOF__
 }
 
+setup_workdir() {
+    cache_dirs=($(pacman -v 2>&1 | grep '^Cache Dirs:' | sed 's/Cache Dirs:\s*//g'))
+    mkdir -p "${work_dir}"
+    sed -r "s|^#?\\s*CacheDir.+|CacheDir = $(echo -n ${cache_dirs[@]})|g" \
+        "${script_path}/pacman.conf" > "${pacman_conf}"
+}
+
 # Base installation (root-image)
 make_basefs() {
-    mkarchiso ${verbose} -C /proc/$$/fd/3 -w "${work_dir}" -D "${install_dir}" -p "base" init
-    mkarchiso ${verbose} -C /proc/$$/fd/3 -w "${work_dir}" -D "${install_dir}" -p "memtest86+ syslinux mkinitcpio-nfs-utils nbd curl" install
+    mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" init
+    mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" -p "memtest86+ mkinitcpio-nfs-utils nbd curl" install
 }
 
 # Additional packages (root-image)
 make_packages() {
-    mkarchiso ${verbose} -C /proc/$$/fd/3 -w "${work_dir}" -D "${install_dir}" -p "$(grep -v ^# ${script_path}/packages.${arch})" install
+    mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" -p "$(grep -v ^# ${script_path}/packages.${arch})" install
 }
 
 make_custom_repo() {
@@ -75,7 +84,7 @@ make_boot() {
         local _src=${work_dir}/root-image
         local _dst_boot=${work_dir}/iso/${install_dir}/boot
         mkdir -p ${_dst_boot}/${arch}
-        mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" \
+        mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" \
             -r 'mkinitcpio -c /etc/mkinitcpio-archiso.conf -k /boot/vmlinuz-linux -g /boot/archiso.img' \
             run
         mv ${_src}/boot/archiso.img ${_dst_boot}/${arch}/archiso.img
@@ -103,7 +112,7 @@ make_syslinux() {
         cp ${_src_syslinux}/*.0 ${_dst_syslinux}
         cp ${_src_syslinux}/memdisk ${_dst_syslinux}
         mkdir -p ${_dst_syslinux}/hdt
-        wget -O - http://pciids.sourceforge.net/v2.2/pci.ids | gzip -9 > ${_dst_syslinux}/hdt/pciids.gz
+        cat ${work_dir}/root-image/usr/share/hwdata/pci.ids | gzip -9 > ${_dst_syslinux}/hdt/pciids.gz
         cat ${work_dir}/root-image/lib/modules/*-ARCH/modules.alias | gzip -9 > ${_dst_syslinux}/hdt/modalias.gz
         : > ${work_dir}/build.${FUNCNAME}
     fi
@@ -128,13 +137,13 @@ make_customize_root_image() {
         chmod 750 ${work_dir}/root-image/etc/sudoers.d
         chmod 440 ${work_dir}/root-image/etc/sudoers.d/g_wheel
         mkdir -p ${work_dir}/root-image/etc/pacman.d
-        wget -O ${work_dir}/root-image/etc/pacman.d/mirrorlist http://www.archlinux.org/mirrorlist/all/
+        wget -O ${work_dir}/root-image/etc/pacman.d/mirrorlist 'https://www.archlinux.org/mirrorlist/?country=all&protocol=http&use_mirror_status=on'
         sed -i "s/#Server/Server/g" ${work_dir}/root-image/etc/pacman.d/mirrorlist
         sed -i 's/#\(en_US\.UTF-8\)/\1/' ${work_dir}/root-image/etc/locale.gen
-        mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" \
+        mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" \
             -r 'locale-gen' \
             run
-        mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" \
+        mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" \
             -r 'useradd -m -p "" -g users -G "audio,disk,optical,wheel" arch' \
             run
         : > ${work_dir}/build.${FUNCNAME}
@@ -147,9 +156,9 @@ make_customize_root_image_2() {
         find ${script_path}/root-image -type f -exec chmod 644 {} \;
         find ${script_path}/root-image -type d -exec chmod 755 {} \;
         find ${script_path}/root-image -name '*bin' -type d | xargs -n1 -I@ find @ -type f -exec chmod +x "{}" \;
-        mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" \
-            -r 'chown -R mpd /var/lib/mpd' \
-            run
+#        mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" \
+#            -r 'chown -R mpd /var/lib/mpd' \
+#            run
         chroot ${work_dir}/root-image /usr/bin/find /home/arch -type d -exec /bin/chmod 700 {} \;
         chroot ${work_dir}/root-image /usr/bin/find /home/arch -type f -exec /bin/chmod 600 {} \;
         chroot ${work_dir}/root-image /bin/chown -R arch:users /home/arch
@@ -188,16 +197,16 @@ make_aitab() {
 
 # Build all filesystem images specified in aitab (.fs .fs.sfs .sfs)
 make_prepare() {
-    mkarchiso ${verbose} -C /proc/$$/fd/3 -w "${work_dir}" -D "${install_dir}" pkglist
-    mkarchiso ${verbose} -C /proc/$$/fd/3 -w "${work_dir}" -D "${install_dir}" prepare
+    mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" pkglist
+    mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" prepare
 }
 
 # Build ISO
 # args: $1 (core | netinstall)
 make_iso() {
     local _iso_type=${1}
-    mkarchiso ${verbose} -C /proc/$$/fd/3 -w "${work_dir}" -D "${install_dir}" checksum
-    mkarchiso ${verbose} -C /proc/$$/fd/3 -w "${work_dir}" -D "${install_dir}" -L "${iso_label}" -o "${out_dir}" iso "${iso_name}-${iso_version}-${_iso_type}-${arch}.iso"
+    mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" checksum
+    mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" -L "${iso_label}" -o "${out_dir}" iso "${iso_name}-${iso_version}-${_iso_type}-${arch}.iso"
 }
 
 purge_single ()
@@ -216,6 +225,7 @@ clean_single ()
 }
 
 make_common_single() {
+    setup_workdir
     make_pacman_conf
     make_custom_repo
     make_basefs

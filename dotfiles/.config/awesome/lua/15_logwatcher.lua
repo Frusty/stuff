@@ -2,8 +2,9 @@
 -- http://www3.telus.net/taj_khattra/luainotify.html
 -- Compile inotify.so and copy it into into /usr/lib/lua/5.1
 
+-- That variable is already defined on 03_widgetbar.lua
+enable_logs = true
 local config = {}
-config.logs_quiet = true
 config.logs  = { IPTABLES = { file = "/var/log/iptables.log" }
                , AUTH     = { file = "/var/log/auth.log" }
                , ERRORS   = { file = "/var/log/errors.log" }
@@ -23,6 +24,7 @@ config.logs  = { IPTABLES = { file = "/var/log/iptables.log" }
                }
 
 function log_watch()
+    if not enable_logs then return; end
     local events, nread, errno, errstr = inot:nbread()
     if events then
         for i, event in ipairs(events) do
@@ -34,6 +36,7 @@ function log_watch()
 end
 
 function log_changed(logname)
+    if not enable_logs then return; end
     local log = config.logs[logname]
     -- read log file
     local f, err = io.open(log.file, 'r')
@@ -60,7 +63,7 @@ function log_changed(logname)
                           , icon = imgdir..'bomb.png'
                           , timeout = 10
                           , run = function (n)
-                                awful.util.spawn(terminal..' -e '..editor..' '..log.file)
+--                                awful.util.spawn(terminal..' -e '..editor..' '..log.file)
                                 n.die()
                             end
                           }
@@ -70,7 +73,7 @@ function log_changed(logname)
     end
 end
 
-if exists('/usr/lib/lua/5.1/inotify.so') and not config.logs_quiet then
+if exists(inotify_so) and enable_logs then
     require("inotify")
     local errno, errstr
     inot, errno, errstr = inotify.init(true)

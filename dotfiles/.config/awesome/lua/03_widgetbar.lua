@@ -1,5 +1,42 @@
--- Awesome widgetbar
+-- Awesome bottom widgetbar
 
+-- {{{ Log Button (imagebox)
+--------------------------------------------------------------------------------
+-- Permite activar/desactivar los logs de 15_logwatcher.lua
+-- inotify_so se declara en rc.lua
+--  imagebox
+log_ico = widget({ type = "imagebox" })
+createIco(log_ico, 'log.png', terminal)
+-- textbox
+logwidget = widget({ type = "textbox"
+                   , name = "logwidget"
+                   })
+if exists(inotify_so) then
+    logwidget.text = fgc('ON', theme.font_value)
+    enable_logs = true
+else
+    logwidget.text = fgc('NA', theme.font_value)
+    enable_logs = false
+end
+-- buttons
+logwidget:buttons(awful.util.table.join(
+    awful.button({ }, 1, function ()
+        if exists(inotify_so) then
+            if enable_logs then
+                logwidget.text = fgc('NO', 'red')
+                enable_logs = false
+                popup( fgc('Awesome Notification:'), 'Logging Disabled', 5 )
+            else
+                logwidget.text = fgc('ON', theme.font_value)
+                enable_logs = true
+                popup( fgc('Awesome Notification:'), 'Logging Enabled', 5 )
+            end
+        else
+            popup( fgc('Awesome Notification:'), "Can't find '"..inotify_so.."'. Logging Disabled.", 5 )
+        end
+    end)
+))
+-- }}}
 -- {{{ GMail (imagebox+textbox) requires wget
 --------------------------------------------------------------------------------
 -- Datos de gmail
@@ -27,10 +64,10 @@ function check_gmail()
     if tonumber(lcount) > 0 then
         return fgc(bold(lcount), 'red')
     else
-        return ''
+        return fgc('0', theme.font_value)
     end
 end
---  lanza un wget en background para bajar el feed de gmail.
+-- lanza un wget en background para bajar el feed de gmail.
 function getMail()
     if confdir and mailadd and mailpass and mailurl then
         os.execute('wget '..mailurl..' -qO '..confdir..mailadd..' --http-user='..mailadd..' --http-passwd="'..mailpass..'"&')
@@ -418,31 +455,25 @@ cpuwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
 -- por primera vez y hace que awesome se demore ese tanto.
 -- De momento he puesto un df >/dev/null&1 en rc.local supercutre para evitarlo.
 function fs_info()
-    local mounts  = { "/"
-                    , "/home"
-                    , "/opt"
-                    , "/usr"
-                    , "/var"
-                    , "/tmp"
-                    }
-    local result = ''
+    local result
     local df = pread("df")
     if df then
         for percent, mpoint in df:gmatch("(%d+)%%%s+(/.-)%s") do
-            for key, value in ipairs(mounts) do
-                if value == string.lower(mpoint) then
-                    if tonumber(percent) < 90 then
-                        result = result..fgc(value..'~', theme.font_key)..fgc(percent..'%', theme.font_value)
-                    else
-                        result = result..fgc(value..'~', theme.font_key)..fgc(percent..'%', 'red')
-                    end
+            local value = mpoint
+            if tonumber(percent) > 90 then
+                result = result..fgc(value..'~', theme.font_key)..fgc(percent..'%', 'red')
+            else
+                if tonumber(percent) > 49 then
+                    result = result..fgc(value..'~', theme.font_key)..fgc(percent..'%', theme.font_value)
                 end
             end
         end
     end
+    if not result then
+        result = fgc('OK', theme.font_value)
+    end
     return result
 end
-
 --  imagebox
 fs_ico = widget({ type = "imagebox" })
 createIco(fs_ico,'fs.png', terminal..' -e fdisk -l')
@@ -736,6 +767,9 @@ for s = 1, screen.count() do
                            , mailwidget and separator or nil
                            , mailwidget
                            , mail_ico
+                           , separator
+                           , logwidget
+                           , log_ico
                            , separator
                            , layout = awful.widget.layout.horizontal.rightleft
                            }

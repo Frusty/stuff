@@ -14,6 +14,7 @@ editor     = os.getenv("EDITOR") or "vim"
 editor_cmd = terminal.." -e "..editor
 setrndwall = "awsetbg -u feh -r "..walldir
 setrndtile = "awsetbg -u feh -t -r "..tiledir
+inotify_so = '/usr/lib/lua/5.1/inotify.so'
 -- }}}
 -- {{{ Base Functions
 function loglua(msg)

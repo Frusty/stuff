@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Shows and updatesa JIRA document to the current localtime.
+# Shows and updates a plone document to the current localtime.
 # usage script.pl <url/s> -u
 
 use strict;

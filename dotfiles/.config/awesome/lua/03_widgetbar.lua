@@ -455,8 +455,8 @@ cpuwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
 -- por primera vez y hace que awesome se demore ese tanto.
 -- De momento he puesto un df >/dev/null&1 en rc.local supercutre para evitarlo.
 function fs_info()
-    local result
-    local df = pread("df")
+    local result = ''
+    local df = pread("df -x squashfs")
     if df then
         for percent, mpoint in df:gmatch("(%d+)%%%s+(/.-)%s") do
             local value = mpoint
@@ -469,7 +469,7 @@ function fs_info()
             end
         end
     end
-    if not result then
+    if result == '' then
         result = fgc('OK', theme.font_value)
     end
     return result

@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Shows or adds JIRA tags (removing the current ones if any)
+# Shows or adds plone tags (removing the current ones if any)
 # usage script.pl <document/s url/s> -t <Tagname>
 # multiple -t flags can be used
 

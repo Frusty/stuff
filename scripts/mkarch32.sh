@@ -9,23 +9,25 @@ which mkarchroot linux32 mount umount || exit 1
 
 CHROOT="/opt/arch32"
 [ $1 ] && CHROOT=$1
-echo -e "#\n#\tCreando/actualizando chroot en ${CHROOT}\n#"
 
 exec 3<<__EOF__
 [options]
 HoldPkg      = pacman glibc
 SyncFirst    = pacman
 Architecture = i686
-SigLevel     = Never
 
 [core]
-Server = http://sunsite.rediris.es/mirror/archlinux/core/os/i686
+SigLevel = Never
+Server   = ftp://mir1.archlinux.fr/archlinux/core/os/i686
 [extra]
-Server = http://sunsite.rediris.es/mirror/archlinux/extra/os/i686
+SigLevel = Never
+Server   = ftp://mir1.archlinux.fr/archlinux/extra/os/i686
 [community]
-Server = http://sunsite.rediris.es/mirror/archlinux/community/os/i686
+SigLevel = Never
+Server   = ftp://mir1.archlinux.fr/archlinux/community/os/i686
 [archlinuxfr]
-Server = http://repo.archlinux.fr/i686
+SigLevel = Optional TrustAll
+Server   = http://repo.archlinux.fr/i686
 __EOF__
 
 exec 4<<__EOF__
@@ -50,26 +52,30 @@ PKGEXT='.pkg.tar.xz'
 SRCEXT='.src.tar.gz'
 __EOF__
 
-# create if doesn't exist
-[ -d ${CHROOT} ] || linux32 mkarchroot -C /proc/$$/fd/3 -M /proc/$$/fd/4 ${CHROOT} base base-devel
-
-# update
-linux32 mkarchroot -u ${CHROOT} || exit 1
+# Create if doesn't exist or update the chroot
+if [ ! -d ${CHROOT} ] ; then 
+    echo -e "#\n#\tCreando chroot en ${CHROOT}\n#"
+    linux32 mkarchroot -C /proc/$$/fd/3 -M /proc/$$/fd/4 ${CHROOT} base base-devel
+else
+    echo -e "#\n#\tActualizando chroot en ${CHROOT}\n#"
+    linux32 mkarchroot -u ${CHROOT} || exit 1
+fi
 
 # bindings
-echo "bindings"
+echo -e "#\n#\tCreando bindings hacia la chroot\n#"
 mount --bind /dev ${CHROOT}/dev
-#mount --bind /dev/pts ${CHROOT}/dev/pts
-#mount --bind /dev/shm ${CHROOT}/dev/shm
+mount --bind /dev/pts ${CHROOT}/dev/pts
+mount --bind /dev/shm ${CHROOT}/dev/shm
 mount --bind /proc ${CHROOT}/proc
-#mount --bind /proc/bus/usb ${CHROOT}/proc/bus/usb
+mount --bind /proc/bus/usb ${CHROOT}/proc/bus/usb
 mount --bind /sys ${CHROOT}/sys
 mount --bind /tmp ${CHROOT}/tmp
 mount --bind /home ${CHROOT}/home
 
 # chroot
+echo -e "#\n#\tEntrando en la la chroot\n#"
 linux32 chroot ${CHROOT} /bin/bash
 
 # umount bindings on exit
-mount | sed -n "s@.*on \([^ ]*${CHROOT}[^ ]*\) .*@\1@p" | xargs -n1 umount
-mount | sed -n "s@.*on \([^ ]*${CHROOT}[^ ]*\) .*@\1@p" | xargs -n1 umount
+echo -e "#\n#\tDesmontando bindings\n#"
+mount | sed -n "s@.*on \([^ ]*${CHROOT}[^ ]*\) .*@\1@p" | xargs -n1 umount -l

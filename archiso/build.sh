@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e -u
 
 iso_name=archlinux
@@ -19,6 +18,7 @@ exec 3<<__EOF__
 [options]
 HoldPkg      = pacman glibc
 SyncFirst    = pacman
+#CacheDir    = /var/cache/pacman/pkg/
 Architecture = i686
 [core]
 SigLevel = PackageRequired
@@ -39,7 +39,7 @@ setup_workdir() {
     cache_dirs=($(pacman -v 2>&1 | grep '^Cache Dirs:' | sed 's/Cache Dirs:\s*//g'))
     mkdir -p "${work_dir}"
     sed -r "s|^#?\\s*CacheDir.+|CacheDir = $(echo -n ${cache_dirs[@]})|g" \
-        "${script_path}/pacman.conf" > "${pacman_conf}"
+        "${pacman_conf}" > "${pacman_conf}"
 }
 
 # Base installation (root-image)
@@ -72,7 +72,6 @@ make_setup_mkinitcpio() {
         done
         cp /usr/lib/initcpio/install/archiso_kms ${work_dir}/root-image/usr/lib/initcpio/install
         cp /usr/lib/initcpio/archiso_shutdown ${work_dir}/root-image/usr/lib/initcpio
-        cp /usr/lib/initcpio/archiso_pxe_nbd ${work_dir}/root-image/usr/lib/initcpio
         cp ${script_path}/mkinitcpio.conf ${work_dir}/root-image/etc/mkinitcpio-archiso.conf
         : > ${work_dir}/build.${FUNCNAME}
    fi
@@ -113,7 +112,7 @@ make_syslinux() {
         cp ${_src_syslinux}/memdisk ${_dst_syslinux}
         mkdir -p ${_dst_syslinux}/hdt
         cat ${work_dir}/root-image/usr/share/hwdata/pci.ids | gzip -9 > ${_dst_syslinux}/hdt/pciids.gz
-        cat ${work_dir}/root-image/lib/modules/*-ARCH/modules.alias | gzip -9 > ${_dst_syslinux}/hdt/modalias.gz
+        cat ${work_dir}/root-image/usr/lib/modules/*-ARCH/modules.alias | gzip -9 > ${_dst_syslinux}/hdt/modalias.gz
         : > ${work_dir}/build.${FUNCNAME}
     fi
 }
@@ -130,21 +129,27 @@ make_isolinux() {
 }
 
 # Customize installation (root-image)
-# NOTE: mkarchroot should not be executed after this function is executed, otherwise will overwrites some custom files.
 make_customize_root_image() {
     if [[ ! -e ${work_dir}/build.${FUNCNAME} ]]; then
         cp -af ${script_path}/root-image ${work_dir}
+        cp -aT ${work_dir}/root-image/etc/skel/ ${work_dir}/root-image/root/
+        ln -sf /usr/share/zoneinfo/UTC ${work_dir}/root-image/etc/localtime
         chmod 750 ${work_dir}/root-image/etc/sudoers.d
         chmod 440 ${work_dir}/root-image/etc/sudoers.d/g_wheel
         mkdir -p ${work_dir}/root-image/etc/pacman.d
         wget -O ${work_dir}/root-image/etc/pacman.d/mirrorlist 'https://www.archlinux.org/mirrorlist/?country=all&protocol=http&use_mirror_status=on'
+        lynx -dump -nolist 'https://wiki.archlinux.org/index.php/Installation_Guide?action=render' >> ${work_dir}/root-image/root/install.txt
         sed -i "s/#Server/Server/g" ${work_dir}/root-image/etc/pacman.d/mirrorlist
+        patch ${work_dir}/root-image/usr/bin/pacman-key < ${script_path}/pacman-key-4.0.3_unattended-keyring-init.patch
         sed -i 's/#\(en_US\.UTF-8\)/\1/' ${work_dir}/root-image/etc/locale.gen
         mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" \
             -r 'locale-gen' \
             run
         mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" \
-            -r 'useradd -m -p "" -g users -G "audio,disk,optical,wheel" arch' \
+            -r 'usermod -s /bin/zsh root' \
+            run
+        mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" \
+            -r 'useradd -m -p "" -g users -G "audio,disk,optical,wheel,vlock,log" -s /bin/zsh arch' \
             run
         : > ${work_dir}/build.${FUNCNAME}
     fi
@@ -155,23 +160,22 @@ make_customize_root_image_2() {
     if [[ ! -e ${work_dir}/build.${FUNCNAME} ]]; then
         find ${script_path}/root-image -type f -exec chmod 644 {} \;
         find ${script_path}/root-image -type d -exec chmod 755 {} \;
-        find ${script_path}/root-image -name '*bin' -type d | xargs -n1 -I@ find @ -type f -exec chmod +x "{}" \;
-#        mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" \
-#            -r 'chown -R mpd /var/lib/mpd' \
-#            run
+        find ${script_path}/root-image -regextype posix-awk -regex "(.*bin/.*|.*rc.d/.*)" -type f -exec chmod +x "{}" \;
+        mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" \
+            -r 'chown -R mpd /var/lib/mpd' \
+            run
         chroot ${work_dir}/root-image /usr/bin/find /home/arch -type d -exec /bin/chmod 700 {} \;
         chroot ${work_dir}/root-image /usr/bin/find /home/arch -type f -exec /bin/chmod 600 {} \;
         chroot ${work_dir}/root-image /bin/chown -R arch:users /home/arch
-#        chroot ${work_dir}/root-image /usr/sbin/useradd -m -p "" -u 1000 -g users -G "audio,disk,optical,wheel,log" crypt
         tar -cjvf ${work_dir}/root-image/archiso.bz2 --exclude={archiso.bz2,*.iso,${PWD}/work} ${script_path}
         : > ${work_dir}/build.${FUNCNAME}
     fi
 }
 
-# Split out /lib/modules from root-image (makes more "dual-iso" friendly)
-make_lib_modules() {
+# Split out /usr/lib/modules from root-image (makes more "dual-iso" friendly)
+make_usr_lib_modules() {
     if [[ ! -e ${work_dir}/build.${FUNCNAME} ]]; then
-        mv ${work_dir}/root-image/lib/modules ${work_dir}/lib-modules
+        mv ${work_dir}/root-image/usr/lib/modules ${work_dir}/usr-lib-modules
         : > ${work_dir}/build.${FUNCNAME}
     fi
 }
@@ -184,14 +188,11 @@ make_usr_share() {
     fi
 }
 
-
 # Process aitab
-# args: $1 (core | netinstall)
 make_aitab() {
-    local _iso_type=${1}
-    if [[ ! -e ${work_dir}/build.${FUNCNAME}_${_iso_type} ]]; then
-        sed "s|%ARCH%|${arch}|g" ${script_path}/aitab.${_iso_type} > ${work_dir}/iso/${install_dir}/aitab
-        : > ${work_dir}/build.${FUNCNAME}_${_iso_type}
+    if [[ ! -e ${work_dir}/build.${FUNCNAME} ]]; then
+        sed "s|%ARCH%|${arch}|g" ${script_path}/aitab > ${work_dir}/iso/${install_dir}/aitab
+        : > ${work_dir}/build.${FUNCNAME}
     fi
 }
 
@@ -202,11 +203,9 @@ make_prepare() {
 }
 
 # Build ISO
-# args: $1 (core | netinstall)
 make_iso() {
-    local _iso_type=${1}
     mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" checksum
-    mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" -L "${iso_label}" -o "${out_dir}" iso "${iso_name}-${iso_version}-${_iso_type}-${arch}.iso"
+    mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" -L "${iso_label}" -o "${out_dir}" iso "${iso_name}-${iso_version}-${arch}.iso"
 }
 
 purge_single ()
@@ -221,7 +220,6 @@ purge_single ()
 clean_single ()
 {
     rm -rf ${work_dir}
-    rm -f ${out_dir}/${iso_name}-${iso_version}-*-${arch}.iso
 }
 
 make_common_single() {
@@ -237,11 +235,11 @@ make_common_single() {
     make_isolinux
     make_customize_root_image
     make_customize_root_image_2
-    make_lib_modules
+    make_usr_lib_modules
     make_usr_share
-    make_aitab $1
-    make_prepare $1
-    make_iso $1
+    make_aitab
+    make_prepare
+    make_iso
 }
 
 if [[ ${EUID} -ne 0 ]]; then
@@ -251,6 +249,6 @@ fi
 
 work_dir=${work_dir}/${arch}
 
-#clean_single
-purge_single
+clean_single
+#purge_single
 make_common_single core

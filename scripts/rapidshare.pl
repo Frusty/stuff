@@ -77,9 +77,9 @@ foreach my $download (@downloads) {
                                  ]
                                );
     if ($response->is_success) {
-        print GREEN "OK" and print "\n";
+        print GREEN " OK" and print "\n";
     } else {
-        print RED "NOK" and print "\n";
+        print RED " NOK" and print "\n";
         next;
     }
 
@@ -106,9 +106,9 @@ foreach my $download (@downloads) {
                               ]
                             );
     if ($response->is_success) {
-        print GREEN "OK" and print "\n";
+        print GREEN " OK" and print "\n";
     } else {
-        print RED "NOK" and print "\n";
+        print RED " NOK" and print "\n";
         next;
     }
 

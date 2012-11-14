@@ -20,5 +20,6 @@ fi
 [ -f "$(which parcellite)"  ] && parcellite  &
 [ -f "$(which wicd-client)" ] && wicd-gtk --tray &
 [ -f "$(which irexec)"      ] && [ "$(pgrep -f irexec | wc -l)" -eq "0" ] && irexec -d
+[ -f "$(which vlock)"       ] && vlock -a &
 # Exec WM
-exec ck-launch-session dbus-launch awesome > ~/.awesome.err 2>&1
+exec awesome > ~/.awesome.err 2>&1

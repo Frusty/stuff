@@ -456,7 +456,7 @@ cpuwidget:add_signal("mouse::leave", function() naughty.destroy(pop) end)
 -- De momento he puesto un df >/dev/null&1 en rc.local supercutre para evitarlo.
 function fs_info()
     local result = ''
-    local df = pread("df -x squashfs")
+    local df = pread("df -x squashfs -x iso9660")
     if df then
         for percent, mpoint in df:gmatch("(%d+)%%%s+(/.-)%s") do
             local value = mpoint

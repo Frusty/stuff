@@ -10,7 +10,6 @@ bc
 bridge-utils
 ccze
 chromium
-consolekit
 cpio
 cpupower
 crda
@@ -29,6 +28,7 @@ ethtool
 ettercap
 feh
 flashplugin
+fsarchiver
 fuse
 gamin
 gdb
@@ -74,6 +74,8 @@ mtools
 mtr
 multitail
 ncdu
+ncmpcpp
+netcfg
 net-snmp
 nfs-utils
 ngrep
@@ -87,8 +89,11 @@ openvpn
 p7zip
 pacman-contrib
 parcellite
+partclone
 parted
+partimage
 pcmanfm
+perl-rename
 rdesktop
 rfkill
 rpcbind
@@ -101,7 +106,6 @@ sshfs
 strace
 syslinux
 sysstat
-systemd
 tcpdump
 terminus-font
 testdisk
@@ -113,11 +117,14 @@ truecrypt
 ttf-droid
 unrar
 unzip
+usb_modeswitch
 vlock
+wget
 whois
 wicd
 wicd-gtk
 wireless_tools
+wireshark-gtk
 wmname
 wpa_actiond
 wvdial
@@ -125,6 +132,7 @@ xcompmgr
 xf86-input-synaptics
 xf86-video-ati
 xf86-video-intel
+xf86-video-nouveau
 xf86-video-vesa
 xorg-server
 xorg-xfontsel

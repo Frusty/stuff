@@ -8,7 +8,8 @@ install_dir=arch
 arch=$(uname -m)
 work_dir=work
 out_dir=out
-verbose="-v"
+#verbose="-v"
+verbose=""
 script_path=$(readlink -f ${0%/*})
 pacman_conf="/proc/$$/fd/3"
 
@@ -45,7 +46,7 @@ setup_workdir() {
 # Base installation (root-image)
 make_basefs() {
     mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" init
-    mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" -p "memtest86+ mkinitcpio-nfs-utils nbd curl" install
+    mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" -p "memtest86+ mkinitcpio-nfs-utils nbd" install
 }
 
 # Additional packages (root-image)
@@ -59,7 +60,7 @@ make_custom_repo() {
 }
 
 make_custom_packages() {
-    mkarchiso ${verbose} -C /proc/$$/fd/3 -w "${work_dir}" -D "${install_dir}" -p "$custom_packages" install
+    mkarchiso ${verbose} -C "${pacman_conf}" -w "${work_dir}" -D "${install_dir}" -p "$custom_packages" install
 }
 
 # Copy mkinitcpio archiso hooks (root-image)
@@ -132,25 +133,13 @@ make_isolinux() {
 make_customize_root_image() {
     if [[ ! -e ${work_dir}/build.${FUNCNAME} ]]; then
         cp -af ${script_path}/root-image ${work_dir}
-        cp -aT ${work_dir}/root-image/etc/skel/ ${work_dir}/root-image/root/
-        ln -sf /usr/share/zoneinfo/UTC ${work_dir}/root-image/etc/localtime
-        chmod 750 ${work_dir}/root-image/etc/sudoers.d
-        chmod 440 ${work_dir}/root-image/etc/sudoers.d/g_wheel
-        mkdir -p ${work_dir}/root-image/etc/pacman.d
-        wget -O ${work_dir}/root-image/etc/pacman.d/mirrorlist 'https://www.archlinux.org/mirrorlist/?country=all&protocol=http&use_mirror_status=on'
-        lynx -dump -nolist 'https://wiki.archlinux.org/index.php/Installation_Guide?action=render' >> ${work_dir}/root-image/root/install.txt
-        sed -i "s/#Server/Server/g" ${work_dir}/root-image/etc/pacman.d/mirrorlist
+
         patch ${work_dir}/root-image/usr/bin/pacman-key < ${script_path}/pacman-key-4.0.3_unattended-keyring-init.patch
-        sed -i 's/#\(en_US\.UTF-8\)/\1/' ${work_dir}/root-image/etc/locale.gen
-        mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" \
-            -r 'locale-gen' \
-            run
-        mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" \
-            -r 'usermod -s /bin/zsh root' \
-            run
-        mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" \
-            -r 'useradd -m -p "" -g users -G "audio,disk,optical,wheel,vlock,log" -s /bin/zsh arch' \
-            run
+        wget -O ${work_dir}/root-image/etc/pacman.d/mirrorlist 'https://www.archlinux.org/mirrorlist/?country=all&protocol=http&use_mirror_status=on'
+
+        lynx -dump -nolist 'https://wiki.archlinux.org/index.php/Installation_Guide?action=render' >> ${work_dir}/root-image/root/install.txt
+
+        mkarchiso ${verbose} -w "${work_dir}" -C "${pacman_conf}" -D "${install_dir}" -r '/usr/local/sbin/customize_root_image.sh' run
         : > ${work_dir}/build.${FUNCNAME}
     fi
 }
@@ -160,7 +149,7 @@ make_customize_root_image_2() {
     if [[ ! -e ${work_dir}/build.${FUNCNAME} ]]; then
         find ${script_path}/root-image -type f -exec chmod 644 {} \;
         find ${script_path}/root-image -type d -exec chmod 755 {} \;
-        find ${script_path}/root-image -regextype posix-awk -regex "(.*bin/.*|.*rc.d/.*)" -type f -exec chmod +x "{}" \;
+        find ${script_path}/root-image -regextype posix-awk -regex "(.*bin/.*|.*rc.d/.*|.*sh.*)" -type f -exec chmod +x "{}" \;
         mkarchiso ${verbose} -w "${work_dir}" -D "${install_dir}" \
             -r 'chown -R mpd /var/lib/mpd' \
             run
@@ -220,6 +209,7 @@ purge_single ()
 clean_single ()
 {
     rm -rf ${work_dir}
+    rm -f ${out_dir}/${iso_name}-${iso_version}-*-${arch}.iso
 }
 
 make_common_single() {
@@ -249,6 +239,6 @@ fi
 
 work_dir=${work_dir}/${arch}
 
-clean_single
-#purge_single
+#clean_single
+purge_single
 make_common_single core

@@ -3,7 +3,7 @@
 
 globalkeys = awful.util.table.join(globalkeys,
     awful.key({ modkey,           }, "masculine",  function () toggle(terminal) end), -- tecla º
-    awful.key({ modkey,           }, "Print",      function () toggle('scrot -e gqview') end), -- tecla Print Screen
+    awful.key({ modkey,           }, "Print",      function () toggle('scrot -e geeqie') end), -- tecla Print Screen
     awful.key({ modkey,           }, "BackSpace",  function () awful.util.spawn('urxvt -pe tabbed') end),
     awful.key({ modkey, "Control" }, "w",          function () awful.util.spawn(setrndwall) end),
     awful.key({ modkey, "Control" }, "e",          function () awful.util.spawn(setrndtile) end),
@@ -16,7 +16,7 @@ globalkeys = awful.util.table.join(globalkeys,
     awful.key({ modkey, "Control" }, "g",          function () awful.util.spawn('gvim') end),
     awful.key({ modkey, "Control" }, "a",          function () awful.util.spawn('ruc_web_resolucio.sh') end),
     awful.key({ modkey, "Control" }, "s",          function () awful.util.spawn('sonata') end),
-    awful.key({ modkey, "Control" }, "x",          function () awful.util.spawn('slock') end),
+    awful.key({ modkey, "Control" }, "x",          function () awful.util.spawn('vlock -an') end),
     awful.key({ modkey, "Control" }, "v",          function () awful.util.spawn(terminal..' -e ncmpcpp') end),
     awful.key({ modkey, "Control" }, "0",          function () awful.util.spawn('xrandr -o left') end),
     awful.key({ modkey, "Control" }, "'",          function () awful.util.spawn('xrandr -o normal') end),

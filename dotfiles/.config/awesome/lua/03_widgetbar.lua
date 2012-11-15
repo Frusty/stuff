@@ -161,8 +161,6 @@ separator.resize = false
 local oldsong
 function mpc_info()
     local now = pread('mpc -f "%name%\n%artist%\n%album%\n%title%\n%track%\n%time%\n%file%"')
---    now = string.gsub(now, "[^\1-\127]+", "")
---    now = string.gsub(now, "%s/%s", "")
     if now and now ~= '' then
         local name,artist,album,title,track,total,file,state,time = now:match('^(.-)\n(.-)\n(.-)\n(.-)\n(.-)\n(.-)\n(.-)\n%[(%w+)%]%s+#%d+/%d+%s+(.-%(%d+%%%))')
         if state and state ~= '' then
@@ -690,7 +688,6 @@ timer1 = timer { timeout = 1 }
 timer1:add_signal("timeout", function()
     cpuwidget.text  = cpu_info()
     loadwidget.text = avg_load()
---    netwidget.text  = net_info()
     net_info()
 end)
 timer1:start()

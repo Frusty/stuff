@@ -79,6 +79,8 @@ bindkey "\e[F"   end-of-line
 sshmount(){ [ -d "/tmp/${1}" ] && { echo "# /tmp/${1} Existe\!"; }|| { mkdir /tmp/${1} && sshfs -o umask=333 root@${1}:/ /tmp/$1 && echo "# Ok -> /tmp/${1}" || rmdir /tmp/${1}; }; }
 findlf(){ find $PWD -xdev -ls | awk {'print $7"\t"$11'} | sort -rn | head -n 10; }
 cprxvt256trm(){ ping -qc1 "$1" >/dev/null &&  scp /usr/share/terminfo/r/rxvt-256color root@${1}:/usr/share/terminfo/r/rxvt-256color; }
+dualscreen(){ ARRAY=( $(xrandr | sed -n 's/^\(.*\) connected.*$/\1/p' | xargs) ) && xrandr --output ${ARRAY[1]} --right-of ${ARRAY[2]} }
+samescreen(){ ARRAY=( $(xrandr | sed -n 's/^\(.*\) connected.*$/\1/p' | xargs) ) && xrandr --output ${ARRAY[1]} --same-as ${ARRAY[2]} }
 # }}}
 # {{{ Autostart
 # -------------------------------------------------------------------------------

@@ -13,9 +13,9 @@ print "Usage: $0 <host/s>\n" and exit 1 unless @ARGV;
 
 my @warnings  = ();
 my @criticals = ();
-my $user      = 'XXXX';
-my $pass      = 'XXXX';
-my $enable    = 'XXXX';
+my $user      = 'XXXXX';
+my $pass      = 'XXXXX';
+my $enable    = 'XXXXX';
 
 foreach my $host (@ARGV) {
     # Establish a telnet connection.
@@ -26,14 +26,15 @@ foreach my $host (@ARGV) {
     my $count = 0;
     my $attempts = 3;
     print STDERR "# Connecting to '$host' via telnet.";
-    while ($count++ < $attempts) {
+    while ($count != $attempts) {
+        $count++;
         print STDERR " $count/$attempts...";
         print STDERR " OK\n" and last if $telnet->open($host);
-        if ($count == $attempts) {
-            print STDERR " NOK!\n# Can't connect to '$host' after $count attempts.\n";
-            push (@criticals, "[$host] Can't connect to '$host' after $count attempts.");
-            next;
-        }
+    }
+    if ($count == $attempts) {
+        print STDERR " NOK!\n# Can't connect to '$host' after $count attempts.\n";
+        push (@criticals, "[$host] Can't connect to '$host' after $count attempts.");
+        next;
     }
 
     # Authenticate with our user/pass pair.
@@ -46,7 +47,7 @@ foreach my $host (@ARGV) {
     if ($prompt) {
         print STDERR " OK\n";
     } else {
-        print " NOK! Unable to get prompt. The last line was: '$lastline'\n";
+        print STDERR " NOK! Unable to get prompt. The last line was: '$lastline'\n";
         push (@criticals, "[$host] Unable to get prompt. The last line was: '$lastline'");
         next;
     }
@@ -56,12 +57,13 @@ foreach my $host (@ARGV) {
     $telnet->print('enable');
     $telnet->waitfor('/password/i');
     $telnet->cmd($enable);
-    if ($telnet->lastline =~ /denied/i) {
-        print STDERR " NOK!\n# Unable to get into EXEC mode.\n";
-        push (@criticals, "[$host] Unable to get into EXEC mode.");
-        next;
-    } else {
+    $lastline = $telnet->lastline;
+    unless ($lastline =~ /denied/i) {
         print STDERR " OK\n";
+    } else {
+        print STDERR " NOK!\n# Unable to get into EXEC mode. The last line was: '$lastline'\n";
+        push (@criticals, "[$host] Unable to get into EXEC mode.  The last line was: '$lastline'");
+        next;
     }
 
     # Remove pagination.

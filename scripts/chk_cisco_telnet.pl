@@ -109,7 +109,7 @@ foreach my $host (@ARGV) {
     print STDERR "\n# Checking BGP connections\n\n";
     $output = join('', $telnet->cmd("show bgp neighbors | include BGP neighbor is|Description:|BGP state ="));
     my $counter = 0;
-    while ($output =~ /BGP neighbor is ([^,]+),[^\n]+\n\s+Description: ([^\n]+)[\n\s]+BGP state = ([^,]+), up for (\w+)/sg) {
+    while ($output =~ /BGP neighbor is ([^,]+),[^\n]+\n\s+Description: ([^\n]+)[\n\s]+BGP state = ([^,]+), up for ([^\n]+)\n/sg) {
         $counter++;
         my ($rpeer, $rpeer_desc, $state, $time) = ($1, uc($2), uc($3), $4);
         print STDERR "Remote BGP peer $rpeer($rpeer_desc) is on $state state for $time\n";

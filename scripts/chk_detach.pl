@@ -19,11 +19,7 @@ print "Null output!\n" and exit 1 unless @result;
 chomp @result;
 
 my %hash=();
-foreach (@result) {
-    if (/^[fg]e\.(\d)\.\d+\s+Detach\s/) {
-        $hash{$1}=1;
-    }
-}
+map {$hash{$1} = 1 if /^[fg]e\.(\d)\.\d+\s+Detach\s/} @result;
 
 if (scalar keys %hash) {
     print "NOK! Hay ".(scalar keys %hash)." switch/es con puertos Detach: ".join(', ', sort keys %hash)."\n";

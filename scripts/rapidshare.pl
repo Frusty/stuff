@@ -12,7 +12,7 @@ use File::Copy;              # move()
 use Term::ANSIColor qw(:constants);
 $Term::ANSIColor::AUTORESET = 1; # It doesn't seem to work everywhere.
 
-print "$0 <rapidshare urls and/or link textfiles>\n" and exit 1 unless $#ARGV == 0;
+print "$0 <rapidshare urls and/or link textfiles>\n" and exit 1 unless @ARGV;
 
 # We'll define and use the same LWP objext, 'show_progress' will provide a progressbar/verbosity.
 my $ua = LWP::UserAgent->new(timeout => 5, show_progress => 1);
@@ -140,7 +140,8 @@ foreach my $download (@downloads) {
             print BOLD RED "Checksum FAILED on '$temp_file', the good MD5 was '$download->{md5hex}'. Leaving the file \"as is\"." and print "\n";
         }
     } else {
-        print BOLD RED "Error getting a download token for '$download->{filename}', the response was '$response->content'" and print "\n";
+        my $content = $response->content;
+        print BOLD RED "Error getting a download token for '$download->{filename}', the response was '$content'" and print "\n";
     }
 }
 exit 0;

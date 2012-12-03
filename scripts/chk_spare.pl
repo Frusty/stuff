@@ -18,22 +18,26 @@ my @result = $telnet->cmd('show port status');
 print "Null output!\n" and exit 1 unless @result;
 chomp @result;
 
-my %hash=();
-my $count=0;
+my %hash = ();
+my $count = 0;
+my $swnum = 0;
 
 foreach (@result) {
     if (/^fe\.(\d)\.\d+\s+Down\s/) {
-    $count++;
-        $hash{$1}=1 if $count == 48;
+        $swnum = $1;
+        $count++;
+        $hash{$swnum} = 1 if $count == 48;
     } else {
         $count = 0;
     }
 }
 
-if (scalar keys %hash) {
-    print "OK! Hay ".(scalar keys %hash)." switch/es spares en el stack: ".join(', ', sort keys %hash)."\n";
+$swnum = $1;
+
+if (scalar keys %hash or $swnum < 3) {
+    print "OK! Found ".(scalar keys %hash)." spare element/s in the stack: ".join(', ', sort keys %hash)." from     a total of $swnum elements.\n";
     exit 1;
 } else {
-    print "NOK! No hay swiches spares en el stack!\n";
+    print "NOK! No spare elements in a $swnum elements stack\n";
     exit 0;
 }

@@ -15,10 +15,10 @@ use Data::Dumper;
 my $mech = WWW::Mechanize->new(autocheck => 0, timeout => 5); #, show_progress => 1, onerror => undef);
 #my $mech = WWW::Mechanize->new(autocheck => 0, timeout => 5 , show_progress => 1, onerror => undef);
 $mech->agent_alias('Mac Safari');
-#$mech->get('http://forums.e-hentai.org/index.php?');
-#$mech->field('UserName','xxxxxx'); # It seems auth users can DL moar stuff?
-#$mech->field('PassWord','xxxxxx');
-#$mech->submit();
+$mech->get('http://forums.e-hentai.org/index.php?');
+$mech->field('UserName','xxxxxx'); # It seems auth users can DL moar stuff?
+$mech->field('PassWord','xxxxxx');
+$mech->submit();
 
 my $temp_file  = undef; # Temporal filename of the current download.
 my $total_size = undef; # Total size of the image to be downloaded.
@@ -85,7 +85,7 @@ sub fetch_page ($) {
 sub rndwait($$) {
     my $first  = shift || 5;
     my $second = shift || 5;
-    my $wait_time = int(rand($first))+$second; # We do nothing on 5-10 secs.
+    my $wait_time = int(1+rand($first))+$second; # We do nothing on 5-10 secs.
     print YELLOW "Waiting $wait_time seconds to avoid hammering the site...\n";
     $| = 1;
     sleep $wait_time;
@@ -117,10 +117,15 @@ foreach my $gallery_url (@ARGV) {
         map { $local_files{$_} = -s $_ } grep { /^\d+_.+$/ && !/^.*part$/i } readdir(DIR);
         my $have_images = scalar keys %local_files;
         print YELLOW "Found $have_images of $total_images images inside.\n" if $have_images;
+        if ($have_images >= $total_images) {
+            print YELLOW "The gallery seems fully retrieved, skipping...\n";
+            next;
+        }
     }
 
     foreach my $current_page (sort {$a <=> $b} keys %pages)  {
         print "# $pages{$current_page} (Page $current_page of $total_pages)\n";
+        &rndwait();
         $gallery_page = &fetch_page($pages{$current_page});
         IMGPAGE: while ($gallery_page =~ /href="(http:\/\/g.e-hentai.org\/s\/.+?)"/g) {
             my $page_url = $1;
@@ -133,6 +138,7 @@ foreach my $gallery_url (@ARGV) {
                 $local_image =~ /^(\d+)_/;
                 if ($curr_img == $1) {
                     print YELLOW "We already got the ${curr_img}th image ($local_image) with $local_files{$local_image} bytes'.\n";
+
                     next IMGPAGE;
                 }
             }
@@ -140,7 +146,7 @@ foreach my $gallery_url (@ARGV) {
             until ($img_url) {
                 print "Searching images on $page_url\n";
                 $page_img = &fetch_page($page_url);
-                if ($page_img =~ /<\/iframe><a href="[^"]+"><img src="([^"]+)" style="[^"]+" \/><\/a><iframe.+?<\/iframe><div>(.+?) ::/i) {
+                if ($page_img =~ /href="[^"]+".+?src="([^"]+)" style="[^"]+" \/>.+?<div>(.+?) ::/i) {
                     ($img_url, $file) = ($1, $2);
                     if ($page_img =~ /<span>(\d+)<\/span> \/ <span>(\d+)<\/span>/) {
                         $curr_img = $1;
@@ -171,7 +177,6 @@ foreach my $gallery_url (@ARGV) {
                     open(OUT, ">", "$ENV{PWD}/$errfile") || die "Can't redirect stdout";
                     print OUT "ARGV: @ARGV\nCURRENT_GALLERY: $gallery_url\nPAGE_URL: $pages{$current_page}\nIMG_URL: $img_url\nERROR: $http_code\n";
                     close(OUT);
-                    exit 1;
                 }
             } else {
                 print RED "$file already exists, skipping...\n";

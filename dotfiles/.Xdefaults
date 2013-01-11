@@ -1,5 +1,4 @@
-
-[D   .Xdefaults
+!   .Xdefaults
 !
 !{{{    misc
 !-------------------------------------------------------------------------------
@@ -27,6 +26,7 @@ urxvt*matcher.button:    1
 urxvt*matcher.pattern.1: \bwww\.[\w-]+\.[\w./?&@#-]*[\w/-]
 !urxvt*print-pipe:        cat > $(echo urxvt.dump.$(date +'%Y%M%d%H%m%S'))
 urxvt*print-pipe:        cat > $(TMPDIR=$HOME mktemp urxvt.XXXXXX)
+urxvt*buffered:          false
 ! Appaerance
 urxvt*fading:       30
 urxvt*depth:        32
@@ -36,12 +36,11 @@ urxvt*shading:      15
 urxvt*transparent:  true
 urxvt*pointerColor: #919191
 ! Geometry & Fonts
-urxvt*renderFont:     false
-urxvt*font:           -xos4-terminus-medium-r-*-*-16-*-*-*-*-*-*-*
-urxvt*boldFont:       -xos4-terminus-bold-r-*-*-16-*-*-*-*-*-*-*
-urxvt*italicFont:     -xos4-terminus-medium-r-*-*-16-*-*-*-*-*-*-*
-urxvt*boldItalicFont: -xos4-terminus-bold-r-*-*-16-*-*-*-*-*-*-*
-! Border & Scrollbar
+urxvt*renderFont:     true
+urxvt*font:           xft:terminus:size=10
+urxvt*boldFont:       xft:terminus:bold:size=10
+urxvt*italicFont:     xft:terminus:italic:size=10
+urxvt*boldItalicFont: xft:terminus:bold:italic:size=10
 urxvt*borderless:  true
 urxvt*saveLines:   8192
 urxvt*jumpScroll:  true

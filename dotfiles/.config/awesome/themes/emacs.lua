@@ -1,5 +1,6 @@
 theme = {}
-theme.wallpaper_cmd = {'feh --bg-fill '..os.getenv("HOME")..'/.config/awesome/walls/woodwall.jpg'}
+theme.wallpaper  = os.getenv("HOME")..'/.config/awesome/walls/woodwall.jpg'
+theme.icon_theme = nil
 
 -- {{{ Styles
 theme.font          = "smoothansi 9"
@@ -34,7 +35,6 @@ theme.taglist_squares_resize = "false"
 theme.awesome_icon           = "/usr/share/awesome/themes/zenburn/awesome-icon.png"
 theme.menu_submenu_icon      = "/usr/share/awesome/themes/default/submenu.png"
 theme.tasklist_floating_icon = "/usr/share/awesome/themes/default/tasklist/floatingw.png"
-theme.separator              = os.getenv("HOME")..'/.config/awesome/imgs/sep_emacs.png'
 -- }}}
 -- {{{ Layout
 theme.layout_fairh = os.getenv("HOME")..'/.config/awesome/layouts/fairhw.png'

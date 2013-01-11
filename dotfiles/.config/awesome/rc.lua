@@ -1,4 +1,5 @@
 -- https://github.com/cycojesus/awesome/raw/master/rc.lua
+
 -- {{{ Base Variables
 homedir    = os.getenv("HOME")..'/'
 logfile    = homedir..'.awesome.err'
@@ -14,16 +15,16 @@ editor     = os.getenv("EDITOR") or "vim"
 editor_cmd = terminal.." -e "..editor
 setrndwall = "awsetbg -u feh -r "..walldir
 setrndtile = "awsetbg -u feh -t -r "..tiledir
-inotify_so = '/usr/lib/lua/5.1/inotify.so'
 -- }}}
 -- {{{ Base Functions
 function loglua(msg)
-    if not msg then cmd = "No error message was specified." end
+    if not msg then cmd = "No message was specified to loglua." end
     local f = io.open(logfile, "a")
     f:write("["..os.date("%Y/%m/%d %H:%M:%S").."] - "..msg.."\n")
     f:close()
 end
 function exists(fname)
+    if not fname then return nil end
     local f = io.open(fname, "r")
     if (f and f:read()) then
         return true
@@ -46,7 +47,7 @@ function loadlua(file, backup)
         loglua("(EE) loadlua couldn't load '"..file.."'. The error was: "..err)
         if exists(backup) then
             loglua("(II) loadlua is reverting to '"..backup.."'.")
-            dofile(backup)
+            loadlua(backup)
         end
     end
 end
@@ -55,7 +56,8 @@ loglua("(II) AWESOME STARTUP")
 -- {{{ Evaluate and load config files
 for file in io.popen('ls '..luadir..'*lua'):lines() do
     loglua("(II) Loading config files: "..file)
-    loadlua(file, "/etc/xdg/awesome/rc.lua")
+    local result = loadlua(file, "/etc/xdg/awesome/rc.lua")
+    if not result then break end
 end
 -- }}}
 -- {{{ Programs to execute on startup
@@ -63,4 +65,5 @@ loglua("(II) Launching external aplications.")
 os.execute("wmname LG3D&") -- https://awesome.naquadah.org/wiki/Problems_with_Java
 -- }}}
 loglua("(II) STARTUP FINISHED")
+
 -- vim: set filetype=lua fdm=marker tabstop=4 shiftwidth=4 nu:

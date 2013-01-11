@@ -1,12 +1,11 @@
 -- Create, show and hide floating clients
 -- http://awesome.naquadah.org/wiki/Drop-down_terminal
 
-local capi = {
-    mouse = mouse,
-    client = client,
-    screen = screen
-}
-
+local awful = require("awful")
+local capi = { mouse = mouse
+             , client = client
+             , screen = screen
+             }
 local dropdown = {}
 
 -- Create a new window for the drop-down application when it doesn't
@@ -18,7 +17,7 @@ function toggle(prog,height,sticky,screen)
     if not dropdown[prog] then
         dropdown[prog] = {}
         -- Add unmanage signal for teardrop programs
-        capi.client.add_signal("unmanage", function (c)
+        capi.client.connect_signal("unmanage", function (c)
             for scr, cl in pairs(dropdown[prog]) do
                 if cl == c then
                     dropdown[prog][scr] = nil
@@ -47,10 +46,10 @@ function toggle(prog,height,sticky,screen)
             if c.titlebar then awful.titlebar.remove(c) end
             c:raise()
             capi.client.focus = c
-            capi.client.remove_signal("manage", spawnw)
+            capi.client.disconnect_signal("manage", spawnw)
         end
         -- Add manage signal and spawn the program
-        capi.client.add_signal("manage", spawnw)
+        capi.client.connect_signal("manage", spawnw)
         awful.util.spawn(prog, false)
     else
         -- Get a running client

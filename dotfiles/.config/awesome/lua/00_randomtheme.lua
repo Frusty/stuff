@@ -1,13 +1,19 @@
--- Choose and loaf a random theme from themedir
+-- Awesome random theme function
 
 -- Theme handling library¶
-require("beautiful")
+local beautiful = require("beautiful")
 
-themes = {}
-for file in io.popen('ls '..themedir..'*lua'):lines() do
-    table.insert(themes, file)
+-- Choose and load a random theme from themedir
+function rndtheme()
+    local themes = {}
+    for file in io.popen('ls '..themedir..'*lua'):lines() do
+        table.insert(themes, file)
+    end
+    math.randomseed(os.time()+#themes)
+    beautiful.init(themes[math.random(#themes)])
 end
-math.randomseed(os.time()+table.getn(themes))
-beautiful.init(themes[math.random(#themes)])
+
+--  1st call
+rndtheme();
 
 -- vim: set filetype=lua fdm=marker tabstop=4 shiftwidth=4 nu:

@@ -1,9 +1,9 @@
 -- http://awesome.naquadah.org/wiki/Naughty_log_watcher
 -- http://www3.telus.net/taj_khattra/luainotify.html
--- Compile inotify.so and copy it into into /usr/lib/lua/5.1
+-- Compile inotify.so and copy it into into /usr/lib/lua/5.2
 
 -- That variable is already defined on 03_widgetbar.lua
-enable_logs = true
+enable_logs = false
 local config = {}
 config.logs  = { IPTABLES = { file = "/var/log/iptables.log" }
                , AUTH     = { file = "/var/log/auth.log" }
@@ -73,7 +73,8 @@ function log_changed(logname)
     end
 end
 
-if exists(inotify_so) and enable_logs then
+--if exists(inotify_so) and enable_logs then
+if enable_logs then
     require("inotify")
     local errno, errstr
     inot, errno, errstr = inotify.init(true)
@@ -82,7 +83,7 @@ if exists(inotify_so) and enable_logs then
         log.wd, errno, errstr = inot:add_watch(log.file, {"IN_MODIFY"})
     end
     timerlog = timer { timeout = 1 }
-    timerlog:add_signal("timeout", log_watch)
+    timerlog:connect_signal("timeout", log_watch)
     timerlog:start()
 end
 

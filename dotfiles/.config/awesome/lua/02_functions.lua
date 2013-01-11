@@ -1,7 +1,9 @@
--- Global utility functions
+-- Awesome Functions
 
--- Notification library¶
-require("naughty")
+local gears     = require("gears")
+local awful     = require("awful")
+local wibox     = require("wibox")
+local naughty   = require("naughty")
 
 -- {{{ Escape string
 function escape(text)
@@ -55,40 +57,28 @@ function fread(cmd)
     end
 end
 -- }}}
--- {{{ Apply a random theme from themedir
-function rndtheme()
-    local themes = {}
-    for file in io.popen('ls '..themedir..'*lua'):lines() do
-        table.insert(themes, file)
-    end
-    math.randomseed(os.time()+table.getn(themes))
-    beautiful.init(themes[math.random(#themes)])
-end
--- }}}
 -- {{{ Icon creation wrapper
-function createIco(widget,file,click)
-    if not widget or not file or not click then return nil end
-    widget.image = image(imgdir..'/'..file)
-    widget.resize = false
-    awful.widget.layout.margins[widget] = { top = 1, bottom = 1, left = 1, right = 1 }
-    widget:buttons(awful.util.table.join(
-        awful.button({ }, 1, function ()
-            awful.util.spawn(click,false)
-        end)
-    ))
+function createIco(file, click)
+    if not file or not click then return nil end
+    local icon = awful.widget.button({ image = imgdir..file })
+    icon:set_resize(false)
+    icon:buttons(awful.util.table.join(awful.button({}, 1, function() awful.util.spawn(click,false) end)))
+    -- Trying to center our 13 heigh icons  # wibox.layout.margin(widget,right,left,top,bottom)
+    layout = wibox.layout.margin(icon, 0, 0, 1, 1)
+    return layout
 end
 -- }}}
 -- {{{ popup, a naughty wrapper
 function popup(title,text,timeout,icon,position,fg,gb)
-    pop = naughty.notify({ title     = title
-                         , text      = text     or "All your base are belong to us."
-                         , timeout   = timeout  or 0
-                         , icon      = icon     or imgdir..'awesome.png'
-                         , icon_size = 39 -- 3 times our standard icon size
-                         , position  = position or nil
-                         , fg        = fg       or beautiful.fg_normal
-                         , bg        = bg       or beautiful.bg_normal
-                         })
+    naughty.notify({ title     = title
+                   , text      = text     or "All your base are belong to us."
+                   , timeout   = timeout  or 0
+                   , icon      = icon     or imgdir..'awesome.png'
+                   , icon_size = 39 -- 3 times our standard icon size
+                   , position  = position or nil
+                   , fg        = fg       or beautiful.fg_normal
+                   , bg        = bg       or beautiful.bg_normal
+                   })
 end
 -- }}}
 -- {{{ Destroy all naughty notifications
@@ -101,11 +91,35 @@ function desnaug()
     end
 end
 -- }}}
+-- {{{ Sets a random maximized wallpaper
+function randwall(dir)
+    local walls = {}
+    for file in io.popen('ls '..dir):lines() do
+        table.insert(walls, dir..file)
+    end
+    math.randomseed(os.time()+#walls)
+    for s = 1, screen.count() do
+        gears.wallpaper.maximized(walls[math.random(#walls)], s, true)
+    end
+end
+-- }}}
+-- {{{ Sets a random tiled wallpaper
+function randtile(dir)
+    local walls = {}
+    for file in io.popen('ls '..dir):lines() do
+        table.insert(walls, dir..file)
+    end
+    math.randomseed(os.time()+#walls)
+    for s = 1, screen.count() do
+        gears.wallpaper.tiled(walls[math.random(#walls)], s)
+    end
+end
+-- }}}
 -- {{{ Converts bytes to human-readable units, returns value (number) and unit (string)
 function bytestoh(bytes)
     local tUnits={"K","M","G","T","P"} -- MUST be enough. :D
     local v,u
-    for k=table.getn(tUnits),1,-1 do
+    for k = #tUnits,1,-1 do
         if math.fmod(bytes,1024^k) ~= bytes then v=bytes/(1024^k); u=tUnits[k] break end
     end
     return v or bytes,u or "B"

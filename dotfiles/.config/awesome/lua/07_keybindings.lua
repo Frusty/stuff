@@ -6,7 +6,6 @@
 local awful = require("awful")
 
 globalkeys = awful.util.table.join(globalkeys,
-    awful.key({ modkey,           }, "masculine",  function () toggle(terminal) end), -- tecla º
     awful.key({ modkey,           }, "Print",      function () toggle('scrot -e geeqie') end), -- tecla Print Screen
     awful.key({ modkey,           }, "BackSpace",  function () awful.util.spawn('urxvt -pe tabbed') end),
     awful.key({ modkey, "Control" }, "w",          function () randwall(walldir) end),

@@ -6,11 +6,25 @@ local awful   = require("awful")
 local wibox   = require("wibox")
 local naughty = require("naughty")
 
+-- {{{ Separators (img)
+--------------------------------------------------------------------------------
+-- Separador de tres pixels de ancho con barra vertical con el color del borde
+local separator = wibox.widget.base.make_widget()
+separator.fit = function(separator, width, height)
+    return 3, height
+end
+separator.draw = function(separator, wibox, cr, width, height)
+    cr:set_source_rgb(gears.color.parse_color(theme.border_normal))
+    cr:rectangle(1, 1, 1, 13)
+    cr:fill()
+    cr:stroke()
+end
+-- }}}
 -- {{{ Log Button (imagebox)
 --------------------------------------------------------------------------------
 -- Permite activar/desactivar los logs de 15_logwatcher.lua
 -- inotify_so se declara en rc.lua
---  imagebox
+-- imagebox
 local log_ico = createIco('log.png', terminal)
 -- textbox
 local logwidget = wibox.widget.textbox()
@@ -145,34 +159,21 @@ if battery then
     batterywidget:connect_signal("mouse::leave", function() naughty.destroy(pop) end)
 end
 -- }}}
--- {{{ Separators (img)
---------------------------------------------------------------------------------
--- Separador de tres pixels de ancho con barra vertical con el color del borde
-local separator = wibox.widget.base.make_widget()
-separator.fit = function(separator, width, height)
-    return 3, height
-end
-separator.draw = function(separator, wibox, cr, width, height)
-    cr:set_source_rgb(gears.color.parse_color(theme.border_normal))
-    cr:rectangle(1, 1, 1, 13)
-    cr:fill()
-    cr:stroke()
-end
--- }}}
 -- {{{ MPC (imagebox+textbox) requires mpc/mp
 --------------------------------------------------------------------------------
 -- Devuelve estado de mpc
 local oldsong
 function mpc_info()
-    local now = pread('mpc -f "%name%\n%artist%\n%album%\n%title%\n%track%\n%time%\n%file%"')
+    local currentsong
+    local now = escape(pread('mpc -f "%name%\n%artist%\n%album%\n%title%\n%track%\n%time%\n%file%"'))
     if now and now ~= '' then
         local name,artist,album,title,track,total,file,state,time = now:match('^(.-)\n(.-)\n(.-)\n(.-)\n(.-)\n(.-)\n(.-)\n%[(%w+)%]%s+#%d+/%d+%s+(.-%(%d+%%%))')
         if state and state ~= '' then
             if artist and title and time then
-                local currentsong = artist.." - "..title
+                currentsong = artist.." - "..title
                 if string.len(currentsong) > 60 then
                     currentsong = '...'..string.sub(currentsong, -57)
-                 end
+                end
             else
                 loglua("(EE) mpc_info got a format error. The string was '"..now.."'.")
                 return 'ZOMFG Format Error!'
@@ -180,7 +181,7 @@ function mpc_info()
             if state == 'playing' then
                 -- Popup con el track
                 if album ~= '' and currentsong ~= oldsong then
-                    popup( nil
+                    popup( asd
                          , string.format("%s %s\n%s  %s\n%s  %s"
                                         , 'Artist:', fgc(bold(artist))
                                         , 'Album:' , fgc(bold(album))
@@ -189,8 +190,8 @@ function mpc_info()
                          , 5
                          , imgdir .. 'mpd_logo.png'
                          )
+                    oldsong = currentsong
                 end
-                oldsong = currentsong
                 return fgc('[Play]','green')..' "'..fgc(currentsong, theme.font_key)..'" '..fgc(time,theme.font_value)
             elseif state == 'paused' then
                 if currentsong ~= '' and time ~= '' then
@@ -450,9 +451,6 @@ cpuwidget:set_markup(cpu_info())
 -- {{{    FileSystem (imagebox+textbox)
 --------------------------------------------------------------------------------
 -- Busca puntos de pontaje concreto en 'df' y lista el espacio usado.
--- la llamada statfs de fs tarda la tira en leer mis discos FAT32 (7 segundos a veces)
--- por primera vez y hace que awesome se demore ese tanto.
--- De momento he puesto un df >/dev/null&1 en rc.local supercutre para evitarlo.
 function fs_info()
     local result = ''
     local df = pread("df -x squashfs -x iso9660")
@@ -462,7 +460,7 @@ function fs_info()
             if tonumber(percent) > 90 then
                 result = result..fgc(value..'~', theme.font_key)..fgc(percent..'%', 'red')
             else
-                if tonumber(percent) > 49 then
+                if tonumber(percent) > 79 then
                     result = result..fgc(value..'~', theme.font_key)..fgc(percent..'%', theme.font_value)
                 end
             end

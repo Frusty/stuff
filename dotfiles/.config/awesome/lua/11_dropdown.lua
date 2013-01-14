@@ -9,7 +9,7 @@ local capi = { mouse = mouse
 local dropdown = {}
 
 -- Create a new window for the drop-down application when it doesn't
--- exist, or toggle between hidden and visible states when it does
+-- exist, or toggle between hidden and visible states when it does.
 function toggle(prog,height,sticky,screen)
     local height = height or 0.3 -- 30%
     local sticky = sticky or false
@@ -73,5 +73,12 @@ function toggle(prog,height,sticky,screen)
         end
     end
 end
+
+-- Merge some keybinding to the globalkeys table
+globalkeys = awful.util.table.join(globalkeys,
+    awful.key({ modkey,           }, "masculine",  function () toggle(terminal) end), -- tecla º Quake Syyle
+    awful.key({ modkey, "Control" }, "masculine",  function () toggle(browser) end)   -- Plus CTRL
+)
+root.keys(globalkeys)
 
 -- vim: set filetype=lua fdm=marker tabstop=4 shiftwidth=4 nu:

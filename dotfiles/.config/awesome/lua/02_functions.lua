@@ -70,15 +70,16 @@ end
 -- }}}
 -- {{{ popup, a naughty wrapper
 function popup(title,text,timeout,icon,position,fg,gb)
-    naughty.notify({ title     = title
-                   , text      = text     or "All your base are belong to us."
-                   , timeout   = timeout  or 0
-                   , icon      = icon     or imgdir..'awesome.png'
-                   , icon_size = 39 -- 3 times our standard icon size
-                   , position  = position or nil
-                   , fg        = fg       or beautiful.fg_normal
-                   , bg        = bg       or beautiful.bg_normal
-                   })
+    -- pop must be global so we can find it and kill it anywhere
+    pop = naughty.notify({ title     = title
+                         , text      = text     or "All your base are belong to us."
+                         , timeout   = timeout  or 0
+                         , icon      = icon     or imgdir..'awesome.png'
+                         , icon_size = 39 -- 3 times our standard icon size
+                         , position  = position or nil
+                         , fg        = fg       or beautiful.fg_normal
+                         , bg        = bg       or beautiful.bg_normal
+                         })
 end
 -- }}}
 -- {{{ Destroy all naughty notifications
@@ -86,7 +87,7 @@ function desnaug()
     for p,pos in pairs(naughty.notifications[mouse.screen]) do
         for i,notification in pairs(naughty.notifications[mouse.screen][p]) do
             naughty.destroy(notification)
-            desnaug()
+            desnaug() -- call itself recursively until the total annihilation
         end
     end
 end

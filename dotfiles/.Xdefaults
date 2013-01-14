@@ -13,7 +13,7 @@ Xft.hinting:   true
 Xft.hintstyle: hintfull
 Xft.rgba:      rgb
 !}}}
-!{{{    urxvt
+!{{{    urxvt*
 !-------------------------------------------------------------------------------
 ! Misc & Matcher
 urxvt*termName:          rxvt-256color
@@ -41,11 +41,11 @@ urxvt*font:           xft:terminus:size=10
 urxvt*boldFont:       xft:terminus:bold:size=10
 urxvt*italicFont:     xft:terminus:italic:size=10
 urxvt*boldItalicFont: xft:terminus:bold:italic:size=10
-urxvt*borderless:  true
-urxvt*saveLines:   8192
-urxvt*jumpScroll:  true
-urxvt*scrollstyle: plain
-urxvt*scrollBar:   false
+urxvt*borderless:     true
+urxvt*saveLines:      8192
+urxvt*jumpScroll:     true
+urxvt*scrollstyle:    plain
+urxvt*scrollBar:      false
 ! Tango Colors
 urxvt*foreground:   white
 urxvt*borderColor:  #151515
@@ -69,7 +69,7 @@ urxvt*color13:      #AD7FA8
 urxvt*color14:      #34E2E2
 urxvt*color15:      #EEEEEE
 !}}}
-!{{{    xterm
+!{{{    xterm*
 !-------------------------------------------------------------------------------
 xterm*termName:           xterm-256color
 xterm*internalBorder:     0

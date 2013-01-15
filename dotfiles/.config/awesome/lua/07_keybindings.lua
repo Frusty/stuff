@@ -6,7 +6,7 @@
 local awful = require("awful")
 
 globalkeys = awful.util.table.join(globalkeys,
-    awful.key({ modkey,           }, "Print",      function () toggle('scrot -e geeqie') end), -- tecla Print Screen
+    awful.key({ modkey,           }, "Print",      function () toggle('scrot -e geeqie') end), -- Print Screen
     awful.key({ modkey,           }, "BackSpace",  function () awful.util.spawn('urxvt -pe tabbed') end),
     awful.key({ modkey, "Control" }, "w",          function () randwall(walldir) end),
     awful.key({ modkey, "Control" }, "e",          function () randtile(tiledir) end),
@@ -24,10 +24,10 @@ globalkeys = awful.util.table.join(globalkeys,
     awful.key({ modkey, "Control" }, "exclamdown", function () awful.util.spawn('xrandr --output VGA1 --mode 1280x1024') end),
     awful.key({ modkey, "Control" }, "b",          function () awful.util.spawn('mpc play') end),
     awful.key({ modkey, "Control" }, "n",          function () awful.util.spawn('mpc pause') end),
-    awful.key({ modkey, "Control" }, "m",          function () awful.util.spawn('mpc prev'); wicked.widgets.mpd() end),
-    awful.key({ modkey, "Control" }, ",",          function () awful.util.spawn('mpc next'); wicked.widgets.mpd() end),
-    awful.key({ modkey, "Control" }, ".",          function () awful.util.spawn('amixer -c 0 set '..sdev..' 3dB-'); getVol() end),
-    awful.key({ modkey, "Control" }, "-",          function () awful.util.spawn('amixer -c 0 set '..sdev..' 3dB+'); getVol() end),
+    awful.key({ modkey, "Control" }, "m",          function () awful.util.spawn('mpc prev') end),
+    awful.key({ modkey, "Control" }, ",",          function () awful.util.spawn('mpc next') end),
+    awful.key({ modkey, "Control" }, ".",          function () awful.util.spawn('amixer -c 0 set '..sdev..' 3dB-'); get_vol() end),
+    awful.key({ modkey, "Control" }, "-",          function () awful.util.spawn('amixer -c 0 set '..sdev..' 3dB+'); get_vol() end),
     awful.key({ modkey, "Control" }, "Down",       function () awful.client.swap.byidx(1) end),
     awful.key({ modkey, "Control" }, "Up",         function () awful.client.swap.byidx(-1) end),
     awful.key({ modkey, "Control" }, "Left",       function () awful.tag.incnmaster(1) end),

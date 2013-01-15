@@ -57,17 +57,6 @@ function fread(cmd)
     end
 end
 -- }}}
--- {{{ Icon creation wrapper
-function createIco(file, click)
-    if not file or not click then return nil end
-    local icon = awful.widget.button({ image = imgdir..file })
-    icon:set_resize(false)
-    icon:buttons(awful.util.table.join(awful.button({}, 1, function() awful.util.spawn(click,false) end)))
-    -- Trying to center our 13 heigh icons  # wibox.layout.margin(widget,right,left,top,bottom)
-    layout = wibox.layout.margin(icon, 0, 0, 1, 1)
-    return layout
-end
--- }}}
 -- {{{ popup, a naughty wrapper
 function popup(title,text,timeout,icon,position,fg,gb)
     -- pop must be global so we can find it and kill it anywhere

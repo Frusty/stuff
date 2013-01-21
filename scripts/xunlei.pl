@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# Get stuff from baidu.com (or not)
+# Get stuff from xunlei.com (or not)
 
 use strict;
 use warnings;
@@ -15,27 +15,20 @@ my $ua = LWP::UserAgent->new( agent         => 'Mac Safari'             # I'm a 
                             , ssl_opts      => { verify_hostname => 0 } # Trust everything
                             );
 
-sub unescape_json ($) {
-    my $string = shift;
-    $string =~ s/\\u(\w{4})/chr(hex($1))/ge; # UTF8
-    $string =~ s/\\+(.)/$1/ge;               # The rest
-    return $string;
-}
-
 foreach my $url (@ARGV) {
     my ($got_failures, $bytes) = (0, 0);
     my $response = $ua->get($url);
     if ($response->is_success) {
         my $content = $response->content;
-        while ($content =~ /server_filename\\":\\"(.+?)\\",\\"size\W+(\d+).+?\\"md5\W+(\w+).+?dlink\W+(.+?)\\"}/sg) {
-            my ($server_filename, $size, $md5, $dlink) = (&unescape_json($1), $2, $3, &unescape_json($4));
+        while ($content =~ /file_name="([^"]+)" file_url="([^"]+)" file_size="(\d+)" cid="(\w+)"/sg) {
+            my ($server_filename, $dlink, $size, $md5) = ($1, $2, $3, $4);
             print "** Found file '$server_filename' size: $size md5: $md5\n";
             if (-r $server_filename) {
                 $bytes = -s $server_filename || 0;
                 print "WA File is already on disk with $bytes bytes, skipping...\n";
                 next;
             }
-            my $tmpfile = "baidu_${md5}.part";
+            my $tmpfile = "xunlei_${md5}.part";
             $bytes = -s $tmpfile || 0;
             print "** Found temp file '$tmpfile' with $bytes bytes, resuming...\n" if $bytes;
             open(DOWN_FH, ">>$tmpfile") || die "ER Error '$!' trying to open '$tmpfile', exiting...\n";
@@ -47,15 +40,10 @@ foreach my $url (@ARGV) {
                 close(DOWN_FH) || die "ER Error '$!' trying to close '$tmpfile', exiting...\n";
                 if ($response->is_success) { # Not checking status 416, we shouldn't hit it.
                     $bytes = -s $tmpfile || 0;
-                    if ($size == $bytes) {
-                        rename($tmpfile, $server_filename);
-                    } else {
-                        print "ER Error, our file is $bytes bytes and we expect $size bytes.\n";
-                        $got_failures++;
-                    }
+                    $size == $bytes ? rename($tmpfile, $server_filename) : print "ER Error, our file is $bytes bytes and we expect $size bytes.\n";
                 } else {
-                    unlink $tmpfile if -z $tmpfile;
                     $got_failures++;
+                    unlink $tmpfile if -z $tmpfile;
                     print "ER Download error. The status code is: ".$response->status_line."\n";
                 }
             } else {

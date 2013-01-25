@@ -15,7 +15,7 @@ if ( lsusb | grep -q "Apple, Inc. Aluminum Keyboard" ) ; then
     xmodmap $HOME/.Xmodmap_alu
 fi
 # nasTests
-[ -f "$(which xcompmgr)"    ] && xcompmgr -f -c &
+[ -f "$(which xcompmgr)"    ] && xcompmgr -c -n&
 [ -f "$(which urxvtd)"      ] && [ "$TERMINAL" = "urxvtc" ] && urxvtd -o -q -f
 [ -f "$(which parcellite)"  ] && parcellite &
 [ -f "$(which wicd-client)" ] && wicd-gtk --tray &

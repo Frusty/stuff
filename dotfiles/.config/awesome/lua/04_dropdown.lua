@@ -2,10 +2,10 @@
 -- http://awesome.naquadah.org/wiki/Drop-down_terminal
 
 local awful = require("awful")
-local capi = { mouse = mouse
-             , client = client
-             , screen = screen
-             }
+local capi  = { mouse  = mouse
+              , client = client
+              , screen = screen
+              }
 local dropdown = {}
 
 -- Create a new window for the drop-down application when it doesn't
@@ -75,10 +75,11 @@ function toggle(prog,height,sticky,screen)
 end
 
 -- Merge some keybinding to the globalkeys table
-globalkeys = awful.util.table.join(globalkeys,
-    awful.key({ modkey,           }, "masculine",  function () toggle(terminal) end), -- tecla º Quake Syyle
-    awful.key({ modkey, "Control" }, "masculine",  function () toggle(browser) end)   -- Plus CTRL
-)
+globalkeys = awful.util.table.join(globalkeys
+                                  , awful.key({ modkey,           }, "#49", function () toggle(terminal) end) -- tecla º Quake Style
+                                  , awful.key({ modkey, "Control" }, "#49", function () toggle(browser) end)   -- Plus CTRL
+                                  )
+-- Actually apply the keybindings
 root.keys(globalkeys)
 
 -- vim: set filetype=lua fdm=marker tabstop=4 shiftwidth=4 nu:

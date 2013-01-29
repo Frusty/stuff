@@ -17,7 +17,7 @@ globalkeys = awful.util.table.join( globalkeys
                                     , awful.key({ modkey, "Control" }, "c",          function () awful.util.spawn(terminal..' -e mc') end)
                                     , awful.key({ modkey, "Control" }, "f",          function () awful.util.spawn(browser) end)
                                     , awful.key({ modkey, "Control" }, "g",          function () awful.util.spawn('gvim') end)
-                                    , awful.key({ modkey, "Control" }, "x",          function () awful.util.spawn('vlock -an') end)
+                                    , awful.key({ modkey, "Control" }, "x",          function () awful.util.spawn('slock') end)
                                     , awful.key({ modkey, "Control" }, "v",          function () awful.util.spawn(terminal..' -e ncmpcpp') end)
                                     , awful.key({ modkey, "Control" }, "0",          function () awful.util.spawn('xrandr -o left') end)
                                     , awful.key({ modkey, "Control" }, "'",          function () awful.util.spawn('xrandr -o normal') end)

@@ -137,7 +137,7 @@ function mpc_info()
                          )
                     oldsong = currentsong
                 end
-                return fgc('[Play]','green')..' "'..fgc(currentsong, theme.font_key)..'" '..fgc(time,theme.font_value)
+                return fgc('[Play]', theme.font_value)..' "'..fgc(currentsong, theme.font_key)..'" '..fgc(time,theme.font_value)
             elseif state == 'paused' then
                 if currentsong ~= '' and time ~= '' then
                     return fgc('[Wait] ',theme.font_value)..currentsong..' '..fgc(time,theme.font_value)
@@ -149,12 +149,12 @@ function mpc_info()
             elseif now:match('^volume:') then
                 return fgc('[Stop]',theme.font_value)..' ZZzzz...'
             else
-                return fgc('[DEAD]', 'red')..' :_('
+                return fgc('[DEAD]', theme.font_value)..' :_('
             end
         end
     else
         loglua("(WW) The mpc binary failed or doesn't exist.")
-        return fgc('NO MPC', 'red')..' :_('
+        return fgc('NO MPC', theme.font_value)..' :_('
     end
 end
 -- 1st call

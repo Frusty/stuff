@@ -10,8 +10,8 @@ $Term::ANSIColor::AUTORESET = 1; # It doesn't seem to work everywhere.
 
 my $cfg = "/opt/local/nagios/etc/nagios.cfg";
 my %nagios_conf = ();
-my %resources  = ();
-my %objects = ();
+my %resources   = ();
+my %objects     = ();
 
 sub slurpfile ($) {
     my $file = shift;
@@ -42,18 +42,19 @@ sub buildcmd ($) {
     return $cmd;
 }
 
-# Build an array with the nagios.cfg params.
+# Build a hash with the nagios.cfg params.
 my $slurp = &slurpfile($cfg);
 $nagios_conf{$1} = $2 while $slurp =~ /^([^\n=#]+?)\s*=\s*([^\n]+)\s*$/gm;
 
-my $ocf = $nagios_conf{object_cache_file};
-my $resfile = $nagios_conf{resource_file};
+# Get the location of our relevant files.
+my $ocf = $nagios_conf{object_cache_file} || die "No 'object_cache_file' entry on nagios.cfg\n";
+my $resfile = $nagios_conf{resource_file} || die "No 'resource_file' entry on nagios.cfg\n";
 
-# Build an array with the resurce.cfg params.
+# Build a hash with the resurce.cfg params.
 $slurp = &slurpfile($resfile);
 $resources{$1} = $2 while $slurp =~ /^\s*?(\$USER\d*\$)\s*=\s*(.*)$/gm;
 
-# Build an array with the objects.cache elements.
+# Build a hash with the objects.cache elements.
 $slurp = &slurpfile($ocf);
 while ($slurp =~ /^define\s(\w+)\s{([^{]+)}/gm) {
     my ($type, $data) = ($1, $2);
@@ -72,27 +73,30 @@ while ($slurp =~ /^define\s(\w+)\s{([^{]+)}/gm) {
     }
 }
 
-# Print the info we want for each argument/host.
-foreach my $host(@ARGV) {
-    print BOLD RED "Host '$host' does not exist.\n" and next unless $objects{host}{$host};
-    print BOLD GREEN "$host\n";
-    my %result = %{$objects{host}{$host}};
-    print BOLD CYAN "\thost\n";
-    &prt(2, 'address', $result{address});
-    &prt(2, 'alias', $result{alias});
-    &prt(2, 'check_command', $result{check_command});
-    &prt(2, $result{check_command}, $objects{command}{$result{check_command}}{command_line});
-    &prt(2, 'exec_command', &buildcmd($result{check_command}, $host));
-    &prt(2,'notes_url', $result{notes_url});
-    print BOLD CYAN "\tservices\n";
-    foreach my $service (sort keys %{$objects{service}{$host}}) {
-        print GREEN "\t\t$service\n";
-        &prt(3, 'alias', $objects{service}{$host}{$service}{alias});
-        &prt(3, 'check_command', $objects{service}{$host}{$service}{check_command});
-        my @check_args = split (/!/, $objects{service}{$host}{$service}{check_command});
-        &prt(3, $check_args[0], $objects{command}{$check_args[0]}{command_line});
-        &prt(3, 'exec_command', &buildcmd($objects{service}{$host}{$service}{check_command}, $host));
-        &prt(3, 'notes_url', $objects{service}{$host}{$service}{notes_url});
+# Print the info we want for each argument/host that matches our args.
+foreach my $arg (@ARGV) {
+    foreach my $host (sort keys %{$objects{host}}) {
+        next unless $host =~ /$arg/i;
+        print BOLD RED "Host '$host' does not exist.\n" and next unless $objects{host}{$host};
+        print BOLD GREEN "$host\n";
+        my %result = %{$objects{host}{$host}};
+        print BOLD CYAN "\thost\n";
+        &prt(2, 'address', $result{address});
+        &prt(2, 'alias', $result{alias});
+        &prt(2, 'check_command', $result{check_command});
+        &prt(2, $result{check_command}, $objects{command}{$result{check_command}}{command_line});
+        &prt(2, 'exec_command', &buildcmd($result{check_command}, $host));
+        &prt(2,'notes_url', $result{notes_url});
+        print BOLD CYAN "\tservices\n";
+        foreach my $service (sort keys %{$objects{service}{$host}}) {
+            print GREEN "\t\t$service\n";
+            &prt(3, 'alias', $objects{service}{$host}{$service}{alias});
+            &prt(3, 'check_command', $objects{service}{$host}{$service}{check_command});
+            my @check_args = split (/!/, $objects{service}{$host}{$service}{check_command});
+            &prt(3, $check_args[0], $objects{command}{$check_args[0]}{command_line});
+            &prt(3, 'exec_command', &buildcmd($objects{service}{$host}{$service}{check_command}, $arg));
+            &prt(3, 'notes_url', $objects{service}{$host}{$service}{notes_url});
+        }
     }
 }
 

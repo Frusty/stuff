@@ -51,7 +51,7 @@ local amixline = pread('amixer | head -1')
 if amixline then
     sdev = amixline:match(".-%s%'(%w+)%',0")
     if not sdev then
-        loglua("(II) Could not find a master volume device.")
+        loglua("(II) [volume_widget] Could not find a master volume device.")
         volume_widget:set_widget(nil) -- hide the widget
     end
 end
@@ -120,7 +120,7 @@ function mpc_info()
                     currentsong = '...'..string.sub(currentsong, -57)
                 end
             else
-                loglua("(EE) mpc_info got a format error. The string was '"..now.."'.")
+                loglua("(EE) [mpc_widget] ]mpc_info got a format error. The string was '"..now.."'.")
                 return 'ZOMFG Format Error!'
             end
             if state == 'playing' then
@@ -153,7 +153,7 @@ function mpc_info()
             end
         end
     else
-        loglua("(WW) The mpc binary failed or doesn't exist.")
+        loglua("(WW) [mpc_widget] ]The mpc binary failed or doesn't exist.")
         return fgc('NO MPC', theme.font_value)..' :_('
     end
 end
@@ -239,10 +239,17 @@ log_textbox:buttons(awful.util.table.join(
 -- }}}
 -- {{{ GMail [Separator+Icon+Textbox] requires wget
 --------------------------------------------------------------------------------
+-- Needs a file called <your gmail adress>.gmail containing the PLAIN password
+-- TODO: Handle multiple files/account
 -- Gmail data
-local mailadd  = 'oprietop@intranet.uoc.edu'
-local mailpass = escape(fread(confdir..mailadd..'.passwd'))
-local mailurl  = 'https://mail.google.com/a/intranet.uoc.edu/feed/atom/unread'
+local mailadd, mailpass
+local mailurl = 'https://mail.google.com/mail/feed/atom'
+-- {{{ Evaluate and load gmail account files
+for file in io.popen('ls '..confdir..'*.gmail | head -1'):lines() do
+    loglua("(II) [mail_widget] Found a gmail file: "..file)
+    mailadd  = file:match('([^/]-).gmail$')
+    mailpass = escape(fread(file))
+end
 -- Icon
 mail_icon = createIco('mail.png', browser..' '..mailurl..'"&')
 -- Textbox
@@ -258,10 +265,12 @@ local mail_widget = wibox.layout.margin(mail_layout)
 if not confdir or not mailadd or not mailpass or not mailurl then
     mail_widget:set_widget(nil) -- hide the widget
 end
--- Parses a gmail feed
+-- Fetch and parse a gmail feed
 local mailcount = 0
 function check_gmail()
-    local feed = fread(confdir..mailadd)
+    if not mailadd or not mailpass or not mailurl then fgc(bold('HIDDEN?'), 'red') end
+    local feed = pread('wget '..mailurl..' -qO - --http-user='..mailadd..' --http-passwd="'..mailpass..'"&')
+    if not feed then return fgc(bold('X'), 'red') end
     local lcount = mailcount
     if feed:match('fullcount>%d+<') then
         lcount = feed:match('fullcount>(%d+)<')
@@ -282,12 +291,6 @@ function check_gmail()
         return fgc('0', theme.font_value)
     end
 end
--- Launches wget to fetch the gmail feed (UGLY)
-function getMail()
-    if confdir and mailadd and mailpass and mailurl then
-        os.execute('wget '..mailurl..' -qO '..confdir..mailadd..' --http-user='..mailadd..' --http-passwd="'..mailpass..'"&')
-    end
-end
 -- 1st call
 mail_textbox:set_markup(check_gmail())
 -- Mouse_enter
@@ -300,7 +303,7 @@ mail_widget:connect_signal("mouse::leave", function() desnaug() end)
 -- Buttons
 mail_textbox:buttons(awful.util.table.join(
     awful.button({ }, 1, function ()
-        getMail()
+        check_mail()
         os.execute(browser..' "'..mailurl..'"&')
     end)
 ))
@@ -320,7 +323,7 @@ load_layout:add(load_textbox)
 local load_widget = wibox.layout.margin(load_layout)
 -- Hide the widget if we don't have everything
 if not fread('/proc/loadavg') then
-    loglua("(WW) Could not read /proc/average. Hiding the load widget.")
+    loglua("(WW) [load_widget] Could not read /proc/average. Hiding the widget.")
     load_widget:set_widget(nil) -- hide the widget
 end
 -- Returns the load average
@@ -375,7 +378,7 @@ cpu_layout:add(cpu_graph_layout)
 local cpu_widget = wibox.layout.margin(cpu_layout)
 -- Hide the widget if we don't have everything
 if not fread('/proc/stat') then
-    loglua("(WW) Could not read /proc/stat. Hiding the cpu widget.")
+    loglua("(WW) [cpu_widget] ]Could not read /proc/stat. Hiding the widget.")
     cpu_widget:set_widget(nil) -- hide the widget
 end
 --  mouse_enter
@@ -390,7 +393,7 @@ cpu_widget:connect_signal("mouse::enter", function()
 end)
 --  mouse_leave
 cpu_widget:connect_signal("mouse::leave", function() naughty.destroy(pop) end)
---  Returns the usage of every CPU feedint the textbox and the graph.
+--  Returns the usage of every CPU feeding the textbox and the graph.
 --  user + nice + system + idle = 100/second
 --  so diffs of: $2+$3+$4 / all-together * 100 = %
 --  or: 100 - ( $5 / all-together) * 100 = %
@@ -473,7 +476,7 @@ memory_layout:add(memory_progressbar_layout)
 local memory_widget = wibox.layout.margin(memory_layout)
 -- Hide the widget if we don't have everything
 if not fread('/proc/meminfo') then
-    loglua("(WW) Could not read /proc/meminfo. Hiding the memory widget.")
+    loglua("(WW) [memory_widget] ]Could not read /proc/meminfo. Hiding the widget.")
     memory_widget:set_widget(nil) -- hide the widget
 end
 -- Mouse_enter
@@ -533,7 +536,7 @@ swap_layout:add(swap_textbox)
 local swap_widget = wibox.layout.margin(swap_layout)
 -- Hide the widget if we don't have everything
 if not fread('/proc/meminfo') then
-    loglua("(WW) Could not read /proc/meminfo. Hiding the swap widget.")
+    loglua("(WW) [swap_widget] ]Could not read /proc/meminfo. Hiding the widget.")
     swap_widget:set_widget(nil) -- hide the widget
 end
 --  mouse_enter
@@ -560,7 +563,7 @@ function activeswap()
                 if total == 0 then
                     swap_widget:set_widget(nil) -- hide the widget
                     noswap = true
-                    loglua("(WW) The Swap reported is 0. Hiding the swap widget.")
+                    loglua("(WW) [swap_widget] Swap reported is 0. Hiding the widget.")
                     return fgc('No Swap', 'red')
                 end
             elseif key == "SwapFree" then
@@ -589,7 +592,7 @@ filesystem_layout:add(filesystem_textbox)
 local filesystem_widget = wibox.layout.margin(filesystem_layout)
 -- Hide the widget if we don't have everything
 if not pread('df') then
-    loglua("(WW) Could not execute df Hiding the filesystem widget.")
+    loglua("(WW) [filesystem_widget] Could not execute df Hiding the widget.")
     filesystem_widget:set_widget(nil) -- hide the widget
 end
 -- Mouse_enter
@@ -653,7 +656,7 @@ function bat_info()
     local cap = fread("/sys/class/power_supply/BAT0/charge_full")
     local sta = fread("/sys/class/power_supply/BAT0/status")
     if not cur or not cap or not sta or tonumber(cap) <= 0 then
-        loglua("(WW) Could not get proper battery stats.")
+        loglua("(WW) [battery_widget] Could not get proper battery stats.")
         return 'ERR'
     end
     battery = math.floor(cur * 100 / cap)
@@ -715,7 +718,7 @@ network_layout:add(network_download_textbox)
 -- The widget itself
 local network_widget = wibox.layout.margin(network_layout)
 if not fread('/proc/net/dev') then
-    loglua("(WW) Could not read /proc/net/dev. Hiding the network widget.")
+    loglua("(WW) [network_widget] Could not read /proc/net/dev. Hiding the widget.")
     network_widget:set_widget(nil) -- hide the widget
 end
 -- Mouse_enter
@@ -808,7 +811,6 @@ timer1:start()
 -- Hook called every 5 secs
 local timer5 = timer { timeout = 5 }
 timer5:connect_signal("timeout", function()
-    if mailpass then  mail_textbox:set_markup(check_gmail()) end
     volume_textbox:set_markup(get_vol())
     memory_textbox:set_markup(activeram())
     activeswap()
@@ -824,7 +826,7 @@ timer30:start()
 -- Hook called every minute
 local timer60 = timer { timeout = 60 }
 timer60:connect_signal("timeout", function()
-    if mailpass then getMail() end
+    if mailpass then  mail_textbox:set_markup(check_gmail()) end
     filesystem_textbox.text = fs_info()
 end)
 timer60:start()

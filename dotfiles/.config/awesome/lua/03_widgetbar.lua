@@ -242,13 +242,14 @@ log_textbox:buttons(awful.util.table.join(
 -- Needs a file called <your gmail adress>.gmail containing the PLAIN password
 -- TODO: Handle multiple files/account
 -- Gmail data
-local mailadd, mailpass
+local mailadd, mailpass, mailfetch
 local mailurl = 'https://mail.google.com/mail/feed/atom'
--- {{{ Evaluate and load gmail account files
+-- Evaluate and load gmail account files
 for file in io.popen('ls '..confdir..'*.gmail | head -1'):lines() do
     loglua("(II) [mail_widget] Found a gmail file: "..file)
-    mailadd  = file:match('([^/]-).gmail$')
-    mailpass = escape(fread(file))
+    mailadd   = file:match('([^/]-).gmail$')
+    mailpass  = escape(fread(file))
+    mailfetch = file..'.fetch'
 end
 -- Icon
 mail_icon = createIco('mail.png', browser..' '..mailurl..'"&')
@@ -265,12 +266,17 @@ local mail_widget = wibox.layout.margin(mail_layout)
 if not confdir or not mailadd or not mailpass or not mailurl then
     mail_widget:set_widget(nil) -- hide the widget
 end
--- Fetch and parse a gmail feed
+-- Fetch a gmail feed
+function fetch_gmail()
+    if not mailadd or not mailpass or not mailurl then fgc(bold('HIDDEN?'), 'red') end
+    -- os.execute is like the C system() function. It doesn't affect interactivity
+    os.execute('wget '..mailurl..' -qO '..mailfetch..' --http-user='..mailadd..' --http-passwd="'..mailpass..'"&')
+end
+-- Parse a gmail feed
 local mailcount = 0
 function check_gmail()
-    if not mailadd or not mailpass or not mailurl then fgc(bold('HIDDEN?'), 'red') end
-    local feed = pread('wget '..mailurl..' -qO - --http-user='..mailadd..' --http-passwd="'..mailpass..'"&')
-    if not feed then return fgc(bold('X'), 'red') end
+    local feed = fread(mailfetch)
+    if not feed then return fgc('0', theme.font_value) end
     local lcount = mailcount
     if feed:match('fullcount>%d+<') then
         lcount = feed:match('fullcount>(%d+)<')
@@ -303,7 +309,7 @@ mail_widget:connect_signal("mouse::leave", function() desnaug() end)
 -- Buttons
 mail_textbox:buttons(awful.util.table.join(
     awful.button({ }, 1, function ()
-        check_mail()
+        fetch_gmail()
         os.execute(browser..' "'..mailurl..'"&')
     end)
 ))
@@ -820,13 +826,14 @@ timer5:start()
 --  Hook every 30 secs
 local timer30 = timer { timeout = 30 }
 timer30:connect_signal("timeout", function()
+    if mailpass then mail_textbox:set_markup(check_gmail()) end
     battery_textbox:set_markup(bat_info())
 end)
 timer30:start()
 -- Hook called every minute
 local timer60 = timer { timeout = 60 }
 timer60:connect_signal("timeout", function()
-    if mailpass then  mail_textbox:set_markup(check_gmail()) end
+    if mailpass then fetch_gmail() end
     filesystem_textbox.text = fs_info()
 end)
 timer60:start()

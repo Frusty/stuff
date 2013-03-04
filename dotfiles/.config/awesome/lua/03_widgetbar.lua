@@ -665,10 +665,11 @@ function bat_info()
         loglua("(WW) [battery_widget] Could not get proper battery stats.")
         return 'ERR'
     end
-    battery = math.floor(cur * 100 / cap)
+    local dir = "="
+    local battery = math.floor(cur * 100 / cap)
     if sta:match("Charging") then
-        local dir = "+"
-        local battery = "A/C~"..battery
+        dir = "+"
+        battery = "A/C~"..battery
         elseif sta:match("Discharging") then
         dir = "-"
         if tonumber(battery) < 10 then
@@ -679,7 +680,6 @@ function bat_info()
                  )
         end
     else
-        dir = "="
         battery = "A/C~"
     end
     return battery..dir

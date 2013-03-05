@@ -1,8 +1,6 @@
 #!/bin/bash
-# Crea una chroot de 32 bits en arch.o
-# Depende el paquete devtools en archlinux.
+# Creaites a 32 bit chroot on archlinux
 set +o posix
-#set -x
 
 [ $USER = "root" ] || { echo "requiere root"; exit 1; }
 which mkarchroot linux32 mount umount || exit 1
@@ -18,13 +16,13 @@ Architecture = i686
 
 [core]
 SigLevel = Never
-Server   = ftp://mir1.archlinux.fr/archlinux/core/os/i686
+Server   =  http://archlinux.polymorf.fr/core/os/i686
 [extra]
 SigLevel = Never
-Server   = ftp://mir1.archlinux.fr/archlinux/extra/os/i686
+Server   =  http://archlinux.polymorf.fr/extra/os/i686
 [community]
 SigLevel = Never
-Server   = ftp://mir1.archlinux.fr/archlinux/community/os/i686
+Server   =  http://archlinux.polymorf.fr/community/os/i686
 [archlinuxfr]
 SigLevel = Optional TrustAll
 Server   = http://repo.archlinux.fr/i686
@@ -54,28 +52,38 @@ __EOF__
 
 # Create if doesn't exist or update the chroot
 if [ ! -d ${CHROOT} ] ; then 
-    echo -e "#\n#\tCreando chroot en ${CHROOT}\n#"
+    echo -e "#\n#\tCreating chroot in ${CHROOT}\n#"
     linux32 mkarchroot -C /proc/$$/fd/3 -M /proc/$$/fd/4 ${CHROOT} base base-devel
 else
-    echo -e "#\n#\tActualizando chroot en ${CHROOT}\n#"
+    echo -e "#\n#\tUpgrading chroot in ${CHROOT}\n#"
     linux32 mkarchroot -u ${CHROOT} || exit 1
 fi
 
-# bindings
-echo -e "#\n#\tCreando bindings hacia la chroot\n#"
-mount --bind /dev ${CHROOT}/dev
-mount --bind /dev/pts ${CHROOT}/dev/pts
-mount --bind /dev/shm ${CHROOT}/dev/shm
-mount --bind /proc ${CHROOT}/proc
-mount --bind /proc/bus/usb ${CHROOT}/proc/bus/usb
-mount --bind /sys ${CHROOT}/sys
-mount --bind /tmp ${CHROOT}/tmp
-mount --bind /home ${CHROOT}/home
+echo -e "#\n#\tCreating bindings to the chroot\n#"
+dirs=(/tmp /dev /dev/pts /home)
+for dir in "${dirs[@]}"; do
+    echo "binding $dir on ${CHROOT}$dir"
+    mount -o bind $dir "${CHROOT}$dir"
+done
+echo "mounting /proc and /sys"
+mount -t proc none "${CHROOT}/proc"
+mount -t sysfs none "${CHROOT}/sys"
 
-# chroot
-echo -e "#\n#\tEntrando en la la chroot\n#"
+echo "# Copying some files"
+cp -v /etc/resolv.conf "${CHROOT}/etc/resolv.conf"
+
+echo -e "#\n#\tEntering the chroot\n#"
 linux32 chroot ${CHROOT} /bin/bash
 
-# umount bindings on exit
-echo -e "#\n#\tDesmontando bindings\n#"
-mount | sed -n "s@.*on \([^ ]*${CHROOT}[^ ]*\) .*@\1@p" | xargs -n1 umount -l
+echo -e "#\n#\tUmounting bindings\n#"
+umount "${CHROOT}/"{sys,proc}
+dirs=(/home /dev/pts /tmp)
+for dir in "${dirs[@]}"; do
+    echo "umounting ${CHROOT}$dir"
+    umount "${CHROOT}/$dir"
+done
+echo "Wating 5 seconds to umount /dev"
+sleep 5s
+echo "umounting ${CHROOT}/$dev"
+umount "${CHROOT}/dev"	
+echo -e "#\n#\tOk\n#"

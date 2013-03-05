@@ -22,11 +22,11 @@ dnsutils
 dosfstools
 dsniff
 dstat
+dvd+rw-tools 
 elinks
 epdfview
 ethtool
 ettercap
-feh
 flashplugin
 fsarchiver
 fuse
@@ -54,7 +54,6 @@ iotop
 iperf
 iproute2
 iptables
-isomaster
 john
 keychain
 lftp
@@ -96,10 +95,10 @@ pcmanfm
 perl-rename
 rdesktop
 rfkill
-rpcbind
 rsync
 rxvt-unicode
 scrot
+slock
 smartmontools
 squashfs-tools
 sshfs
@@ -118,7 +117,6 @@ ttf-droid
 unrar
 unzip
 usb_modeswitch
-vlock
 wget
 whois
 wicd

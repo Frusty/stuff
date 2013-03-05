@@ -2,7 +2,6 @@ theme = {}
 theme.wallpaper  = os.getenv("HOME")..'/.config/awesome/walls/science.png'
 theme.icon_theme = nil
 
-
 -- {{{ Stylesz
 theme.font          = "smoothansi 9"
 theme.font_key      = "white"

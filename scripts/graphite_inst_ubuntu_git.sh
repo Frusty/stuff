@@ -1,34 +1,25 @@
 #!/bin/bash
-# Unnatended graphite/nginx/uwsgi/supervisor install for ubuntu
-# it worked on Ubuntu 12.04.2 LTS on 22/03/2012
+# Unnatended graphite+megacarbon+ceres(alpha)/nginx/uwsgi/supervisor install for ubuntu
+# it worked on Ubuntu 12.04.2 LTS on 25/03/2012
 set -o nounset
 
 ok() { echo -ne "\e[32m# $1\e[m"; }
 CORES=$(nproc)
-HOSTNAME=$(hostname)
 
 ok "Updating system\n"
 aptitude update
 ok "Getting packages\n"
-aptitude install --assume-yes python-setuptools python-dev python-django python-django-tagging supervisor memcached nginx libxml2-dev uwsgi-plugin-python python-twisted python-cairo python-txamqp python-memcache python-zope.interface
+aptitude install --assume-yes git python-setuptools python-dev python-django python-django-tagging supervisor memcached nginx libxml2-dev uwsgi-plugin-python python-twisted python-cairo python-txamqp python-memcache python-zope.interface python-tz python-pyparsing
 
-ok "Downloading graphite, carbon and whisper\n"
+ok "Fetching graphite, megacarbon and ceres from their Master (unstable/alpha) branches.\n"
 mkdir sandbox
 cd sandbox/
-wget https://launchpad.net/graphite/0.9/0.9.10/+download/graphite-web-0.9.10.tar.gz
-wget https://launchpad.net/graphite/0.9/0.9.10/+download/carbon-0.9.10.tar.gz
-wget https://launchpad.net/graphite/0.9/0.9.10/+download/whisper-0.9.10.tar.gz
-ok "Unpacking graphite, carbon and whisper\n"
-tar -zxf graphite-web-0.9.10.tar.gz
-tar -zxf carbon-0.9.10.tar.gz
-tar -zxf whisper-0.9.10.tar.gz
-ok "Putting everything in place\n"
-mv graphite-web-0.9.10 graphite
-mv carbon-0.9.10 carbon
-mv whisper-0.9.10 whisper
+git clone git://github.com/graphite-project/graphite-web.git
+git clone git://github.com/graphite-project/carbon.git -b megacarbon
+git clone git://github.com/graphite-project/ceres.git
 
-ok "Installing whisper\n"
-cd whisper
+ok "Installing ceres\n"
+cd ceres
 python setup.py install
 
 ok "Installing carbon\n"
@@ -36,7 +27,7 @@ cd ../carbon
 python setup.py install
 
 ok "Installing graphite-web\n"
-cd ../graphite
+cd ../graphite-web
 python setup.py install
 
 ok "Setting the Database\n"
@@ -81,16 +72,9 @@ autostart=true
 autorestart=true
 user=nobody
 
-[program:carbon-cache]
-command=python /opt/graphite/bin/carbon-cache.py --debug start
-process_name=%(program_name)s
-autostart=true
-autorestart=true
-stopsignal=QUIT
-
-[program:carbon-relay]
-command=python /opt/graphite/bin/carbon-relay.py --debug start
-process_name=%(program_name)s
+[program:carbon-writer]
+command=python /opt/graphite/bin/carbon-daemon.py --debug writer start
+irocess_name=%(program_name)s
 autostart=true
 autorestart=true
 stopsignal=QUIT
@@ -129,7 +113,7 @@ ok "Nginx graphite site\n"
 cat > /etc/nginx/sites-enabled/graphite <<-EOF
 server {
     listen       80 default;
-    server_name  $HOSTNAME;
+    server_name  $(hostname);
     access_log  /var/log/nginx/graphite.access.log main;
     location / {
         include uwsgi_params;
@@ -147,11 +131,13 @@ EOF
 ok "Linking local_setting.py to webapp/graphite\n"
 ln -s /opt/graphite/conf/local_settings.py /opt/graphite/webapp/graphite/local_settings.py
 
-ok "Copying config files\n"
-cp -v /opt/graphite/conf/storage-schemas.conf.example /opt/graphite/conf/storage-schemas.conf
-cp -v /opt/graphite/conf/relay-rules.conf.example /opt/graphite/conf/relay-rules.conf
-cp -v /opt/graphite/conf/graphite.wsgi.example /opt/graphite/conf/graphite.wsgi
-cp -v /opt/graphite/conf/carbon.conf.example /opt/graphite/conf/carbon.conf
+ok "Creating a Carbon Writer instance\n"
+cd /opt/graphite/conf/carbon-daemons
+cp -vr example writer
+
+ok "Enabling the Ceres database\n"
+sed -i 's/DATABASE = whisper/DATABASE = ceres/g' /opt/graphite/conf/carbon-daemons/writer/db.conf
+sed -i 's@LOCAL_DATA_DIR = /opt/graphite/storage/whisper/@LOCAL_DATA_DIR = /opt/graphite/storage/ceres/@g' /opt/graphite/conf/carbon-daemons/writer/db.conf
 
 ok "Removing nginx startup\n"
 update-rc.d -f nginx remove

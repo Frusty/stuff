@@ -9,22 +9,23 @@ CORES=$(nproc)
 ok "Updating system\n"
 aptitude update
 ok "Getting packages\n"
-aptitude install --assume-yes python-setuptools python-dev python-django python-django-tagging supervisor memcached nginx libxml2-dev uwsgi-plugin-python python-twisted python-cairo python-txamqp python-memcache python-zope.interface
+aptitude install --assume-yes git python-setuptools python-dev python-django python-django-tagging supervisor memcached nginx libxml2-dev uwsgi-plugin-python python-twisted python-cairo python-txamqp python-memcache python-zope.interface python-tz python-pyparsing
 
-ok "Downloading graphite, carbon and whisper\n"
+ok "Getting graphite, carbon and whisper from git\n"
 mkdir sandbox
 cd sandbox/
-wget https://launchpad.net/graphite/0.9/0.9.10/+download/graphite-web-0.9.10.tar.gz
-wget https://launchpad.net/graphite/0.9/0.9.10/+download/carbon-0.9.10.tar.gz
-wget https://launchpad.net/graphite/0.9/0.9.10/+download/whisper-0.9.10.tar.gz
-ok "Unpacking graphite, carbon and whisper\n"
-tar -zxf graphite-web-0.9.10.tar.gz
-tar -zxf carbon-0.9.10.tar.gz
-tar -zxf whisper-0.9.10.tar.gz
-ok "Putting everything in place\n"
-mv graphite-web-0.9.10 graphite
-mv carbon-0.9.10 carbon
-mv whisper-0.9.10 whisper
+git clone git://github.com/graphite-project/graphite-web.git
+cd graphite-web
+git checkout 0.9.x
+cd ..
+git clone git://github.com/graphite-project/carbon.git
+cd carbon
+git checkout 0.9.x
+cd ..
+git clone git://github.com/graphite-project/whisper.git
+cd whisper
+git checkout 0.9.x
+cd ..
 
 ok "Installing whisper\n"
 cd whisper
@@ -35,7 +36,7 @@ cd ../carbon
 python setup.py install
 
 ok "Installing graphite-web\n"
-cd ../graphite
+cd ../graphite-web
 python setup.py install
 
 ok "Setting the Database\n"

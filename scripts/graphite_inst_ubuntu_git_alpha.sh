@@ -53,28 +53,24 @@ supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
 [program:nginx]
 command=/usr/sbin/nginx
-process_name=%(program_name)s
 autostart=true
 autorestart=true
 stopsignal=QUIT
 
 [program:uwsgi-graphite]
-command=uwsgi_python --socket 127.0.0.1:3031 --master --processes $CORES --limit-as 512 --chdir=/opt/graphite/webapp --env DJANGO_SETTINGS_MODULE=graphite.settings --module='django.core.handlers.wsgi:WSGIHandler()'
-process_name=%(program_name)s
+command=uwsgi_python -b 65536 --socket 127.0.0.1:3031 --master --processes $CORES --limit-as 512 --chdir=/opt/graphite/webapp --env DJANGO_SETTINGS_MODULE=graphite.settings --module='django.core.handlers.wsgi:WSGIHandler()'
 autostart=true
 autorestart=true
 stopsignal=QUIT
 
 [program:memcached]
 command=/usr/bin/memcached -m 64 logfile /var/log/memcached.log
-process_name=%(program_name)s
 autostart=true
 autorestart=true
 user=nobody
 
 [program:carbon-writer]
 command=python /opt/graphite/bin/carbon-daemon.py --debug writer start
-irocess_name=%(program_name)s
 autostart=true
 autorestart=true
 stopsignal=QUIT
@@ -97,6 +93,7 @@ http {
                       '\$status \$body_bytes_sent "\$http_referer" '
                       '"\$http_user_agent" "\$http_x_forwarded_for" \$request_time \$upstream_response_time';
     add_header        P3P "CP=\\"CAO PSA OUR\\"";
+    large_client_header_buffers  4  64k;
     include           /etc/nginx/mime.types;
     access_log        /var/log/nginx/access.log main;
     sendfile          on;

@@ -11,15 +11,14 @@ print "Usage: $0 <host/s>\n" and exit 1 unless @ARGV;
 
 my @warnings  = ();
 my @criticals = ();
-my $user      = 'XXXXX';
-my $pass      = 'XXXXX';
+my $user      = 'xxxxx';
+my $pass      = 'xxxxx';
 
 foreach my $host (@ARGV) {
     # Establish a telnet connection.
     my $telnet = new Net::Telnet ( Timeout => 1
                                  , Errmode => 'return'
                                  , Prompt  => '/.*\(rw\)->/i'
-#                                 , Prompt  => '/(?m:.*[\w.-]+\s?(?:\(config[^\)]*\))?\s?[\+\$#>]\s?(?:\(enable\))?\s*$)/'
                                  );
     my $count = 0;
     my $attempts = 3;
@@ -63,9 +62,18 @@ foreach my $host (@ARGV) {
         next;
     }
 
+    # Check CPU usage.
+    print STDERR "\n# Checking CPU Utilization\n";
+    my $result = join('', $telnet->cmd('show system utilization cpu'));
+    chomp($result);
+    print STDERR $result;
+    while ($result =~ /%\s+\d+%\s+(\d+)%/sg) {
+        push (@warnings, "[$host] Total CPU Utilizationi (5min): $1%") if $1 > 20;
+    }
+
     # Check Fan Status.
     print STDERR "\n# Checking fan status\n\n";
-    my $result = join('', $telnet->cmd('show system'));
+    $result = join('', $telnet->cmd('show system'));
     $result =~ s/([\s-])+/$1/g;
     while ($result =~ /Switch\s(\d+).+?Fan2-Status\n((?:Ok|Not.+?))\s((?:Ok|Not.+?))\n/sg) {
         print STDERR "Switch $1 -> Fan1:$2 Fan2:$3\n";
@@ -76,7 +84,6 @@ foreach my $host (@ARGV) {
     print STDERR "\n# Checking stack interconnection problems\n\n";
     $result = join('', $telnet->cmd('show switch stack-ports'));
     while ($result =~ /(\d)\s+(?:Up|Down)[\s\d]+\s(\d+)\s+\n\s+(?:Up|Down)[\s\d]+?\s(\d+)\s+\n/sg) {
-    #    $err += ($2 + $3);
         print STDERR "Switch $1 has ".($2 + $3)." IC errors\n";
         push (@warnings, "[$host] Switch $1 has ".($2 + $3)." IC errors") if ($2 + $3);
     }
@@ -102,7 +109,7 @@ foreach my $host (@ARGV) {
     map { ($swnum, $ports) = ($1, $2) if /^[fg]e\.(\d)\.(\d+)/} @result;
     $count = 0;
     foreach (@result) {
-        if (/^[fg]e\.(\d)\.\d+\s+Down\s/) {
+        if (/^[fg]e\.(\d)\.\d+\s+[Dd]o\w+\s/) {
             $count++;
             $hash{$1} = 1 if $count == $ports;
         } else {
@@ -118,8 +125,8 @@ foreach my $host (@ARGV) {
 }
 
 # Print every abnormal output and exit appropiately.
-print join(", ", @criticals);
-print join(", ", @warnings);
+print join("\n", @criticals);
+print join("\n", @warnings);
 exit 2 if @criticals;
 exit 1 if @warnings;
-exit 0;
+print "OK\n" and exit 0;

@@ -5,9 +5,9 @@ use strict;
 use warnings;
 use LWP::UserAgent;
 
-my $user      = 'XXXX';
-my $pass      = 'XXXX';
-my $host      = 'X.X.X.X';
+my $user      = 'xxxxx';
+my $pass      = 'xxxxx';
+my $host      = 'xxx.xxx.xxx.xxx';
 my $total_aps = 18; # Hardware doesn't keep a total including nonworking APs.
 my $ua = LWP::UserAgent->new( agent         => 'Mac Safari'
                             , show_progress => 0 # Adds fancy progressbars

@@ -2,9 +2,7 @@
 #
 # {{{ Init
 # -------------------------------------------------------------------------------
-autoload -U compinit promptinit
-compinit
-promptinit
+autoload -U compinit && compinit
 unsetopt beep
 bindkey -e # emacs keybindings
 # }}}
@@ -20,7 +18,10 @@ export BROWSER=chromium
 # }}}
 # {{{ Prompt
 # -------------------------------------------------------------------------------
-export PROMPT=$'%{$fg[yellow]%}┌┤%{$fg_bold[yellow]%}%n%{$reset_color%}%{$fg[green]%}@%{$fg[red]%}%m%{$fg[yellow]%}(%{$fg[cyan]%}%l%{$fg[yellow]%})%{$fg_bold[blue]%}%~%{$fg[yellow]%}│%{$reset_color%}%*\n%{$fg[yellow]%}└%{$fg_bold[blue]%}%?%{$reset_color%}%{$fg[yellow]%}┐%{$reset_color%}%# '
+autoload -U colors && colors
+PS1="%{$fg[yellow]%}┌┤%{$fg_bold[yellow]%}%n%{$reset_color%}%{$fg[green]%}@%{$fg[red]%}%m%{$fg[yellow]%}(%{$fg[cyan]%}%l%{$fg[yellow]%})%{$fg_bold[blue]%}%~%{$fg[yellow]%}│%{$reset_color%}%*
+%{$fg[yellow]%}└%{$fg_bold[blue]%}%?%{$reset_color%}%{$fg[yellow]%}┐%{$reset_color%}%# "
+#}
 # }}}
 # {{{ Aliases
 # -------------------------------------------------------------------------------

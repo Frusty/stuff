@@ -13,9 +13,9 @@ print "Usage: $0 <host/s>\n" and exit 1 unless @ARGV;
 
 my @warnings  = ();
 my @criticals = ();
-my $user      = 'XXXXX';
-my $pass      = 'XXXXX';
-my $enable    = 'XXXXX';
+my $user      = 'xxxxx';
+my $pass      = 'xxxxx';
+my $enable    = 'xxxxx';
 
 foreach my $host (@ARGV) {
     # Establish a telnet connection.
@@ -54,16 +54,20 @@ foreach my $host (@ARGV) {
 
     # Enter into EXEC mode.
     print STDERR "# Entering privileged mode...";
-    $telnet->print('enable');
-    $telnet->waitfor('/password/i');
-    $telnet->cmd($enable);
-    $lastline = $telnet->lastline;
-    unless ($lastline =~ /denied/i) {
-        print STDERR " OK\n";
+    if ($prompt =~ /#$/) {
+        print STDERR " Already on EXEC mode!\n";
     } else {
-        print STDERR " NOK!\n# Unable to get into EXEC mode. The last line was: '$lastline'\n";
-        push (@criticals, "[$host] Unable to get into EXEC mode.  The last line was: '$lastline'");
-        next;
+        $telnet->print('enable');
+        $telnet->waitfor('/password/i');
+        $telnet->cmd($enable);
+        $lastline = $telnet->lastline;
+        unless ($lastline =~ /denied/i) {
+            print STDERR " OK\n";
+        } else {
+            print STDERR " NOK!\n# Unable to get into EXEC mode. The last line was: '$lastline'\n";
+            push (@criticals, "[$host] Unable to get into EXEC mode.  The last line was: '$lastline'");
+            next;
+        }
     }
 
     # Remove pagination.
@@ -119,8 +123,8 @@ foreach my $host (@ARGV) {
 }
 
 # Print every abnormal output and exit appropiately.
-print join(", ", @criticals);
-print join(", ", @warnings);
+print join("\n", @criticals);
+print join("\n", @warnings);
 exit 2 if @criticals;
 exit 1 if @warnings;
-exit 0;
+print "OK\n" and exit 0;

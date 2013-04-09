@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 use File::Find; # find()
-
+ 
 my @warnings  = ();
 my @criticals = ();
 my %hash      = ();
@@ -28,7 +28,7 @@ sub wanted {
     my $file = $File::Find::name;
     return unless -f $file;
     my @stats = stat($file); # http://perldoc.perl.org/functions/stat.html
-    my $atime = time()-$stats[9];
+    my $atime = time()-$stats[9]; 
     if (my ($path) = $file =~ m<$dir/(.+?)/[^/]+wsp$>) {
         return if $path =~ /graphite/;
         $hash{$path} = $atime if not $hash{$1} or $hash{$1} > $atime;
@@ -40,6 +40,7 @@ sub wanted {
 print STDERR "\n# Checking metrics\n\n";
 find (\&wanted, $dir);
 map {delete $hash{$_} if $hash{$_} < 21600} keys %hash; # 21600sec = 6 hours
+print STDERR "OK\n" unless keys %hash;
 foreach my $file (sort keys %hash) {
     print STDERR "'$file' not updated since ".&seconds2HR($hash{$file})."\n";
     push (@warnings, "'$file' not updated since ".&seconds2HR($hash{$file})."\n");
@@ -55,8 +56,8 @@ while ($output =~ /(\S+)\s+(\S+)\s+pid/sg) {
 }
 
 # Print every abnormal output and exit appropiately.
-print join(", ", @criticals);
-print join(", ", @warnings);
+print join("\n", @criticals);
+print join("\n", @warnings);
 exit 2 if @criticals;
 exit 1 if @warnings;
-exit 0;
+print "OK\n" and exit 0;

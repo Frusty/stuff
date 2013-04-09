@@ -11,8 +11,8 @@ print "Usage: $0 <host/s>\n" and exit 1 unless @ARGV;
 
 my @warnings  = ();
 my @criticals = ();
-my $user      = 'XXXXXX';
-my $pass      = 'XXXXXX';
+my $user      = 'xxxxx';
+my $pass      = 'xxxxx';
 
 foreach my $host (@ARGV) {
     # Establish a telnet connection.

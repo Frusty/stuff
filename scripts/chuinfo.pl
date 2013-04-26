@@ -1,73 +1,93 @@
 #!/usr/bin/perl
-# chuinfo.pl AKA test.pl+SNMP::Info AKA "Switch CPU Toaster", Oscar Prieto.
+# chuinfo.pl AKA test.pl+SNMP::Info AKA "Switch CPU Toaster".
 
 use strict;
 use warnings;
 use SNMP::Info;
 
-# No quiero escribir esto cada vez.
-my $table = '<TABLE class="sortable"; style="text-align: center; border-style:solid; border-width:1px;" border="0" >';
-my $infoTR="\t<TR bgcolor=#DDDDDD><TD bgcolor=#AAAAAA nowrap=\"nowrap\">";
-
-# Quiero solo el nombre del script sin path.
+# Remove the path from the script name.
 $0 =~ s/.*\///g;
 
-# Funciones.
-sub footer() {  # HTML Footer (chapamos por las buenas)
+# The SNMPv2 community we will use:
+my $community = 'public';
+
+#
+# Functions.
+#
+# {{{ HTML Footer
+sub footer() {
     print "</BODY></HTML>\n";
     exit 0;
 }
-
-sub td($$) {# Paso de tratar las celdas a pelo.
+# }}}
+# {{{ TD Wrapper
+sub td($$) {
     my $text = shift || "";
     my $args = shift || "";
-    return "<TD $args>$text</TD>" if $text ne "" or return '<TD bgcolor=#EEEEEE style="color:grey;font-style:italic">Null</TD>';
+    return "<TD $args>$text</TD>" if $text ne "" or return '<TD class="null">Null</TD>';
 }
-
-sub tdn($$) {# Paso de tratar las celdas a pelo.
+# }}}
+# {{{ TH Wrapper
+sub th($$) {
     my $text = shift || "";
     my $args = shift || "";
-    return "<TD $args>$text</TD>" if $text !~ /^\-/ or return '<TD bgcolor=#AD4434">'.$text.'</TD>';
+    return "<TH $args>$text</TH>" if $text ne "" or return '<TH></TH>';
 }
-sub tde($$) {# Aquí devolvemos un color de alerta si el valor es verdadero (diferente de 0)
+# }}}
+# {{{ TDN Wrapper
+sub tdn($$) {
+    my $text = shift || "";
+    my $args = shift || "";
+    return "<TD $args>$text</TD>" if $text !~ /^\-/ or return '<TD>'.$text.'</TD>';
+}
+# }}}
+# {{{ TDE Wrapper
+sub tde($$) {
     my $text = shift || 0;
     my $args = shift || "";
     if (defined $text) {
         if ($text gt 0 or $text =~ /^-/) {
-            return "<TD bgcolor=#AD4434><I>$text</I></TD>";
+            return "<TD class=\"warning\"><I>$text</I></TD>";
         } else {
             return "<TD $args>$text</TD>";
         }
     } else {
-         return '<TD bgcolor=#EEEEEE style="color:grey;font-style:italic">Null</TD>';
+         return '<TD class="null">Null</TD>';
     }
 }
-sub non_empty(%) { # Devuelve 0 (falso) si todos los valores del hash son ""
+# }}}
+# {{{ non_empty(%) [Return 0 (false) if all the hash values are ""]
+sub non_empty(%) {
     return grep { $_ ne "" } values %{$_[0]};
 }
-
+# }}}
+# {{{ check_ip_host(@) [Check for a valid IP or Host]
 sub check_ip_host(@) {
     my $validip = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\$";
     my $validhost = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])\$";
     @_ ? my @badhosts = grep { $_ !~ /(?:$validip|$validhost)/ } @_ : return "Empty array!\n";
     @badhosts ? return join(", ", @badhosts)." IP o Hostname inválido/s.\n" : return 0;
 }
+# }}}
+# {{{ convert_bytes($$) [Bytes to 'Human Readable']
 
-sub convert_bytes ($$){ # Bytes a 'Human Readable'
-    my $bytes = shift;
-    my $dec = shift;
+sub convert_bytes ($$){     my $bytes = shift || 0;
+    my $dec   = shift || 2;
     foreach my $posfix (qw(bytes Kb Mb Gb Tb Pb Eb Zb Yb)) {
         return sprintf("\%.${dec}f \%s", $bytes, $posfix) if $bytes < 1024;
         $bytes /= 1024;
-     }
+    }
 }
+# }}}
+# {{{ timeticks2HR($) [Tents of second to "Human Readable"]
 
-sub timeticks2HR($) { # Centésimas de segundo a "Human Readable"
-    my $seconds = ($_[0]/100);
+sub timeticks2HR($) {     my $seconds = ($_[0]/100);
     return sprintf ("%.1d Days, %.2d:%.2d:%.2d", $seconds/86400, $seconds/3600%24, $seconds/60%60, $seconds%60) if $seconds or return 0;
 }
+# }}}
+# {{{ TrueSort(@) http://www.perlmonks.org/?node_id =483462
 
-sub TrueSort(@) { # http://www.perlmonks.org/?node_id=483462
+sub TrueSort(@) {
     my @list = @_;
     return @list[
         map { unpack "N", substr($_,-4) }
@@ -79,16 +99,17 @@ sub TrueSort(@) { # http://www.perlmonks.org/?node_id=483462
         } 0..$#list
     ];
 }
-
-sub AgrArr(@) { #Agrupa los puertos de un array de un chui
+# }}}
+# {{{  AgrArr(@) [Port list to range]
+sub AgrArr(@) {
     my @out=();
     my $cache=undef;
     my @array=&TrueSort(@_);
     for my $i (0..$#array) {
-        next if $array[$i] eq $array[$i+1]; #Nos cargamos los duplicados
-        my $next = $1.($2+1) if $array[$i] =~ /(.+?)(\d+)$/g;
-        if ( $next ne $array[$i+1] ) {
-            push (@out, $cache.$array[$i]) if $cache.$array[$i];
+        next if $array[$i+1] and $array[$i] eq $array[$i+1]; #Nos cargamos los duplicados
+        my $next = $1.($2+1) if $array[$i] =~ /(.+?)(\d+)$/g or next;
+        if ( not $array[$i+1] or $next ne $array[$i+1] ) {
+            $cache ? push (@out, "$cache$array[$i]") : push (@out, $array[$i]);
             undef($cache);
         } elsif ( ! defined($cache) ) {
             $cache = "$array[$i]~";
@@ -96,31 +117,31 @@ sub AgrArr(@) { #Agrupa los puertos de un array de un chui
     }
     return @out;
 }
-
-sub arr_resta(@@) {  # devuelve @first - @second
-    my $first = shift;
+# }}}
+# {{{ arr_resta(@@) [returns @first - @second]
+sub arr_resta {
+    my $first  = shift;
     my $second = shift;
     my %hash;
     $hash{$_}=1 foreach @$second;
     return grep { not $hash{$_} } @$first;
 }
-
+# }}}
 #
-#   Empezamos
+# Hammer a Device
 #
-
-{   # Solo puede quedar uno. Solo funcionaremos si podemos tener acceso exclusivo a un fichero común.
-    use Fcntl qw(LOCK_EX LOCK_NB);
-    open HIGHLANDER, ">>/tmp/perl_$0_highlander" or die "Content-Type: text/html\n\nCannot open highlander: $!";
-    {
-        flock HIGHLANDER, LOCK_EX | LOCK_NB and last;
-        print "Content-Type: text/html\n\nScript en uso!";
-        exit 1;
-    }
+# {{{ Highlander [Only allow one instance of the script running at once]
+use Fcntl qw(LOCK_EX LOCK_NB);
+open HIGHLANDER, ">>/tmp/perl_$0_highlander" or die "Content-Type: text/html\n\nCannot open highlander: $!";
+{
+    flock HIGHLANDER, LOCK_EX | LOCK_NB and last;
+    print "Content-Type: text/html\n\n<P>Script en uso!</P>";
+    exit 1;
 }
-
+# }}}
+# {{{ Parse POST values if any 
 my %FORM=();
-{   # Leemos POST
+if ($ENV{'CONTENT_LENGTH'}) {
     read(STDIN, my $buffer, $ENV{'CONTENT_LENGTH'});
     my @pairs = split(/&/, $buffer);
     foreach my $pair (@pairs) {
@@ -130,157 +151,230 @@ my %FORM=();
         $FORM{$name} = $value;
     }
 }
-
-{   # HTML Header
-    my $date = scalar localtime();
-    my $version = "v".int(rand(10))."\.".int(rand(1000))."b";
-    print "Content-Type: text/html\n\n";
-    print <<EOF;
+# }}}
+# {{{ HTML Header and Guts
+{
+my $date = scalar localtime();
+my $version = "v".int(rand(10))."\.".int(rand(1000))."b";
+my $current = $FORM{'input'} || "Null";
+print "Content-Type: text/html\n\n";
+print <<EOF;
 <HTML>
     <HEAD>
         <META http-equiv="Content-Type" content="text/html; charset=utf-8">
-        <TITLE>$FORM{'input'} // $0 // $date</TITLE>
+        <TITLE>$current // $0 // $date</TITLE>
         <script type="text/javascript" src="../sorttable.js"></script>
+        <style type="text/css">
+            body {
+                background: #B0B0B0;
+                text-align: center;
+            }
+            p {
+                font: x-large Helvetica Neue,Helvetica,sans-serif;
+                color: #222;
+                text-shadow: 0px 2px 3px #666;
+            }
+            table {
+                background-color: #FAFAFA;
+                border: 1px solid #111;
+                background: #FAFAFA;
+                font-size: small;
+                text-align: center;
+                border-radius: 5px;
+                margin-left:auto;
+                margin-right:auto;
+            }
+            tr, td, th {
+                font: small Helvetica Neue,Helvetica,sans-serif;
+                padding-right: 5px;
+                padding-left: 5px;
+                transition: all 0.3s;  /* Simple transition for hover effect */¶
+            }
+            th {
+                background: linear-gradient(#666 0%,#333 100%); /* Gradient Background */
+                color: #FAFAFA;
+                font-weight: bold;
+            }
+            tr th:first-child { /* First-child header cell */
+                border: 0 none;
+                background: #FAFAFA;
+                color: black;
+                text-align: left;
+                font-size: medium;
+            }
+            tr:first-child th:nth-child(2) { border-radius: 5px 0 0 0; } /* Round borders to specific cells */
+            tr:first-child th:last-child { border-radius: 0 5px 0 0; }
+            tr td:hover { /* Hover cell effect! */
+                border-radius: 5px;
+                background: #333;
+                color: #FFF;
+            }
+            .bold_right {
+                font-style: italic;
+                font-weight: bold;
+                text-align: right;
+                background: #FAFAFA;
+            }
+            .dotted_cell {
+                font-weight: bold;
+                border: 1px dotted #666;
+                background: #FAFAFA;
+                font-style: italic;
+                font-weight: bold;
+                text-align: right;
+            }
+            .opadmup_gt_24h     { background: #E6E6E6; }
+            .opadmup_lt_24h     { background: #DBEDFF; }
+            .opadmup_lt_15m     { background: #8CB3D9; }
+            .opupadmdown        { background: #B38CD9; }
+            .opdownadmup_gt_24h { background: #F0E5CC; }
+            .opdownadmup_lt_24h { background: #CCF0D3; }
+            .opdownadmup_lt_15m { background: #8CD98C; }
+            .noneth             { background: #EAEAC8; }
+            .warning            {
+                background: #FF7A7A;
+                border-radius: 5px;
+            }
+            .null {
+                background: #FAFAFA;
+                color: #DDD;
+                text-shadow: 0px 1px 1px #CCC;
+            }
+        </style>
     </HEAD>
 <BODY>
-<B>ChuInfo $version</B><BR>
-<FORM action="$ENV{'SCRIPT_NAME'}" method="POST">
-    <TABLE border="0">
+<P>ChuInfo $version</P>
+<FORM action="$0" method="POST">
+    <TABLE "rndtable">
         <TR><TD align="right">Host:</TD><TD><INPUT type="text" name="input" value=""/></TD><TD><INPUT type="submit" value="Submit"/></TD></TR>
     </TABLE>
 </FORM>
 EOF
 }
-
-# Para poder usar el script sin cgi.
+# }}}
+# {{{ Use @ARGVs if any
 $FORM{'input'} = $ARGV[0] if not $FORM{'input'};
-
+# }}}
+# {{{ Print our chosen host
 unless ( &check_ip_host("$FORM{'input'}") ) {
     print "<H2>$FORM{'input'}</H2>\n";
-} elsif ($FORM{'input'}) { # Cagó la regexp
-    print "<H2>Invalid host entry.</B>\n";
+} elsif ($FORM{'input'}) {
+    print "<P>Invalid host entry.</P>\n";
     &footer;
-} else {    # 1era vez
+} else {    # First Time
     &footer;
 }
-
-# Creación del objeto SNMP::Info y conexión mediante SNMP::Session.
-my $info = new SNMP::Info(
-            AutoSpecify => 1,
-            LoopDetect  => 1,
-            Debug       => 0,
-            BigInt      => 0,   # No se como tratar los obetos BigInt aún.
-            BulkWalk    => 1,
-            # The rest is passed to SNMP::Session
-            DestHost    => $FORM{'input'}, # || '192.168.238.4', # 192.168.247.80
-            Community   => 'public',
-            Version     => 2,
-            MibDirs     => [    '/usr/share/netdisco/mibs/rfc'
-                           ,    '/usr/share/netdisco/mibs/net-snmp'
-                           ,    '/usr/share/netdisco/mibs/cisco'
-                           ,    '/usr/share/netdisco/mibs/enterasys'
-                           ,    '/usr/share/netdisco/mibs/juniper'
-                           ],
-) or print "<B>Can't connect to device.</B>\n" and &footer;
+# }}}
+# {{{ Perform the SNMP Bulkwalk query
+my $info = new SNMP::Info( AutoSpecify => 1
+                         , LoopDetect  => 1
+                         , Debug       => 0
+                         , BigInt      => 0 # No se como tratar los obetos BigInt aún.
+                         , BulkWalk    => 1
+                         , # The rest is passed to SNMP::Session
+                         , DestHost    => $FORM{'input'} # || '192.168.238.4', # 192.168.247.80
+                         , Community   => $community
+                         , Version     => 2
+                         ) or print "<P>Can't connect to device.</P>\n" and &footer;
 
 my $err = $info->error();
 print "<H2>SNMP Community or Version probably wrong connecting to device. $err</H2>\n" and &footer if defined $err;
-
-# Si no hubo errores, Interrogamos $info y rellenamos nuestros hashes.
+# }}}
+# {{{ Fill our hashes
 # Find out the Duplex status for the ports
-my $interfaces = $info->interfaces();
-my $i_duplex   = $info->i_duplex();
-my $i_duplex_admin  = $info->i_duplex_admin();
+my $interfaces     = $info->interfaces();
+my $i_duplex       = $info->i_duplex();
+my $i_duplex_admin = $info->i_duplex_admin();
 # Iface Info
-my $i_index = $info->i_index();
+my $i_index       = $info->i_index();
 my $i_description = $info->i_description();
-my $i_type = $info->i_type();
-my $i_mtu = $info->i_mtu();
-my $i_speed = $info->i_speed();
-my $i_mac = $info->i_mac();
-my $i_up = $info->i_up();
-my $i_up_admin = $info->i_up_admin();
-my $i_lastchange = $info->i_lastchange();
-my $i_alias = $info->i_alias();
+my $i_type        = $info->i_type();
+my $i_mtu         = $info->i_mtu();
+my $i_speed       = $info->i_speed();
+my $i_mac         = $info->i_mac();
+my $i_up          = $info->i_up();
+my $i_up_admin    = $info->i_up_admin();
+my $i_lastchange  = $info->i_lastchange();
+my $i_alias       = $info->i_alias();
 # Iface Stats
-my $i_octet_in64 = $info->i_octet_in64();
-my $i_octet_out64 = $info->i_octet_out64();
-my $i_errors_in = $info->i_errors_in();
-my $i_errors_out = $info->i_errors_out();
-my $i_pkts_bcast_in64 = $info->i_pkts_bcast_in64();
+my $i_octet_in64       = $info->i_octet_in64();
+my $i_octet_out64      = $info->i_octet_out64();
+my $i_errors_in        = $info->i_errors_in();
+my $i_errors_out       = $info->i_errors_out();
+my $i_pkts_bcast_in64  = $info->i_pkts_bcast_in64();
 my $i_pkts_bcast_out64 = $info->i_pkts_bcast_out64();
-my $i_discards_in = $info->i_discards_in();
-my $i_discards_out = $info->i_discards_out();
-my $i_bad_proto_in = $info->i_bad_proto_in();
-my $i_qlen_out = $info->i_qlen_out();
+my $i_discards_in      = $info->i_discards_in();
+my $i_discards_out     = $info->i_discards_out();
+my $i_bad_proto_in     = $info->i_bad_proto_in();
+my $i_qlen_out         = $info->i_qlen_out();
 # Get CDP Neighbor info
 my $c_if       = $info->c_if();
 my $c_ip       = $info->c_ip();
 my $c_port     = $info->c_port();
 #Vlan
-my $i_vlan = $info->i_vlan();
+my $i_vlan            = $info->i_vlan();
 my $i_vlan_membership = $info->i_vlan_membership();
-my $qb_v_fbdn_egress = $info->qb_v_fbdn_egress();
-my $qb_v_untagged = $info->qb_v_untagged();
-my $v_name = $info->v_name();
-# A esto se le va la olla con algunos cisco y da llaves del tipo "1.100"
+my $qb_v_fbdn_egress  = $info->qb_v_fbdn_egress();
+my $qb_v_untagged     = $info->qb_v_untagged();
+my $v_name            = $info->v_name();
+# Cisco sometimes returns keys like "1.100"
 foreach (keys %$v_name) {
-    next if /^\d+$/; # Si la vlan es todo digitos, OK
+    next if /^\d+$/; # OK IF the vlan is all digits
     /\d+$/;
     $v_name->{$&} = $v_name->{$_};
     delete $v_name->{$_};
 }
 my $vtp_trunk_dyn = $info->vtp_trunk_dyn();
 my $vtp_trunk_dyn_stat = $info->vtp_trunk_dyn_stat();
-#   Fin del martilleo.
+# }}}
+#
+# Show the stuff we got
+#
+# {{{ Print the INFO Table
+print "<P>Info:</P>\n";
+print "<TABLE><TR><TH>OIDs</TH><TH>Name</TH></TR>\n";
+print "<TR><TD class=\"dotted_cell\">Name</TD>".&td($info->name())."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Location</TD>".&td($info->location())."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Contact</TD>".&td($info->contact())."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Class</TD>".&td($info->class())."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Model</TD>".&td($info->model())."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">OS Version</TD>".&td($info->os_ver())."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Serial Number</TD>".&td($info->serial())."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Base MAC</TD>".&td($info->mac())."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Uptime</TD>".&td(&timeticks2HR($info->uptime()))."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Layers</TD>".&td($info->layers())."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Ports</TD>".&td($info->ports())."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Ip Forwarding".&td($info->ipforwarding())."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">CDP".&td($info->hasCDP())."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Bulkwalk</TD>".&td($info->bulkwalk())."</TR>\n";
+print "</TABLE>\n";
+# }}}
+# {{{ Print the IP Address Table
+my $index = $info->ip_index();
+my $tble = $info->ip_table();
+my $netmask = $info->ip_netmask();
+my $broadcast = $info->ip_broadcast();
 
-{   #Info
-    print "<B>Info:</B><BR>\n";
-    print "$table<TR bgcolor=#AAAAAA><TD>Index</TD><TD>Name</TD></TR>\n";
-    print "${infoTR}Name</TD>".&td($info->name())."</TR>\n";
-    print "${infoTR}Location</TD>".&td($info->location())."</TR>\n";
-    print "${infoTR}Contact</TD>".&td($info->contact())."</TR>\n";
-    print "${infoTR}Class</TD>".&td($info->class())."</TR>\n";
-    print "${infoTR}Model</TD>".&td($info->model())."</TR>\n";
-    print "${infoTR}OS Version</TD>".&td($info->os_ver())."</TR>\n";
-    print "${infoTR}Serial Number</TD>".&td($info->serial())."</TR>\n";
-    print "${infoTR}Base MAC</TD>".&td($info->mac())."</TR>\n";
-    print "${infoTR}Uptime</TD>".&td(&timeticks2HR($info->uptime()))."</TR>\n";
-    print "${infoTR}Layers</TD>".&td($info->layers())."</TR>\n";
-    print "${infoTR}Ports</TD>".&td($info->ports())."</TR>\n";
-    print "${infoTR}Ip Forwarding".&td($info->ipforwarding())."</TR>\n";
-    print "${infoTR}CDP".&td($info->hasCDP())."</TR>\n";
-    print "${infoTR}Bulkwalk</TD>".&td($info->bulkwalk())."</TR>\n";
-    print "</TABLE>\n";
-}
-
-{   # IP Address Table
-    my $index = $info->ip_index();
-    my $tble = $info->ip_table();
-    my $netmask = $info->ip_netmask();
-    my $broadcast = $info->ip_broadcast();
-
-    print "<B>IP Adress Table:</B><BR>\n";
-    print "$table<TR bgcolor=#AAAAAA>"
-        .&td('Index')
-        .&td('Port')
-        .&td('Table')
-        .&td('Netmask')
-        .&td('Broadcast')
+print "<P>IP Adress Table:</P>\n";
+print '<TABLE><TR>'
+    .&th('Index')
+    .&th('Port')
+    .&th('Table')
+    .&th('Netmask')
+    .&th('Broadcast')
+    ."</TR>\n";
+foreach my $key (sort { $index->{$a} cmp $index->{$b} } keys %$index){
+    print "\t<TR>"
+        .&td($index->{$key}, 'class="dotted_cell"')
+        .&td($interfaces->{$index->{$key}})
+        .&td($tble->{$key})
+        .&td($netmask->{$key})
+        .&td($broadcast->{$key})
         ."</TR>\n";
-    foreach my $key (sort { $index->{$a} cmp $index->{$b} } keys %$index){
-        print "\t<TR bgcolor=#DDDDDD>"
-            .&td($index->{$key}, 'bgcolor=#AAAAAA')
-            .&td($interfaces->{$index->{$key}})
-            .&td($tble->{$key})
-            .&td($netmask->{$key})
-            .&td($broadcast->{$key})
-            ."</TR>\n";
-    }
-    print "</TABLE>\n";
 }
-
-#IP Routing Table
+print "</TABLE>\n";
+# }}}
+# {{{ Print the IP Routing Table
 if ( &non_empty($info->ipr_if()) ) {
     my $ipr_route = $info->ipr_route();
     my $ipr_if = $info->ipr_if();
@@ -294,25 +388,24 @@ if ( &non_empty($info->ipr_if()) ) {
     my $ipr_proto = $info->ipr_proto();
     my $ipr_age = $info->ipr_age();
     my $ipr_mask = $info->ipr_mask();
-
-    print "<B>Routing Table:</B><BR>\n";
-    print "$table<TR bgcolor=#AAAAAA>"
-        .&td('Index')
-        .&td('Route')
-        .&td('Mask')
-        .&td('Dest')
-        .&td('1')
-        .&td('2')
-        .&td('3')
-        .&td('4')
-        .&td('5')
-        .&td('Type')
-        .&td('Proto');
-    print &td('Age') if &non_empty($ipr_age);
+    print "<P>Routing Table:</P>\n";
+    print '<TABLE><TR>'
+        .&th('Index')
+        .&th('Route')
+        .&th('Mask')
+        .&th('Dest')
+        .&th('1')
+        .&th('2')
+        .&th('3')
+        .&th('4')
+        .&th('5')
+        .&th('Type')
+        .&th('Proto');
+    print &th('Age') if &non_empty($ipr_age);
     print "</TR>\n";
     foreach my $key (sort keys %$ipr_route){
-        print "\t<TR bgcolor=#DDDDDD>"
-            .&td($ipr_if->{$key}, 'bgcolor=#AAAAAA')
+        print "\t<TR>"
+            .&td($ipr_if->{$key}, 'class="dotted_cell"')
             .&td($ipr_route->{$key})
             .&td($ipr_mask->{$key})
             .&td($ipr_dest->{$key})
@@ -328,8 +421,9 @@ if ( &non_empty($info->ipr_if()) ) {
     }
     print "</TABLE>\n";
 }
-
-sub hashmatch(%$) { # devuelve el puerto asociado a claves de $hash cuyo valor coinciden con $reg
+# }}}
+# {{{ hasmatch($$) Returns the ports asociated to a $hash key with a valued on $reg
+sub hashmatch {
     my $hash = shift;
     my $reg = shift;
     my @tmplist = grep { $hash->{$_} =~ $reg and $i_type->{$_} eq "ethernetCsmacd" } keys %$hash;
@@ -337,175 +431,187 @@ sub hashmatch(%$) { # devuelve el puerto asociado a claves de $hash cuyo valor c
     @result = map { $interfaces->{$_} } @tmplist or ();
     return @result;
 }
-
-{   #Totals
-    my @ether      = &hashmatch($i_type,             ".*");
-    my @adminon    = &hashmatch($i_up_admin,         "up");
-    my @adminoff   = &arr_resta(\@ether,             \@adminon);
-    my @operon     = &hashmatch($i_up,               "up");
-    my @operoff    = &arr_resta(\@ether,             \@operon);
-    my @gbports    = &hashmatch($i_speed,            "1.0 G");
-    @gbports       = &arr_resta(\@gbports,           \@operoff);
-    my @fastports  = &hashmatch($i_speed,            "100 M");
-    @fastports     = &arr_resta(\@fastports,         \@operoff);
-    my @ethports   = &hashmatch($i_speed,            "10 M");
-    @ethports      = &arr_resta(\@ethports,          \@operoff);
-    my @halfdup    = &hashmatch($i_duplex,           "half");
-    @halfdup       = &arr_resta(\@halfdup,           \@operoff);
-    my @trunkports = &hashmatch($vtp_trunk_dyn_stat, '^trunking$' );
-    print '<B>Totals:</B><BR/>';
-    print "$table<TR bgcolor=#AAAAAA>".&td('Range').&td('Ports').&td('Total')."</TR>";
-    print "${infoTR}Admin On</TD>"    .&td(join (", ", &AgrArr(@adminon)))   .&td(($#adminon+1))."</TR>\n";
-    print "${infoTR}Admin Off</TD>"   .&td(join (", ", &AgrArr(@adminoff)))  .&td(($#adminoff+1))."</TR>\n";
-    print "${infoTR}Oper On</TD>"     .&td(join (", ", &AgrArr(@operon)))    .&td(($#operon+1))."</TR>\n";
-    print "${infoTR}Oper Off</TD>"    .&td(join (", ", &AgrArr(@operoff)))   .&td(($#operoff+1))."</TR>\n";
-    print "${infoTR}Gb Link</TD>"     .&td(join (", ", &AgrArr(@gbports)))   .&td(($#gbports+1))."</TR>\n";
-    print "${infoTR}Fast Link</TD>"   .&td(join (", ", &AgrArr(@fastports))) .&td(($#fastports+1))."</TR>\n";
-    print "${infoTR}Ether Link</TD>"  .&td(join (", ", &AgrArr(@ethports)))  .&tde(($#ethports+1))."</TR>\n";
-    print "${infoTR}Half Duplex</TD>" .&td(join (", ", &AgrArr(@halfdup)))   .&tde(($#halfdup+1))."</TR>\n";
-    print "${infoTR}Trunking</TD>"    .&td(join (", ", &AgrArr(@trunkports))).&td(($#trunkports+1))."</TR>\n" if @trunkports;
-    print "</TABLE>\n";
-}
-
-{   # Vlans
-    print "<B>Vlans:</B><BR/>\n";
-    print "$table<TR bgcolor=#AAAAAA><TD>Nombre</TD><TD>Pvid</TD><TD>Tipo</TD><TD>Puertos</TD><TD>Total</TD></TR>\n";
-    foreach my $pvid ( sort {$a <=> $b} keys %$v_name) {
-        my @pvid        = ();
-        my @pegress     = ();
-        my @pforbegress = ();
-        my @puntagged   = ();
-        foreach my $port (keys %$interfaces) {
-            next unless $i_type->{$port} eq "ethernetCsmacd"; #Solo tendremos en cuenta puertos "usables"
-            push (@pvid,        $interfaces->{$port}) if $i_vlan->{$port} eq $pvid;
-            push (@pegress,     $interfaces->{$port}) if grep { $_ eq $pvid } @{$i_vlan_membership->{$port}};
-            push (@pforbegress, $interfaces->{$port}) if @{$qb_v_fbdn_egress->{$pvid}}[($port-1)];
-            push (@puntagged,   $interfaces->{$port}) if @{$qb_v_untagged->{$pvid}}[($port-1)];
-        }
-        print "\t<TR bgcolor=#DDDDDD><TD rowspan=\"4\" bgcolor=#AAAAAA>$v_name->{$pvid}</TD><TD rowspan=\"4\" >$pvid</TD><TD bgcolor=#BBBBBB>Pvid</TD>".&td(join (", ", &AgrArr(@pvid)))  .&td(($#pvid+1))."</TR>\n";
-        print "\t<TR bgcolor=#DDDDDD><TD bgcolor=#DDDDDD>Egress</TD>".&td(join (", ", &AgrArr(@pegress)))  .&td(($#pegress+1))."</TR>\n";
-        print "\t<TR bgcolor=#DDDDDD><TD bgcolor=#BBBBBB>Forbidden</TD>".&td(join (", ", &AgrArr(@pforbegress)))  .&tde(($#pforbegress+1))."</TR>\n";
-        print "\t<TR bgcolor=#DDDDDD><TD bgcolor=#DDDDDD>Untagged</TD>".&td(join (", ", &AgrArr(@puntagged)))  .&td(($#puntagged+1))."</TR>\n";
+# }}}
+# {{{ Print The TOTALS table.
+#Totals
+my @ether      = &hashmatch($i_type,             ".*");
+my @adminon    = &hashmatch($i_up_admin,         "up");
+my @adminoff   = &arr_resta(\@ether,             \@adminon);
+my @operon     = &hashmatch($i_up,               "up");
+my @operoff    = &arr_resta(\@ether,             \@operon);
+my @gbports    = &hashmatch($i_speed,            "1.0 G");
+@gbports       = &arr_resta(\@gbports,           \@operoff);
+my @fastports  = &hashmatch($i_speed,            "100 M");
+@fastports     = &arr_resta(\@fastports,         \@operoff);
+my @ethports   = &hashmatch($i_speed,            "10 M");
+@ethports      = &arr_resta(\@ethports,          \@operoff);
+my @halfdup    = &hashmatch($i_duplex,           "half");
+@halfdup       = &arr_resta(\@halfdup,           \@operoff);
+my @trunkports = &hashmatch($vtp_trunk_dyn_stat, '^trunking$' );
+print '<P>Totals:</P>';
+print '<TABLE><TR>'.&th('Range').&th('Ports').&th('Total')."</TR>";
+print "<TR><TD class=\"dotted_cell\">Admin On</TD>"    .&td(join (", ", &AgrArr(@adminon)))   .&td(($#adminon+1))."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Admin Off</TD>"   .&td(join (", ", &AgrArr(@adminoff)))  .&td(($#adminoff+1))."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Oper On</TD>"     .&td(join (", ", &AgrArr(@operon)))    .&td(($#operon+1))."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Oper Off</TD>"    .&td(join (", ", &AgrArr(@operoff)))   .&td(($#operoff+1))."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Gb Link</TD>"     .&td(join (", ", &AgrArr(@gbports)))   .&td(($#gbports+1))."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Fast Link</TD>"   .&td(join (", ", &AgrArr(@fastports))) .&td(($#fastports+1))."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Ether Link</TD>"  .&td(join (", ", &AgrArr(@ethports)))  .&tde(($#ethports+1))."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Half Duplex</TD>" .&td(join (", ", &AgrArr(@halfdup)))   .&tde(($#halfdup+1))."</TR>\n";
+print "<TR><TD class=\"dotted_cell\">Trunking</TD>"    .&td(join (", ", &AgrArr(@trunkports))).&td(($#trunkports+1))."</TR>\n" if @trunkports;
+print "</TABLE>\n";
+# }}}
+# {{{ Print the VLANs Table
+print "<P>Vlans:</P>\n";
+print "<TABLE><TR><TH>Vlan Name</TH><TH>Pvid</TH><TH>Type</TH><TH>Puertos</TH><TH>Total</TH></TR>\n";
+foreach my $pvid ( sort {$a <=> $b} keys %$v_name) {
+    my @pvid        = ();
+    my @pegress     = ();
+    my @pforbegress = ();
+    my @puntagged   = ();
+    foreach my $port (keys %$interfaces) {
+        next unless $i_type->{$port} eq "ethernetCsmacd"; # We will onlu take "usable ports" into account
+        push (@pvid,        $interfaces->{$port}) if $i_vlan->{$port} eq $pvid;
+        push (@pegress,     $interfaces->{$port}) if grep { $_ eq $pvid } @{$i_vlan_membership->{$port}};
+        push (@pforbegress, $interfaces->{$port}) if @{$qb_v_fbdn_egress->{$pvid}}[($port-1)];
+        push (@puntagged,   $interfaces->{$port}) if @{$qb_v_untagged->{$pvid}}[($port-1)];
     }
-    print "</TABLE>\n";
+    print "\t<TR><TD class=\"dotted_cell\" rowspan=\"4\">$v_name->{$pvid}</TD><TD rowspan=\"4\" >$pvid</TD><TD class=\"bold_right\">Pvid</TD>".&td(join (", ", &AgrArr(@pvid)))  .&td(($#pvid+1))."</TR>\n";
+    print "\t<TR><TD class=\"dotted_cell\">Egress</TD>".&td(join (", ", &AgrArr(@pegress))).&td(($#pegress+1))."</TR>\n";
+    print "\t<TR><TD class=\"bold_right\">Forbidden</TD>".&td(join (", ", &AgrArr(@pforbegress))).&tde(($#pforbegress+1))."</TR>\n";
+    print "\t<TR><TD class=\"dotted_cell\">Untagged</TD>".&td(join (", ", &AgrArr(@puntagged))).&td(($#puntagged+1))."</TR>\n";
 }
-
-{   # Ports
-    print "<B>Ports:</B><BR>\n";
-    print "$table<TR bgcolor=#AAAAAA>"
-        .&td('Index')
-        .&td('Name');
-    print &td('Alias') if &non_empty($i_alias);
-    print &td('Oper')
-        .&td('Admin')
-        .&td('Duplex')
-        .&td('Speed')
-        .&td('PVID Name')
-        .&td('PVID')
-        .&td('Egress');
-        if ($info->vtp_version()) {
-            print &td('VTP Trunk State/Neg.');
-        } else {
-            print &td('Untagged');
-        }
-    print &td('Last Change')
-        .&td('Octets In')
-        .&td('Octets Out')
-        .&td('Bcast In')
-        .&td('Bcast Out')
-        .&td('Errors In')
-        .&td('Errors Out')
-        .&td('Discards In')
-        .&td('Discards Out')
-        .&td('Bad Proto In');
-    print &td('Qlen_out') if &non_empty($i_qlen_out);
-    print &td('Mtu')
-        .&td('Mac')
-        .&td('Type')
-        .&td('Description');
-    print &td('CDP') if &non_empty($c_ip);
-    print "</TR>";
-
-    foreach my $iid (sort { $a <=> $b } keys %$interfaces){
-        my $itime = ($info->uptime() - $i_lastchange->{$iid});
-        my $TRArgs = 'bgcolor=#000000';
-        if ($itime > 0) {
-            if ($i_up->{$iid} eq "up") {
-                $TRArgs = 'bgcolor=#DDDDDD';
-                $TRArgs = 'bgcolor=#BBCBDB' if $itime/100 < 86400;
-                $TRArgs = 'bgcolor=#8CB3D9' if $itime/100 < 900;
-                $TRArgs = 'bgcolor=#D98C8C' if $i_up_admin->{$iid} eq "down";
-            } else {
-                $TRArgs = 'bgcolor=#E4C9B4';
-                $TRArgs = 'bgcolor=#B3D98C' if $itime/100 < 86400;
-                $TRArgs = 'bgcolor=#75B03B' if $itime/100 < 900;
-                $TRArgs = 'bgcolor=#EEEEEE style="color:gray; font-style:italic"' if $i_up_admin->{$iid} eq "down";
-            }
-        } else {
-                $TRArgs = 'bgcolor=#D98C80'; # Negative time
-        }
-        $TRArgs = 'bgcolor=#DFDF9F style="font-style:italic"' if $i_type->{$iid} ne "ethernetCsmacd";
-
-        my $egress = join('<BR>', &TrueSort(@{$i_vlan_membership->{$iid}})) if $i_vlan_membership->{$iid};
-
-        my @untagged = ();
-        foreach (keys %$v_name) {
-            next unless @{$qb_v_untagged->{$_}}[($iid-1)];
-            push (@untagged, $_) if @{$qb_v_untagged->{$_}}[($iid-1)];
-        }
-        my $untag = join('<BR>', &TrueSort(@untagged));
-
-        print "\t<TR $TRArgs><TD bgcolor=#AAAAAA>$i_index->{$iid}</TD>"
-            .&td($interfaces->{$iid});
-        print &td($i_alias->{$iid}) if &non_empty($i_alias);
-        print &td($i_up->{$iid})
-            .&td($i_up_admin->{$iid})
-            .&td($i_duplex->{$iid}.' / '.$i_duplex_admin->{$iid})
-            .&td($i_speed->{$iid})
-            .&td($v_name->{$i_vlan->{$iid}})
-            .&td($i_vlan->{$iid})
-            .&td($egress);
-            if ($info->vtp_version()) {
-                print &td($vtp_trunk_dyn_stat->{$iid}.' / '.$vtp_trunk_dyn->{$iid});
-            } else {
-                 print &td($untag);
-            }
-        print &tdn(&timeticks2HR($itime))
-            .&td(&convert_bytes($i_octet_in64->{$iid}, 1))
-            .&td(&convert_bytes($i_octet_out64->{$iid}, 1))
-            .&td($i_pkts_bcast_in64->{$iid})
-            .&td($i_pkts_bcast_out64->{$iid})
-            .&tde($i_errors_in->{$iid})
-            .&tde($i_errors_out->{$iid})
-            .&tde($i_discards_in->{$iid})
-            .&tde($i_discards_out->{$iid})
-            .&tde($i_bad_proto_in->{$iid});
-        print &tde($i_qlen_out->{$iid}) if &non_empty($i_qlen_out);
-        print &td($i_mtu->{$iid})
-            .&td($i_mac->{$iid})
-            .&td($i_type->{$iid})
-            .&td($i_description->{$iid}, 'nowrap=\"nowrap\"');
-    # The CDP Table has table entries different than the interface tables.
-    # So we use c_if to get the map from cdp table to interface table.
-        print "</TR>\n" and next unless &non_empty($c_ip);
-        my %c_map = reverse %$c_if;
-        my $c_key = $c_map{$iid};
-        my $portcdp = "$c_ip->{$c_key} ($c_port->{$c_key})" if defined $c_ip->{$c_key};
-        print &td($portcdp, 'nowrap="nowrap"');
-        print "</TR>\n";
+print "</TABLE>\n";
+# }}}
+# {{{ Print the PORTS Table:
+print "<P>Ports:</P>\n";
+print '<TABLE><TR>'
+    .&th('Index')
+    .&th('Name');
+print &th('Alias') if &non_empty($i_alias);
+print &th('Oper')
+    .&th('Admin')
+    .&th('Duplex')
+    .&th('Speed')
+    .&th('PVID Name')
+    .&th('PVID')
+    .&th('Egress');
+    if ($info->vtp_version()) {
+        print &th('VTP Trunk State/Neg.');
+    } else {
+        print &th('Untagged');
     }
-    print "</TABLE>\n";
-}
+print &th('Last Change')
+    .&th('Octets In')
+    .&th('Octets Out')
+    .&th('Bcast In')
+    .&th('Bcast Out')
+    .&th('Errors In')
+    .&th('Errors Out')
+    .&th('Discards In')
+    .&th('Discards Out')
+    .&th('Bad Proto In');
+print &th('Qlen_out') if &non_empty($i_qlen_out);
+print &th('Mtu')
+    .&th('Mac')
+    .&th('Type')
+    .&th('Description');
+print &th('CDP') if &non_empty($c_ip);
+print "</TR>";
 
+foreach my $iid (sort { $a <=> $b } keys %$interfaces){
+    my $itime = ($info->uptime() - $i_lastchange->{$iid});
+    my $TRArgs;
+    if ($itime > 0) {
+        if ($i_up->{$iid} =~ /^(?:up|dormant)$/) {
+            $TRArgs = 'class="opadmup_gt_24h"';
+            $TRArgs = 'class="opadmup_lt_24h"' if $itime/100 < 86400;
+            $TRArgs = 'class="opadmup_lt_15m"' if $itime/100 < 900;
+            $TRArgs = 'class="opupadmdown"'    if $i_up_admin->{$iid} eq "down";
+        } else {
+            $TRArgs = 'class="opdownadmup_gt_24h"';
+            $TRArgs = 'class="opdownadmup_lt_24h"' if $itime/100 < 86400;
+            $TRArgs = 'class="opdownadmup_lt_15m"' if $itime/100 < 900;
+            $TRArgs = 'class="null"' if $i_up_admin->{$iid} eq "down";
+        }
+    } else {
+            $TRArgs = 'class="warning"'; # Negative time
+    }
+    $TRArgs = 'class="noneth"' if $i_type->{$iid} ne "ethernetCsmacd";
+
+    my $egress = join('<BR>', &TrueSort(@{$i_vlan_membership->{$iid}})) if $i_vlan_membership->{$iid};
+
+    my @untagged = ();
+    foreach (keys %$v_name) {
+        next unless $qb_v_untagged;
+        next unless @{$qb_v_untagged->{$_}}[($iid-1)];
+        push (@untagged, $_) if @{$qb_v_untagged->{$_}}[($iid-1)];
+    }
+    my $untag = join('<BR>', &TrueSort(@untagged));
+
+    print "\t<TR $TRArgs><TD class=\"dotted_cell\">$i_index->{$iid}</TD>"
+        .&td($interfaces->{$iid});
+    print &td($i_alias->{$iid}) if &non_empty($i_alias);
+    print &td($i_up->{$iid})
+        .&td($i_up_admin->{$iid});
+    if ($i_duplex->{$iid} and $i_duplex_admin->{$iid}) {
+        if ($i_duplex->{$iid} eq 'half' and $interfaces->{$iid} eq 'up') {
+            print &td("$i_duplex->{$iid} / $i_duplex_admin->{$iid}", 'class="warning"');
+        } else {
+            print &td("$i_duplex->{$iid} / $i_duplex_admin->{$iid}");
+        }
+    } else {
+        print &td;
+    }
+    print &td($i_speed->{$iid});
+    if ($i_vlan->{$iid}) {
+        print &td($v_name->{$i_vlan->{$iid}})
+            .&td($i_vlan->{$iid});
+    } else {
+        print &td.&td;
+    }
+    print &td($egress);
+    if ($info->vtp_version() and $vtp_trunk_dyn_stat->{$iid} and $vtp_trunk_dyn->{$iid}) {
+        print &td("$vtp_trunk_dyn_stat->{$iid} / $vtp_trunk_dyn->{$iid}");
+    } else {
+        print &td($untag); }
+    print &tdn(&timeticks2HR($itime))
+        .&td(&convert_bytes($i_octet_in64->{$iid}, 1))
+        .&td(&convert_bytes($i_octet_out64->{$iid}, 1))
+        .&td($i_pkts_bcast_in64->{$iid})
+        .&td($i_pkts_bcast_out64->{$iid})
+        .&tde($i_errors_in->{$iid})
+        .&tde($i_errors_out->{$iid})
+        .&tde($i_discards_in->{$iid})
+        .&tde($i_discards_out->{$iid})
+        .&tde($i_bad_proto_in->{$iid});
+    print &tde($i_qlen_out->{$iid}) if &non_empty($i_qlen_out);
+    print &td($i_mtu->{$iid})
+        .&td($i_mac->{$iid})
+        .&td($i_type->{$iid})
+        .&td($i_description->{$iid}, 'nowrap=\"nowrap\"');
+# The CDP Table has table entries different than the interface tables.
+# So we use c_if to get the map from cdp table to interface table.
+    print "</TR>\n" and next unless &non_empty($c_ip);
+    my %c_map = reverse %$c_if;
+    my $c_key = $c_map{$iid};
+    my $portcdp = "$c_ip->{$c_key} ($c_port->{$c_key})" if $c_key and defined $c_ip->{$c_key};
+    print &td($portcdp, 'nowrap="nowrap"');
+    print "</TR>\n";
+}
+print "</TABLE>\n";
+# }}}
+# {{{ Print the LEGEND table:
 print <<EOF;
-<B>Legend:</B><BR>
-<TABLE style="text-align: center; border-style:solid; border-width:1px;" border="0">
-    <TR bgcolor=#DDDDDD><TD bgcolor=#DDDDDD>Op & Adm UP +24h</TD><TD bgcolor=#E4C9B4>Op DOWN Adm UP +24h</TD></TR>
-    <TR bgcolor=#DDDDDD><TD bgcolor=#BBCBDB>Op & Adm UP -24h</TD><TD bgcolor=#B3D98C>Op DOWN Adm UP -24h</TD></TR>
-    <TR bgcolor=#DDDDDD><TD bgcolor=#8CB3D9>Op & Adm UP -15m</TD><TD bgcolor=#75B03B>Op DOWN Adm UP -15m</TD></TR>
-    <TR bgcolor=#DDDDDD><TD bgcolor=#B38CD9>Op UP Adm DOWN</TD><TD bgcolor=#EEEEEE style="font-style:italic">Op & Adm DOWN</TD></TR>
-    <TR bgcolor=#DDDDDD><TD bgcolor=#D98C80>Warning!</TD><TD bgcolor=#DFDF9F style="font-style:italic">Non Ethernet</TD></TR>
+<P>Legend:</P>
+<TABLE>
+    <TR><TD class="opadmup_gt_24h">Op & Adm UP +24h</TD><TD class="opdownadmup_gt_24h">Op DOWN Adm UP +24h</TD></TR>
+    <TR><TD class="opadmup_lt_24h">Op & Adm UP -24h</TD><TD class="opdownadmup_lt_24h">Op DOWN Adm UP -24h</TD></TR>
+    <TR><TD class="opadmup_lt_15m">Op & Adm UP -15m</TD><TD class="opdownadmup_lt_15m">Op DOWN Adm UP -15m</TD></TR>
+    <TR><TD class="opupadmdown">Op UP Adm DOWN</TD><TD class="null">Op & Adm DOWN</TD></TR>
+    <TR><TD class="warning">Warning!</TD><TD class="noneth">Non Ethernet</TD></TR>
 </TABLE>
 EOF
+# }}}
 
 &footer;

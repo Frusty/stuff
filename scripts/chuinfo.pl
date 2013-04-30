@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 # chuinfo.pl AKA test.pl+SNMP::Info AKA "Switch CPU Toaster".
+# Sorttable from http://www.kryogenix.org/code/browser/sorttable/sorttable.js
 
 use strict;
 use warnings;
@@ -14,59 +15,66 @@ my $community = 'public';
 #
 # Functions.
 #
+# {{{ Execution Time
+sub exec_time() {
+my $date = scalar localtime();
+my $runtime=(time - $^T);
+print "<P class=\"extime\">Generado el $date en $runtime segundos.</P>\n";
+}
+# }}}
 # {{{ HTML Footer
 sub footer() {
-    print "</BODY></HTML>\n";
-    exit 0;
+print "</BODY></HTML>\n";
+exit 0;
 }
 # }}}
 # {{{ TD Wrapper
 sub td($$) {
-    my $text = shift || "";
-    my $args = shift || "";
-    return "<TD $args>$text</TD>" if $text ne "" or return '<TD class="null">Null</TD>';
+my $text = shift || "";
+my $args = shift || "";
+return "<TD $args>$text</TD>" if $text ne "" or return '<TD class="null">Null</TD>';
 }
 # }}}
 # {{{ TH Wrapper
 sub th($$) {
-    my $text = shift || "";
-    my $args = shift || "";
-    return "<TH $args>$text</TH>" if $text ne "" or return '<TH></TH>';
+my $text = shift || "";
+my $args = shift || "";
+return "<TH $args>$text</TH>" if $text ne "" or return '<TH></TH>';
 }
 # }}}
 # {{{ TDN Wrapper
 sub tdn($$) {
-    my $text = shift || "";
-    my $args = shift || "";
-    return "<TD $args>$text</TD>" if $text !~ /^\-/ or return '<TD>'.$text.'</TD>';
+my $text = shift || "";
+my $args = shift || "";
+return "<TD $args>$text</TD>" if $text !~ /^\-/ or return '<TD>'.$text.'</TD>';
 }
 # }}}
 # {{{ TDE Wrapper
 sub tde($$) {
-    my $text = shift || 0;
-    my $args = shift || "";
-    if (defined $text) {
-        if ($text gt 0 or $text =~ /^-/) {
-            return "<TD class=\"warning\"><I>$text</I></TD>";
-        } else {
-            return "<TD $args>$text</TD>";
-        }
+my $text = shift || 0;
+my $args = shift || "";
+if (defined $text) {
+    if ($text gt 0 or $text =~ /^-/) {
+        return "<TD class=\"warning\"><I>$text</I></TD>";
     } else {
-         return '<TD class="null">Null</TD>';
+        return "<TD $args>$text</TD>";
     }
+} else {
+     return '<TD class="null">Null</TD>';
+}
 }
 # }}}
 # {{{ non_empty(%) [Return 0 (false) if all the hash values are ""]
 sub non_empty(%) {
-    return grep { $_ ne "" } values %{$_[0]};
+return grep { $_ ne "" } values %{$_[0]};
 }
 # }}}
 # {{{ check_ip_host(@) [Check for a valid IP or Host]
 sub check_ip_host(@) {
-    my $validip = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\$";
-    my $validhost = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])\$";
-    @_ ? my @badhosts = grep { $_ !~ /(?:$validip|$validhost)/ } @_ : return "Empty array!\n";
-    @badhosts ? return join(", ", @badhosts)." IP o Hostname inválido/s.\n" : return 0;
+my $validip = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\$";
+my $validhost = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])\$";
+@_ ? my @badhosts = grep { $_ !~ /(?:$validip|$validhost)/ } @_ : return "Empty array!\n";
+@badhosts ? return join(", ", @badhosts)." IP o Hostname inválido/s.\n" : return 0;
 }
 # }}}
 # {{{ convert_bytes($$) [Bytes to 'Human Readable']
@@ -139,30 +147,23 @@ open HIGHLANDER, ">>/tmp/perl_$0_highlander" or die "Content-Type: text/html\n\n
     exit 1;
 }
 # }}}
-# {{{ Parse POST values if any 
-my %FORM=();
-if ($ENV{'CONTENT_LENGTH'}) {
-    read(STDIN, my $buffer, $ENV{'CONTENT_LENGTH'});
-    my @pairs = split(/&/, $buffer);
-    foreach my $pair (@pairs) {
-        my ($name, $value) = split(/=/, $pair);
-        $value =~ tr/+/ /;
-        $value =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-        $FORM{$name} = $value;
-    }
+# {{{ Pick our host from the query string (GET) or command line.
+my $host;
+if ($ARGV[0]) {
+    $host = $ARGV[0];
+} elsif ($ENV{QUERY_STRING}) {
+    $host = $1 if $ENV{QUERY_STRING} =~ /host=(.+)$/;
 }
 # }}}
 # {{{ HTML Header and Guts
-{
 my $date = scalar localtime();
 my $version = "v".int(rand(10))."\.".int(rand(1000))."b";
-my $current = $FORM{'input'} || "Null";
 print "Content-Type: text/html\n\n";
 print <<EOF;
 <HTML>
     <HEAD>
         <META http-equiv="Content-Type" content="text/html; charset=utf-8">
-        <TITLE>$current // $0 // $date</TITLE>
+        <TITLE>$host // $0 // $date</TITLE>
         <script type="text/javascript" src="../sorttable.js"></script>
         <style type="text/css">
             body {
@@ -170,109 +171,126 @@ print <<EOF;
                 text-align: center;
             }
             p {
-                font: x-large Helvetica Neue,Helvetica,sans-serif;
+                font: x-large "helvetica neue", helvetica, arial, sans-serif;
                 color: #222;
                 text-shadow: 0px 2px 3px #666;
             }
+            p.extime {
+                font-size: small;
+            }
+            button {
+                background-image: linear-gradient(#666 0%,#333 100%);
+                border: 1px solid #172d6e;
+                border-bottom: 1px solid #0e1d45;
+                border-radius: 5px;
+                box-shadow: inset 0 1px 0 0 #b1b9cb;
+                color: #fff;
+                padding: 3px;
+                font: normal "helvetica neue", helvetica, arial, sans-serif;
+                font-weight: bold;
+                text-shadow: 0 -1px 1px #000f4d;
+            }
+            input {
+                background: white;
+                border: 1px solid #DDD;
+                border-radius: 5px;
+                box-shadow: 0 0 5px #DDD inset;
+                color: #666;
+                float: left;
+                padding: 3px;
+                width: 165px;
+            }
             table {
-                background-color: #FAFAFA;
                 border: 1px solid #111;
                 background: #FAFAFA;
-                font-size: small;
-                text-align: center;
                 border-radius: 5px;
                 margin-left:auto;
                 margin-right:auto;
             }
-            tr, td, th {
-                font: small Helvetica Neue,Helvetica,sans-serif;
+            table.fancy tr, table.fancy td, table.fancy th {
+                font: small "helvetica neue", helvetica, arial, sans-serif;
+                text-align: center;
                 padding-right: 5px;
                 padding-left: 5px;
-                transition: all 0.3s;  /* Simple transition for hover effect */¶
+                transition: all 0.3s;  /* Simple transition for hover effect */
             }
-            th {
+            table.fancy th {
                 background: linear-gradient(#666 0%,#333 100%); /* Gradient Background */
                 color: #FAFAFA;
                 font-weight: bold;
+                text-shadow: 0 -1px 1px #000f4d;
             }
-            tr th:first-child { /* First-child header cell */
+            table.fancy tr, table.fancy th:first-child { /* First-child header cell */
                 border: 0 none;
                 background: #FAFAFA;
                 color: black;
                 text-align: left;
                 font-size: medium;
+                text-shadow: none;
             }
-            tr:first-child th:nth-child(2) { border-radius: 5px 0 0 0; } /* Round borders to specific cells */
-            tr:first-child th:last-child { border-radius: 0 5px 0 0; }
-            tr td:hover { /* Hover cell effect! */
+            table.fancy tr:first-child, table.fancy th:last-child { border-radius: 0 5px 0 0; }
+            table.fancy td:hover { /* Hover cell effect! */
                 border-radius: 5px;
                 background: #333;
                 color: #FFF;
             }
-            .bold_right {
+            table.fancy .bold_right {
                 font-style: italic;
                 font-weight: bold;
                 text-align: right;
-                background: #FAFAFA;
             }
-            .dotted_cell {
-                font-weight: bold;
+            table.fancy .dotted_cell {
+                background: #FAFAFA;
                 border: 1px dotted #666;
-                background: #FAFAFA;
                 font-style: italic;
                 font-weight: bold;
                 text-align: right;
+                padding-right: 5px;
             }
-            .opadmup_gt_24h     { background: #E6E6E6; }
-            .opadmup_lt_24h     { background: #DBEDFF; }
-            .opadmup_lt_15m     { background: #8CB3D9; }
-            .opupadmdown        { background: #B38CD9; }
-            .opdownadmup_gt_24h { background: #F0E5CC; }
-            .opdownadmup_lt_24h { background: #CCF0D3; }
-            .opdownadmup_lt_15m { background: #8CD98C; }
-            .noneth             { background: #EAEAC8; }
-            .warning            {
+            table.fancy .opadmup_gt_24h     { background: #E6E6E6; }
+            table.fancy .opadmup_lt_24h     { background: #DBEDFF; }
+            table.fancy .opadmup_lt_15m     { background: #8CB3D9; }
+            table.fancy .opupadmdown        { background: #B38CD9; }
+            table.fancy .opdownadmup_gt_24h { background: #F0E5CC; }
+            table.fancy .opdownadmup_lt_24h { background: #CCF0D3; }
+            table.fancy .opdownadmup_lt_15m { background: #8CD98C; }
+            table.fancy .noneth             { background: #EAEAC8; }
+            table.fancy .warning            {
                 background: #FF7A7A;
                 border-radius: 5px;
             }
-            .null {
+            table.fancy .null {
                 background: #FAFAFA;
                 color: #DDD;
                 text-shadow: 0px 1px 1px #CCC;
             }
+            table.sortable th { color: #FAFAFA; } /* White font for the sorttable hlink */
         </style>
     </HEAD>
 <BODY>
 <P>ChuInfo $version</P>
-<FORM action="$0" method="POST">
-    <TABLE "rndtable">
-        <TR><TD align="right">Host:</TD><TD><INPUT type="text" name="input" value=""/></TD><TD><INPUT type="submit" value="Submit"/></TD></TR>
+<FORM action="$0" method="GET">
+    <TABLE>
+        <TR><TH>Host:</TH><TD><INPUT type="text" name="host" value=""/></TD><TD><BUTTON>Submit</BUTTON></TD></TR>
     </TABLE>
 </FORM>
 EOF
-}
-# }}}
-# {{{ Use @ARGVs if any
-$FORM{'input'} = $ARGV[0] if not $FORM{'input'};
 # }}}
 # {{{ Print our chosen host
-unless ( &check_ip_host("$FORM{'input'}") ) {
-    print "<H2>$FORM{'input'}</H2>\n";
-} elsif ($FORM{'input'}) {
-    print "<P>Invalid host entry.</P>\n";
+unless ($host) { # First time.
     &footer;
-} else {    # First Time
+} elsif (not &check_ip_host($host)) {
+    print "<H2>$host</H2>\n";
+} else {
+    print "<P>Invalid host entry.</P>\n";
     &footer;
 }
 # }}}
 # {{{ Perform the SNMP Bulkwalk query
 my $info = new SNMP::Info( AutoSpecify => 1
-                         , LoopDetect  => 1
                          , Debug       => 0
-                         , BigInt      => 0 # No se como tratar los obetos BigInt aún.
-                         , BulkWalk    => 1
                          , # The rest is passed to SNMP::Session
-                         , DestHost    => $FORM{'input'} # || '192.168.238.4', # 192.168.247.80
+                         , DestHost    => $host # || '192.168.238.4', # 192.168.247.80
                          , Community   => $community
                          , Version     => 2
                          ) or print "<P>Can't connect to device.</P>\n" and &footer;
@@ -308,6 +326,7 @@ my $i_discards_out     = $info->i_discards_out();
 my $i_bad_proto_in     = $info->i_bad_proto_in();
 my $i_qlen_out         = $info->i_qlen_out();
 # Get CDP Neighbor info
+my $c_id       = $info->c_id();
 my $c_if       = $info->c_if();
 my $c_ip       = $info->c_ip();
 my $c_port     = $info->c_port();
@@ -332,21 +351,22 @@ my $vtp_trunk_dyn_stat = $info->vtp_trunk_dyn_stat();
 #
 # {{{ Print the INFO Table
 print "<P>Info:</P>\n";
-print "<TABLE><TR><TH>OIDs</TH><TH>Name</TH></TR>\n";
-print "<TR><TD class=\"dotted_cell\">Name</TD>".&td($info->name())."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Location</TD>".&td($info->location())."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Contact</TD>".&td($info->contact())."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Class</TD>".&td($info->class())."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Model</TD>".&td($info->model())."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">OS Version</TD>".&td($info->os_ver())."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Serial Number</TD>".&td($info->serial())."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Base MAC</TD>".&td($info->mac())."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Uptime</TD>".&td(&timeticks2HR($info->uptime()))."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Layers</TD>".&td($info->layers())."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Ports</TD>".&td($info->ports())."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Ip Forwarding".&td($info->ipforwarding())."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">CDP".&td($info->hasCDP())."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Bulkwalk</TD>".&td($info->bulkwalk())."</TR>\n";
+print "<TABLE class=\"fancy\"><TR><TH>OIDs</TH><TH>Name</TH></TR>\n";
+print '<TR><TD class="dotted_cell">Name</TD>'.&td($info->name())."</TR>\n";
+print '<TR><TD class="dotted_cell">Location</TD>'.&td($info->location())."</TR>\n";
+print '<TR><TD class="dotted_cell">Contact</TD>'.&td($info->contact())."</TR>\n";
+print '<TR><TD class="dotted_cell">Class</TD>'.&td($info->class())."</TR>\n";
+print '<TR><TD class="dotted_cell">Model</TD>'.&td($info->model())."</TR>\n";
+print '<TR><TD class="dotted_cell">OS Version</TD>'.&td($info->os_ver())."</TR>\n";
+print '<TR><TD class="dotted_cell">Serial Number</TD>'.&td($info->serial())."</TR>\n";
+print '<TR><TD class="dotted_cell">Base MAC</TD>'.&td($info->mac())."</TR>\n";
+print '<TR><TD class="dotted_cell">Uptime</TD>'.&td(&timeticks2HR($info->uptime()))."</TR>\n";
+print '<TR><TD class="dotted_cell">Booted on</TD>'.&td(scalar localtime(time - $info->uptime()/100))."</TR>\n";
+print '<TR><TD class="dotted_cell">Layers</TD>'.&td($info->layers())."</TR>\n";
+print '<TR><TD class="dotted_cell">Ports</TD>'.&td($info->ports())."</TR>\n";
+print '<TR><TD class="dotted_cell">Ip Forwarding'.&td($info->ipforwarding())."</TR>\n";
+print '<TR><TD class="dotted_cell">CDP'.&td($info->hasCDP())."</TR>\n";
+print '<TR><TD class="dotted_cell">Bulkwalk</TD>'.&td($info->bulkwalk())."</TR>\n";
 print "</TABLE>\n";
 # }}}
 # {{{ Print the IP Address Table
@@ -356,7 +376,7 @@ my $netmask = $info->ip_netmask();
 my $broadcast = $info->ip_broadcast();
 
 print "<P>IP Adress Table:</P>\n";
-print '<TABLE><TR>'
+print '<TABLE class="fancy"><TR>'
     .&th('Index')
     .&th('Port')
     .&th('Table')
@@ -389,7 +409,7 @@ if ( &non_empty($info->ipr_if()) ) {
     my $ipr_age = $info->ipr_age();
     my $ipr_mask = $info->ipr_mask();
     print "<P>Routing Table:</P>\n";
-    print '<TABLE><TR>'
+    print '<TABLE class="fancy"><TR>'
         .&th('Index')
         .&th('Route')
         .&th('Mask')
@@ -449,21 +469,21 @@ my @halfdup    = &hashmatch($i_duplex,           "half");
 @halfdup       = &arr_resta(\@halfdup,           \@operoff);
 my @trunkports = &hashmatch($vtp_trunk_dyn_stat, '^trunking$' );
 print '<P>Totals:</P>';
-print '<TABLE><TR>'.&th('Range').&th('Ports').&th('Total')."</TR>";
-print "<TR><TD class=\"dotted_cell\">Admin On</TD>"    .&td(join (", ", &AgrArr(@adminon)))   .&td(($#adminon+1))."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Admin Off</TD>"   .&td(join (", ", &AgrArr(@adminoff)))  .&td(($#adminoff+1))."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Oper On</TD>"     .&td(join (", ", &AgrArr(@operon)))    .&td(($#operon+1))."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Oper Off</TD>"    .&td(join (", ", &AgrArr(@operoff)))   .&td(($#operoff+1))."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Gb Link</TD>"     .&td(join (", ", &AgrArr(@gbports)))   .&td(($#gbports+1))."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Fast Link</TD>"   .&td(join (", ", &AgrArr(@fastports))) .&td(($#fastports+1))."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Ether Link</TD>"  .&td(join (", ", &AgrArr(@ethports)))  .&tde(($#ethports+1))."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Half Duplex</TD>" .&td(join (", ", &AgrArr(@halfdup)))   .&tde(($#halfdup+1))."</TR>\n";
-print "<TR><TD class=\"dotted_cell\">Trunking</TD>"    .&td(join (", ", &AgrArr(@trunkports))).&td(($#trunkports+1))."</TR>\n" if @trunkports;
+print '<TABLE class="fancy"><TR>'.&th('Range').&th('Ports').&th('Total')."</TR>";
+print '<TR><TD class="dotted_cell">Admin On</TD>'    .&td(join (", ", &AgrArr(@adminon)))   .&td(($#adminon+1))."</TR>\n";
+print '<TR><TD class="dotted_cell">Admin Off</TD>'   .&td(join (", ", &AgrArr(@adminoff)))  .&td(($#adminoff+1))."</TR>\n";
+print '<TR><TD class="dotted_cell">Oper On</TD>'     .&td(join (", ", &AgrArr(@operon)))    .&td(($#operon+1))."</TR>\n";
+print '<TR><TD class="dotted_cell">Oper Off</TD>'    .&td(join (", ", &AgrArr(@operoff)))   .&td(($#operoff+1))."</TR>\n";
+print '<TR><TD class="dotted_cell">Gb Link</TD>'     .&td(join (", ", &AgrArr(@gbports)))   .&td(($#gbports+1))."</TR>\n";
+print '<TR><TD class="dotted_cell">Fast Link</TD>'   .&td(join (", ", &AgrArr(@fastports))) .&td(($#fastports+1))."</TR>\n";
+print '<TR><TD class="dotted_cell">Ether Link</TD>'  .&td(join (", ", &AgrArr(@ethports)))  .&tde(($#ethports+1))."</TR>\n";
+print '<TR><TD class="dotted_cell">Half Duplex</TD>' .&td(join (", ", &AgrArr(@halfdup)))   .&tde(($#halfdup+1))."</TR>\n";
+print '<TR><TD class="dotted_cell">Trunking</TD>'    .&td(join (", ", &AgrArr(@trunkports))).&td(($#trunkports+1))."</TR>\n" if @trunkports;
 print "</TABLE>\n";
 # }}}
 # {{{ Print the VLANs Table
 print "<P>Vlans:</P>\n";
-print "<TABLE><TR><TH>Vlan Name</TH><TH>Pvid</TH><TH>Type</TH><TH>Puertos</TH><TH>Total</TH></TR>\n";
+print "<TABLE class=\"fancy\"><TR><TH>Vlan Name</TH><TH>Pvid</TH><TH>Type</TH><TH>Ports</TH><TH>Total</TH></TR>\n";
 foreach my $pvid ( sort {$a <=> $b} keys %$v_name) {
     my @pvid        = ();
     my @pegress     = ();
@@ -485,7 +505,8 @@ print "</TABLE>\n";
 # }}}
 # {{{ Print the PORTS Table:
 print "<P>Ports:</P>\n";
-print '<TABLE><TR>'
+#print '<TABLE class="fancy"><TR>'
+print '<TABLE class="fancy sortable"><TR>'
     .&th('Index')
     .&th('Name');
 print &th('Alias') if &non_empty($i_alias);
@@ -502,6 +523,7 @@ print &th('Oper')
         print &th('Untagged');
     }
 print &th('Last Change')
+    .&th('Changed on')
     .&th('Octets In')
     .&th('Octets Out')
     .&th('Bcast In')
@@ -549,14 +571,14 @@ foreach my $iid (sort { $a <=> $b } keys %$interfaces){
     }
     my $untag = join('<BR>', &TrueSort(@untagged));
 
-    print "\t<TR $TRArgs><TD class=\"dotted_cell\">$i_index->{$iid}</TD>"
+    print "\t<TR $TRArgs>".&td($i_index->{$iid}, 'class="dotted_cell"')
         .&td($interfaces->{$iid});
     print &td($i_alias->{$iid}) if &non_empty($i_alias);
     print &td($i_up->{$iid})
         .&td($i_up_admin->{$iid});
     if ($i_duplex->{$iid} and $i_duplex_admin->{$iid}) {
-        if ($i_duplex->{$iid} eq 'half' and $interfaces->{$iid} eq 'up') {
-            print &td("$i_duplex->{$iid} / $i_duplex_admin->{$iid}", 'class="warning"');
+        if ($i_duplex->{$iid} eq 'half' and $i_up->{$iid} eq 'up') {
+            print &td("$i_duplex->{$iid}- / $i_duplex_admin->{$iid}", 'class="warning"');
         } else {
             print &td("$i_duplex->{$iid} / $i_duplex_admin->{$iid}");
         }
@@ -576,6 +598,7 @@ foreach my $iid (sort { $a <=> $b } keys %$interfaces){
     } else {
         print &td($untag); }
     print &tdn(&timeticks2HR($itime))
+        .&td(scalar localtime(time - $itime/100))
         .&td(&convert_bytes($i_octet_in64->{$iid}, 1))
         .&td(&convert_bytes($i_octet_out64->{$iid}, 1))
         .&td($i_pkts_bcast_in64->{$iid})
@@ -595,8 +618,8 @@ foreach my $iid (sort { $a <=> $b } keys %$interfaces){
     print "</TR>\n" and next unless &non_empty($c_ip);
     my %c_map = reverse %$c_if;
     my $c_key = $c_map{$iid};
-    my $portcdp = "$c_ip->{$c_key} ($c_port->{$c_key})" if $c_key and defined $c_ip->{$c_key};
-    print &td($portcdp, 'nowrap="nowrap"');
+    my $portcdp = "<A HREF=\"$0?host=$c_ip->{$c_key}\" TARGET=\"_blank\">$c_id->{$c_key} ($c_port->{$c_key})</A>" if $c_key and defined $c_ip->{$c_key};
+    print &td($portcdp);
     print "</TR>\n";
 }
 print "</TABLE>\n";
@@ -604,7 +627,7 @@ print "</TABLE>\n";
 # {{{ Print the LEGEND table:
 print <<EOF;
 <P>Legend:</P>
-<TABLE>
+<TABLE class="fancy">
     <TR><TD class="opadmup_gt_24h">Op & Adm UP +24h</TD><TD class="opdownadmup_gt_24h">Op DOWN Adm UP +24h</TD></TR>
     <TR><TD class="opadmup_lt_24h">Op & Adm UP -24h</TD><TD class="opdownadmup_lt_24h">Op DOWN Adm UP -24h</TD></TR>
     <TR><TD class="opadmup_lt_15m">Op & Adm UP -15m</TD><TD class="opdownadmup_lt_15m">Op DOWN Adm UP -15m</TD></TR>
@@ -614,4 +637,5 @@ print <<EOF;
 EOF
 # }}}
 
+&exec_time if $host;
 &footer;

@@ -17,64 +17,64 @@ my $community = 'public';
 #
 # {{{ Execution Time
 sub exec_time() {
-my $date = scalar localtime();
-my $runtime=(time - $^T);
-print "<P class=\"extime\">Generado el $date en $runtime segundos.</P>\n";
+    my $date = scalar localtime();
+    my $runtime=(time - $^T);
+    print "<P class=\"extime\">Generado el $date en $runtime segundos.</P>\n";
 }
 # }}}
 # {{{ HTML Footer
 sub footer() {
-print "</BODY></HTML>\n";
-exit 0;
+    print "</BODY></HTML>\n";
+    exit 0;
 }
 # }}}
 # {{{ TD Wrapper
 sub td($$) {
-my $text = shift || "";
-my $args = shift || "";
-return "<TD $args>$text</TD>" if $text ne "" or return '<TD class="null">Null</TD>';
+    my $text = shift || "";
+    my $args = shift || "";
+    return "<TD $args>$text</TD>" if $text ne "" or return '<TD><div class="cross"></div></TD>';
 }
 # }}}
 # {{{ TH Wrapper
 sub th($$) {
-my $text = shift || "";
-my $args = shift || "";
-return "<TH $args>$text</TH>" if $text ne "" or return '<TH></TH>';
+    my $text = shift || "";
+    my $args = shift || "";
+    return "<TH $args>$text</TH>" if $text ne "" or return '<TH></TH>';
 }
 # }}}
 # {{{ TDN Wrapper
 sub tdn($$) {
-my $text = shift || "";
-my $args = shift || "";
-return "<TD $args>$text</TD>" if $text !~ /^\-/ or return '<TD>'.$text.'</TD>';
+    my $text = shift || "";
+    my $args = shift || "";
+    return "<TD $args>$text</TD>" if $text !~ /^\-/ or return '<TD>'.$text.'</TD>';
 }
 # }}}
 # {{{ TDE Wrapper
 sub tde($$) {
-my $text = shift || 0;
-my $args = shift || "";
-if (defined $text) {
-    if ($text gt 0 or $text =~ /^-/) {
-        return "<TD class=\"warning\"><I>$text</I></TD>";
+    my $text = shift || 0;
+    my $args = shift || "";
+    if (defined $text) {
+        if ($text gt 0 or $text =~ /^-/) {
+            return "<TD class=\"warning\"><I>$text</I></TD>";
+        } else {
+            return "<TD $args>$text</TD>";
+        }
     } else {
-        return "<TD $args>$text</TD>";
+        return '<TD><div class="cross"></div></TD>';
     }
-} else {
-     return '<TD class="null">Null</TD>';
-}
 }
 # }}}
 # {{{ non_empty(%) [Return 0 (false) if all the hash values are ""]
 sub non_empty(%) {
-return grep { $_ ne "" } values %{$_[0]};
+    return grep { $_ ne "" } values %{$_[0]};
 }
 # }}}
 # {{{ check_ip_host(@) [Check for a valid IP or Host]
 sub check_ip_host(@) {
-my $validip = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\$";
-my $validhost = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])\$";
-@_ ? my @badhosts = grep { $_ !~ /(?:$validip|$validhost)/ } @_ : return "Empty array!\n";
-@badhosts ? return join(", ", @badhosts)." IP o Hostname inválido/s.\n" : return 0;
+    my $validip = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\$";
+    my $validhost = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])\$";
+    @_ ? my @badhosts = grep { $_ !~ /(?:$validip|$validhost)/ } @_ : return "Empty array!\n";
+    @badhosts ? return join(", ", @badhosts)." IP o Hostname inválido/s.\n" : return 0;
 }
 # }}}
 # {{{ convert_bytes($$) [Bytes to 'Human Readable']
@@ -180,18 +180,18 @@ print <<EOF;
             }
             button {
                 background-image: linear-gradient(#666 0%,#333 100%);
-                border: 1px solid #172d6e;
-                border-bottom: 1px solid #0e1d45;
+                border: 1px solid #172D6E;
+                border-bottom: 1px solid #0E1D45;
                 border-radius: 5px;
                 box-shadow: inset 0 1px 0 0 #b1b9cb;
-                color: #fff;
+                color: #FFF;
                 padding: 3px;
                 font: normal "helvetica neue", helvetica, arial, sans-serif;
                 font-weight: bold;
-                text-shadow: 0 -1px 1px #000f4d;
+                text-shadow: 0 -1px 1px #111;
             }
             input {
-                background: white;
+                background: #FFF;
                 border: 1px solid #DDD;
                 border-radius: 5px;
                 box-shadow: 0 0 5px #DDD inset;
@@ -215,18 +215,18 @@ print <<EOF;
                 transition: all 0.3s;  /* Simple transition for hover effect */
             }
             table.fancy th {
-                background: linear-gradient(#666 0%,#333 100%); /* Gradient Background */
                 color: #FAFAFA;
                 font-weight: bold;
-                text-shadow: 0 -1px 1px #000f4d;
+                text-shadow: 0 -1px 1px #111;
+                background: linear-gradient(#666 0%,#333 100%); /* Gradient Background */
             }
             table.fancy tr, table.fancy th:first-child { /* First-child header cell */
                 border: 0 none;
-                background: #FAFAFA;
                 color: black;
                 text-align: left;
                 font-size: medium;
                 text-shadow: none;
+                background: #FAFAFA;
             }
             table.fancy tr:first-child, table.fancy th:last-child { border-radius: 0 5px 0 0; }
             table.fancy td:hover { /* Hover cell effect! */
@@ -260,11 +260,30 @@ print <<EOF;
                 border-radius: 5px;
             }
             table.fancy .null {
-                background: #FAFAFA;
                 color: #DDD;
                 text-shadow: 0px 1px 1px #CCC;
+                background: #FAFAFA;
             }
             table.sortable th { color: #FAFAFA; } /* White font for the sorttable hlink */
+            .cross{
+                position: relative;
+                margin-left: auto;
+                margin-right: auto;
+                width: 3px;
+                height: 9px;
+                transform: rotate(45deg);
+                -webkit-transform: rotate(45deg);
+                background: #DDD;
+            }
+            .cross:before{
+                position: absolute;
+                width: 9px;
+                height: 3px;
+                top: 3px;
+                left: -3px;
+                background: #DDD;
+                content: "";
+            }
         </style>
     </HEAD>
 <BODY>

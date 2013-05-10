@@ -18,7 +18,7 @@ print "Project (EXXXXX): " and chomp($project = <>) while $project !~ /^[Ee]\d{5
 my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime(time);
 my $today = sprintf("%02d/%02d/%04d", $mday, $mon+1, $year+1900);
 my $dow = qw(7 1 2 3 4 5 6)[$wday]; # $wday begins with sunday at 0
-my $woy = int($yday / 7) + 1; # WeekOfYear
+my $woy = int(($yday+1)/7)+1; # WeekOfYear
 
 my $ua = LWP::UserAgent->new( agent         => 'Windows IE 6' # ORLY
                             , show_progress => 1

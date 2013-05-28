@@ -7,7 +7,6 @@ iso_version=$(date +%Y.%m.%d)
 install_dir=arch
 work_dir=work
 out_dir=out
-
 arch=i686
 verbose="-v"
 pacman_conf="/proc/$$/fd/3"
@@ -25,27 +24,30 @@ run_once() {
 make_pacman_conf() {
 exec 3<<__EOF__
 [options]
-HoldPkg      = pacman glibc
-SyncFirst    = pacman
-#CacheDir    = /var/cache/pacman/pkg/
-Architecture = i686
+HoldPkg           = pacman glibc
+Architecture      = i686
+SigLevel          = Required DatabaseOptional
+LocalFileSigLevel = Optional
+Color
+CheckSpace
 [core]
-SigLevel = PackageRequired
 Include  = /etc/pacman.d/mirrorlist
 [extra]
-SigLevel = PackageRequired
 Include  = /etc/pacman.d/mirrorlist
 [community]
-SigLevel = PackageRequired
 Include  = /etc/pacman.d/mirrorlist
+[archlinuxfr]
+SigLevel = Optional TrustAll
+Server = http://repo.archlinux.fr/$arch
 [custompkgs]
 SigLevel = Optional TrustAll
-Server = file://${script_path}/custompkgs
+Server   = file://${script_path}/custompkgs
 __EOF__
 }
 
 # Prepare our custom repo database
 make_custom_repo() {
+    rm -f ${script_path}/custompkgs/custom*
     for i in custompkgs/*xz; do repo-add ${script_path}/custompkgs/custompkgs.db.tar.gz $i; done
 }
 
@@ -83,7 +85,6 @@ make_setup_mkinitcpio() {
 make_customize_root_image() {
     cp -af ${script_path}/root-image ${work_dir}/${arch}
 
-    patch ${work_dir}/${arch}/root-image/usr/bin/pacman-key < ${script_path}/pacman-key-4.0.3_unattended-keyring-init.patch
     curl -o ${work_dir}/${arch}/root-image/etc/pacman.d/mirrorlist 'https://www.archlinux.org/mirrorlist/?country=all&protocol=http&use_mirror_status=on'
     setarch ${arch} mkarchiso ${verbose} -w "${work_dir}/${arch}" -C "${pacman_conf}" -D "${install_dir}" -r '/usr/local/sbin/customize_root_image.sh' run
 }
@@ -126,7 +127,6 @@ make_isolinux() {
     cp ${work_dir}/${arch}/root-image/usr/lib/syslinux/isohdpfx.bin ${work_dir}/iso/isolinux/
 }
 
-
 # Copy aitab
 make_aitab() {
     mkdir -p ${work_dir}/iso/${install_dir}
@@ -153,7 +153,7 @@ if [[ ${EUID} -ne 0 ]]; then
     _usage 1
 fi
 
-rm -rf out ${work_dir}
+rm -rf ${work_dir}
 mkdir -p ${work_dir}
 
 run_once make_pacman_conf

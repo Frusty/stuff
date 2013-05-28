@@ -26,9 +26,4 @@ chmod 755 /usr/local/sbin/*
 
 sed -i "s/#Server/Server/g" /etc/pacman.d/mirrorlist
 
-sed 's#\(^ExecStart=-/sbin/agetty\)#\1 --autologin arch#;
-     s#\(^Alias=getty.target.wants/\).\+#\1autologin@tty1.service#' \
-     /usr/lib/systemd/system/getty@.service > /etc/systemd/system/autologin@.service
-
-systemctl disable getty@tty1.service
-systemctl enable multi-user.target pacman-init.service autologin@.service wicd.service mpd.service gpm.service
+systemctl enable multi-user.target pacman-init.service wicd.service mpd.service gpm.service

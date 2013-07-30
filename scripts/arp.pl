@@ -6,15 +6,21 @@
 use strict;
 use warnings;
 use SNMP;
-use Socket;       # inet_aton()
-use Storable;     # store, retrieve¶
+use Socket;   # inet_aton()
+use Storable; # store, retrieve¶
 use Time::HiRes qw( time );
+use File::Spec;
+use Cwd 'abs_path';
 use Data::Dumper;
 
+my $fullpath = abs_path($0);
+my ($volume, $path, $file) = File::Spec->splitpath($fullpath);
 my $starting_time = time();
 my %result  = (); # Main Hash
-my %routers = ( 'router1.com'      => { COMMUNITY => 'public' }
-              , 'router2.com'      => { COMMUNITY => 'public' }
+my %routers = ( 'router1 (datos)' => { COMMUNITY => 'datos@public'
+                                     , HOST      => '127.0.0.1'
+                                     }
+              , 'router2'         => { COMMUNITY => 'public' }
               );
 
 sub header() {
@@ -108,6 +114,7 @@ sub td() {
 sub stats_table() {
     return 0;
 }
+
 sub arp_table() {
     print &tab."<TABLE id=\"arp_table\" class=\"sortable\" cellspacing=\"0\">\n";
     print &tab(2)."<CAPTION>Generated on ".scalar localtime()." in ".sprintf("%.2f", (time() - $^T))." seconds. Click on a column title to apply sort. Hover over a router name to get the last seen date..</CAPTION>\n";
@@ -117,7 +124,7 @@ sub arp_table() {
         if ($result{$ip}{HOST}) {
             $host .= " ($result{$ip}{HOST})";
             $trclass = "ip";
-            $tdclass = "";
+            $tdclass = "ip";
         }
         print &tab(2)."<TR>\n";
         my @seen_routers = map { "<a title=\"Last seeen on $result{$ip}{ROUTERS}{$_}\">$_</a>"} keys %{$result{$ip}{ROUTERS}};
@@ -133,7 +140,7 @@ sub footer() {
 
 sub update() {
     my %vendors = (); # Will containt the parsed oid.txt
-    open(OUI, "<", 'oui.txt') or die "can't find oui.txt";
+    open(OUI, "<", "$path\/oui.txt") or die "Can't find oui.txt, get it from http://standards.ieee.org/develop/regauth/oui/oui.txt";
     while (my $line = <OUI>) {
         $vendors{$1} = $2 if $line =~ /(\S+)\s+\(hex\)\s+(.+)$/;
     }
@@ -149,7 +156,7 @@ sub update() {
                                                }
                    );
 
-        my $session = new SNMP::Session( DestHost   => $router
+        my $session = new SNMP::Session( DestHost   => $routers{$router}{HOST} || $router
                                        , Community  => $routers{$router}{COMMUNITY}
                                        , Version    => $routers{$router}{VERSION} || 2
                                        , UseNumeric => 1
@@ -164,7 +171,6 @@ sub update() {
         }
         my $VarList = new SNMP::VarList(@VarBinds);
         my @result = $session->bulkwalk(0, 100, $VarList);
-
         my $i=0;
         for my $vbarr (@result) {
             my $oid = $$VarList[$i++]->tag();
@@ -172,7 +178,6 @@ sub update() {
                 push(@{$oids{$oid}{RES}}, $v->val);
             }
         }
-
         my $total = scalar @{$oids{'1.3.6.1.2.1.4.22.1.2'}{RES}};
         for $i (0..($total-1)) {
             my $ip = $oids{'1.3.6.1.2.1.4.22.1.3'}{RES}[$i];
@@ -193,17 +198,24 @@ sub update() {
     }
 } #update
 
-my $href = retrieve("$0.hash");
-%result = %{$href};
+my $href;
+if (-f "$fullpath.hash") {
+   $href = retrieve("$fullpath.hash");
+   %result = %{$href};
+} else {
+   $ARGV[0] = "update";
+}
+
 if($ARGV[0]) {
     &update;
-    store(\%result, "$0.hash") or die "Can't store hash!\n";
+    store(\%result, "$fullpath.hash") or die "Can't store hash!\n";
 } else {
     &header;
     &stats_table;
     &arp_table;
     &footer;
 }
-exit 0;
+
+#exit 0;
 print Dumper %result;
 print Dumper %routers;

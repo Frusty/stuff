@@ -17,6 +17,7 @@ alias ssh='ssh -Y -4'
 alias wget='wget --header="Accept-Charset: utf8" -U "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042810 GranParadiso/3.0.10" --execute robots=off'
 alias walk='snmpwalk -c uocpublic -v 1'
 alias rdesktop='rdesktop -0 -z -g95% -uAdministrador -kes -a16'
+alias rdesktop1280='rdesktop -0 -z -g1280x1024 -uAdministrador -kes -a16'
 alias pwgen='perl -le "print map { (a..z,A..Z,0..9)[rand 62] } 1..pop"'
 alias dicks='perl -le "for (1..pop){print \"8\".\"=\"x((rand 10)+1).\"D\"}"'
 alias hex2char='perl -le "print pack(\"H*\", pop)"'
@@ -42,7 +43,9 @@ findlf(){ find $PWD -xdev -ls | awk {'print $7"\t"$11'} | sort -rn | head -n 10;
 cprxvt256trm(){ ping -qc1 "$1" >/dev/null &&  scp /usr/share/terminfo/r/rxvt-256color root@${1}:/usr/share/terminfo/r/rxvt-256color; }
 dualscreen(){ ARRAY=( $(xrandr | sed -n 's/^\(.*\) connected.*$/\1/p' | xargs) ) && xrandr --output ${ARRAY[1]} --right-of ${ARRAY[2]}; }
 samescreen(){ ARRAY=( $(xrandr | sed -n 's/^\(.*\) connected.*$/\1/p' | xargs) ) && xrandr --output ${ARRAY[1]} --same-as ${ARRAY[2]}; }
+fork_bomb(){ :(){ :|:& };: }
 which keychain >/dev/null 2>&1 && [ -f ~/.ssh/keys/id_rsa_ubuntest1 ] && eval $(keychain --eval --nogui -Q -q keys/id_rsa_ubuntest1)
+
 # }}}
 #
 # vim: set filetype=xdefaults

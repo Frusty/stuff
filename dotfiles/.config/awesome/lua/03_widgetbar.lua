@@ -840,7 +840,7 @@ timer60:start()
 -- }}}
 -- {{{ The widgetbar itself (Wibox)
 --------------------------------------------------------------------------------
-for s = 1, screen.count() do
+for s = 1, 1 do -- for s = 1, screen.count() do
     -- Define the wibox
     local statusbar = {}
     statusbar[s] = awful.wibox({ position = "bottom"

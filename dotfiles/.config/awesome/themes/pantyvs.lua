@@ -4,13 +4,13 @@ theme.icon_theme = nil
 
 -- {{{ Styles
 theme.font          = "smoothansi 9"
-theme.font_key      = "#FEFEFE"
+theme.font_key      = "black"
 theme.font_value    = "black"
 --bg
 theme.bg_normal     = "#F6D77DAA"
 theme.bg_focus      = "#e60241AA"
-theme.bg_urgent     = "b6fcb3"
-theme.bg_minimize   = "0e2a69"
+theme.bg_urgent     = "#b6fcb3"
+theme.bg_minimize   = "#0e2a69"
 --fg
 theme.fg_normal     = "#000000"
 theme.fg_focus      = "#010101"
@@ -18,8 +18,8 @@ theme.fg_urgent     = "#000000"
 theme.fg_minimize   = "#FEFEFE"
 --border
 theme.border_width  = "2"
-theme.border_normal = "#010101"
-theme.border_focus  = "#FEFEFE"
+theme.border_normal = "#000000"
+theme.border_focus  = "#e60241"
 theme.border_marked = "green"
 -- }}}
 -- {{{ Mouse finder

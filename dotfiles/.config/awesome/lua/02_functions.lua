@@ -1,15 +1,20 @@
 -- Awesome Functions
 
 local gears     = require("gears")
-local awful     = require("awful")
 local wibox     = require("wibox")
 local naughty   = require("naughty")
 
 -- {{{ Escape string
 function escape(text)
-    if text then
-        return awful.util.escape(text or 'UNKNOWN')
-    end
+    local xml_entities = {
+        ["\""] = "&quot;",
+        ["&"]  = "&amp;",
+        ["'"]  = "&apos;",
+        ["<"]  = "&lt;",
+        [">"]  = "&gt;"
+    }
+
+    return text and text:gsub("[\"&'<>]", xml_entities)
 end
 -- }}}
 -- {{{ Bold
@@ -27,6 +32,11 @@ function fgc(text,color)
     if not color then color = 'white' end
     if not text  then text  = 'NULL'  end
     return '<span color="'..color..'">'..text..'</span>'
+end
+-- }}}
+-- {{{ Uppercase first letter of string
+function ucfirst(str)
+    return (str:gsub("^%l", string.upper))
 end
 -- }}}
 -- {{{ Process read (io.popen wrapper)

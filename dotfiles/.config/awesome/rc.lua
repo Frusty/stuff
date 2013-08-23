@@ -1,6 +1,10 @@
 -- https://github.com/cycojesus/awesome/raw/master/rc.lua
 
 -- {{{ Base Variables
+user       = os.getenv("USER")
+browser    = os.getenv("BROWSER")  or "chromium"
+terminal   = os.getenv("TERMINAL") or "xterm"
+editor     = os.getenv("EDITOR")   or "vim"
 homedir    = os.getenv("HOME")..'/'
 logfile    = homedir..'.awesome.err'
 confdir    = homedir..'.config/awesome/'
@@ -9,9 +13,6 @@ themedir   = confdir..'themes/'
 imgdir     = confdir..'imgs/'
 tiledir    = confdir..'tiles/'
 walldir    = confdir..'walls/'
-browser    = os.getenv("BROWSER") or "chromium"
-terminal   = os.getenv("TERMINAL") or "xterm"
-editor     = os.getenv("EDITOR") or "vim"
 editor_cmd = terminal.." -e "..editor
 setrndwall = "awsetbg -u feh -r "..walldir
 setrndtile = "awsetbg -u feh -t -r "..tiledir

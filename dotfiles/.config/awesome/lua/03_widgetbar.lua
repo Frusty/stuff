@@ -1,5 +1,4 @@
 -- Awesome widgetbar
-
 local gears   = require("gears")
 local widget  = require("wibox")
 local awful   = require("awful")
@@ -41,9 +40,9 @@ local volume_icon = createIco('vol.png', terminal..' -e alsamixer')
 local volume_textbox = wibox.widget.textbox()
 -- Layout with all the elements
 local volume_layout = wibox.layout.fixed.horizontal()
-volume_layout:add(volume_icon)
-volume_layout:add(volume_textbox)
-volume_layout:add(separator)
+      volume_layout:add(volume_icon)
+      volume_layout:add(volume_textbox)
+      volume_layout:add(separator)
 -- The widget itslelf
 local volume_widget = wibox.layout.margin(volume_layout)
 -- Fetch our master volume device
@@ -67,8 +66,6 @@ function get_vol()
         end
     end
 end
---  1st call
-volume_textbox:set_markup(get_vol())
 --  Buttons
 volume_textbox:buttons(awful.util.table.join(
     awful.button({ }, 4, function()
@@ -84,7 +81,7 @@ volume_textbox:buttons(awful.util.table.join(
 volume_widget:connect_signal("mouse::enter", function()
     naughty.destroy(pop)
     local text = pread('amixer get '..sdev)
-    popup( fgc('Volume\n')
+    popup( 'Volume'
          , pread('amixer get '..sdev)
          , 0
          , imgdir..'vol.png'
@@ -102,17 +99,17 @@ local mpd_icon = createIco('mpd.png', terminal..' -e ncmpcpp')
 local mpc_textbox = wibox.widget.textbox()
 -- Layout with all the elements
 local mpc_layout = wibox.layout.fixed.horizontal()
-mpc_layout:add(mpd_icon)
-mpc_layout:add(mpc_textbox)
+      mpc_layout:add(mpd_icon)
+      mpc_layout:add(mpc_textbox)
 -- The widget itself
 local mpc_widget = wibox.layout.margin(mpc_layout)
 -- Returns the parsed output of the mpc client
 local oldsong
 function mpc_info()
     local currentsong
-    local now = escape(pread('mpc -f "%name%\n%artist%\n%album%\n%title%\n%track%\n%time%\n%file%"'))
+    local now = escape(pread('mpc -f "%artist%\n%album%\n%title%\n%time%"'))
     if now and now ~= '' then
-        local name,artist,album,title,track,total,file,state,time = now:match('^(.-)\n(.-)\n(.-)\n(.-)\n(.-)\n(.-)\n(.-)\n%[(%w+)%]%s+#%d+/%d+%s+(.-%(%d+%%%))')
+        local artist,album,title,total,state,time = now:match('^(.-)\n(.-)\n(.-)\n(.-)\n%[(%w+)%]%s+#%d+/%d+%s+(.-%(%d+%%%))')
         if state and state ~= '' then
             if artist and title and time then
                 currentsong = artist.." - "..title
@@ -126,7 +123,7 @@ function mpc_info()
             if state == 'playing' then
                 -- Track popup
                 if album ~= '' and currentsong ~= oldsong then
-                    popup( asd
+                    popup( nil
                          , string.format("%s %s\n%s  %s\n%s  %s"
                                         , 'Artist:', fgc(bold(artist))
                                         , 'Album:' , fgc(bold(album))
@@ -158,11 +155,11 @@ function mpc_info()
     end
 end
 -- 1st call
-mpc_textbox:set_markup(mpc_info())
+mpc_textbox:set_markup(fgc('Hi '..ucfirst(user)..'!', theme.font_value))
 -- Textbox buttons
 mpc_textbox:buttons(awful.util.table.join(
     awful.button({ }, 1, function ()
-        os.execute('mpc play')
+        os.execute('mpc play<F3>')
         mpc_textbox:set_markup(mpc_info())
     end),
     awful.button({ }, 2, function ()
@@ -185,7 +182,7 @@ mpc_textbox:buttons(awful.util.table.join(
 --  Mouse_enter
 mpc_widget:connect_signal("mouse::enter",function()
     naughty.destroy(pop)
-    popup( fgc('MPC Stats\n')
+    popup( 'MPC Stats'
          , pread("mpc; echo ; mpc stats")
          , 0
          , imgdir..'mpd_logo.png'
@@ -205,9 +202,9 @@ local log_icon = createIco('log.png', terminal)
 local log_textbox = wibox.widget.textbox()
 -- Layout with all the elements
 local log_layout = wibox.layout.fixed.horizontal()
-log_layout:add(separator)
-log_layout:add(log_icon)
-log_layout:add(log_textbox)
+      log_layout:add(separator)
+      log_layout:add(log_icon)
+      log_layout:add(log_textbox)
 -- The widget itself
 local log_widget = wibox.layout.margin(log_layout)
 --
@@ -225,65 +222,50 @@ log_textbox:buttons(awful.util.table.join(
             if enable_logs then
                 log_textbox.text = fgc('NO', 'red')
                 enable_logs = false
-                popup( fgc('Awesome Notification:'), 'Logging Disabled', 5 )
+                popup( 'Awesome Notification:', 'Logging Disabled', 5 )
             else
                 log_textbox.text = fgc('ON', theme.font_value)
                 enable_logs = true
-                popup( fgc('Awesome Notification:'), 'Logging Enabled', 5 )
+                popup( 'Awesome Notification:', 'Logging Enabled', 5 )
             end
         else
-            popup( fgc('Awesome Notification:'), "Can't find '"..inotify_so.."'. Logging Disabled.", 5 )
+            popup( 'Awesome Notification:', "Can't find '"..inotify_so.."'. Logging Disabled.", 5 )
         end
     end)
 ))
 -- }}}
 -- {{{ GMail [Separator+Icon+Textbox] requires wget
 --------------------------------------------------------------------------------
--- Needs a file called <your gmail adress>.gmail containing the PLAIN password
--- TODO: Handle multiple files/account
--- Gmail data
-local mailadd, mailpass, mailfetch
-local mailurl = 'https://mail.google.com/mail/feed/atom'
--- Evaluate and load gmail account files
-for file in io.popen('ls '..confdir..'*.gmail | head -1'):lines() do
-    loglua("(II) [mail_widget] Found a gmail file: "..file)
-    mailadd   = file:match('([^/]-).gmail$')
-    mailpass  = escape(fread(file))
-    mailfetch = file..'.fetch'
-end
--- Icon
+-- Needs a .netrc file in your homedir with the credentials (look at the -n curl flag)
+-- Example of a .netrc file contents:
+-- machine host.domain.com login myself password secret
+mailurl = 'https://mail.google.com/mail/feed/atom/'
 mail_icon = createIco('mail.png', browser..' '..mailurl..'"&')
 -- Textbox
 mail_textbox = wibox.widget.textbox()
 -- Layout with all the elements
 local mail_layout = wibox.layout.fixed.horizontal()
-mail_layout:add(separator)
-mail_layout:add(mail_icon)
-mail_layout:add(mail_textbox)
+      mail_layout:add(separator)
+      mail_layout:add(mail_icon)
+      mail_layout:add(mail_textbox)
 -- The widget itself
 local mail_widget = wibox.layout.margin(mail_layout)
--- Hide the widget if we don't have everything
-if not confdir or not mailadd or not mailpass or not mailurl then
+-- Hide the widget if we don't have a .netrc file
+if not fread(homedir..'.netrc') then
     mail_widget:set_widget(nil) -- hide the widget
 end
--- Fetch a gmail feed
-function fetch_gmail()
-    if not mailadd or not mailpass or not mailurl then fgc(bold('HIDDEN?'), 'red') end
-    -- os.execute is like the C system() function. It doesn't affect interactivity
-    os.execute('wget '..mailurl..' -qO '..mailfetch..' --http-user='..mailadd..' --http-passwd="'..mailpass..'"&')
-end
--- Parse a gmail feed
+-- Fetch and parse a gmail feed
 local mailcount = 0
 function check_gmail()
-    local feed = fread(mailfetch)
-    if not feed then return fgc('0', theme.font_value) end
+    local feed = pread('curl --connect-timeout 1 -m 3 -fsn "'..mailurl..'"')
+    if not feed then return fgc('?', theme.font_value) end
     local lcount = mailcount
     if feed:match('fullcount>%d+<') then
         lcount = feed:match('fullcount>(%d+)<')
     end
     if lcount ~= mailcount then
         for title,summary,name,email in feed:gmatch('<entry>\n<title>(.-)</title>\n<summary>(.-)</summary>.-<name>(.-)</name>\n<email>(.-)</email>') do
-            popup( fgc('New mail on ')..mailadd
+            popup( nil
                  , name..' ('..email..')\n'..title..'\n'..summary
                  , 20
                  , imgdir..'yellow_mail.png'
@@ -297,12 +279,10 @@ function check_gmail()
         return fgc('0', theme.font_value)
     end
 end
--- 1st call
-mail_textbox:set_markup(check_gmail())
 -- Mouse_enter
 mail_widget:connect_signal("mouse::enter", function()
     mailcount = 0
-    check_gmail()
+    mail_textbox:set_markup(check_gmail())
 end)
 -- Mouse_leave
 mail_widget:connect_signal("mouse::leave", function() desnaug() end)
@@ -322,9 +302,9 @@ local load_icon = createIco('load.png', terminal..' -e htop')
 local load_textbox = wibox.widget.textbox()
 -- Layout with all the elements
 local load_layout = wibox.layout.fixed.horizontal()
-load_layout:add(separator)
-load_layout:add(load_icon)
-load_layout:add(load_textbox)
+      load_layout:add(separator)
+      load_layout:add(load_icon)
+      load_layout:add(load_textbox)
 -- The widget itself
 local load_widget = wibox.layout.margin(load_layout)
 -- Hide the widget if we don't have everything
@@ -343,7 +323,7 @@ load_textbox:set_markup(avg_load())
 -- Mouse_enter
 load_widget:connect_signal("mouse::enter", function()
     naughty.destroy(pop)
-    popup( fgc('Uptime\n')
+    popup( 'Uptime'
          , pread("uptime; echo; id; echo; who")
          , 0
          , imgdir..'load.png'
@@ -361,25 +341,25 @@ local cpu_icon = createIco('cpu.png', terminal..' -e htop')
 local cpu_textbox = wibox.widget.textbox()
 -- Graph
 local cpu_graph = awful.widget.graph()
-cpu_graph:set_width(40)
-cpu_graph:set_background_color('#000000')
-cpu_graph:set_border_color('#FFFFFF')
-cpu_graph:set_color({ type  = "linear"
-                   , from  = { 0,  }
-                   , to    = { 0, 13 }
-                   , stops = { { 0  , "#FF0000" }
-                             , { 0.4, "#FFCC00" }
-                             , { 1  , "#00FF00" }
-                             }
-                   })
+      cpu_graph:set_width(40)
+      cpu_graph:set_background_color('#000000')
+      cpu_graph:set_border_color('#FFFFFF')
+      cpu_graph:set_color({ type  = "linear"
+                         , from  = { 0,  }
+                         , to    = { 0, 13 }
+                         , stops = { { 0  , "#FF0000" }
+                                   , { 0.4, "#FFCC00" }
+                                   , { 1  , "#00FF00" }
+                                   }
+                         })
 -- Fit the graph into a layout to add margins
 local cpu_graph_layout = wibox.layout.margin(cpu_graph, 1, 1, 1, 1)
 -- Layout with all the elements
 local cpu_layout = wibox.layout.fixed.horizontal()
-cpu_layout:add(separator)
-cpu_layout:add(cpu_icon)
-cpu_layout:add(cpu_textbox)
-cpu_layout:add(cpu_graph_layout)
+      cpu_layout:add(separator)
+      cpu_layout:add(cpu_icon)
+      cpu_layout:add(cpu_textbox)
+      cpu_layout:add(cpu_graph_layout)
 -- The widget itself
 local cpu_widget = wibox.layout.margin(cpu_layout)
 -- Hide the widget if we don't have everything
@@ -390,7 +370,7 @@ end
 --  mouse_enter
 cpu_widget:connect_signal("mouse::enter", function()
     naughty.destroy(pop)
-    popup( fgc('Processes\n')
+    popup( 'Processes'
          , pread("ps -eo %cpu,%mem,ruser,pid,comm --sort -%cpu | head -30")
          , 0
          , imgdir..'cpu.png'
@@ -448,8 +428,6 @@ function cpu_info()
     end
     return info
 end
--- 1st Call
-cpu_textbox:set_markup(cpu_info())
 -- }}}
 -- {{{ Memory [Separator+Icon+Textbox+Progressbar]
 --------------------------------------------------------------------------------
@@ -459,25 +437,25 @@ local memory_icon = createIco('mem.png', terminal..' -e htop')
 local memory_textbox = wibox.widget.textbox()
 -- Progressbar
 local memory_progressbar = awful.widget.progressbar()
-memory_progressbar:set_width(40)
-memory_progressbar:set_background_color('#000000')
-memory_progressbar:set_border_color('#FFFFFF')
-memory_progressbar:set_color({ type  = "linear"
-                             , from  = { 40, 0 }
-                             , to    = { 0 , 0 }
-                             , stops = { { 0  , "#FF0000" }
-                                       , { 0.4, "#FFCC00" }
-                                       , { 1  , "#00FF00" }
-                                       }
-                             })
+      memory_progressbar:set_width(40)
+      memory_progressbar:set_background_color('#000000')
+      memory_progressbar:set_border_color('#FFFFFF')
+      memory_progressbar:set_color({ type  = "linear"
+                                   , from  = { 40, 0 }
+                                   , to    = { 0 , 0 }
+                                   , stops = { { 0  , "#FF0000" }
+                                             , { 0.4, "#FFCC00" }
+                                             , { 1  , "#00FF00" }
+                                             }
+                                   })
 -- Fit the progressbar into a layout to add margins
 local memory_progressbar_layout = wibox.layout.margin(memory_progressbar, 1, 1, 1, 1)
 -- Layout with all the elements
 local memory_layout = wibox.layout.fixed.horizontal()
-memory_layout:add(separator)
-memory_layout:add(memory_icon)
-memory_layout:add(memory_textbox)
-memory_layout:add(memory_progressbar_layout)
+      memory_layout:add(separator)
+      memory_layout:add(memory_icon)
+      memory_layout:add(memory_textbox)
+      memory_layout:add(memory_progressbar_layout)
 -- The widget itself
 local memory_widget = wibox.layout.margin(memory_layout)
 -- Hide the widget if we don't have everything
@@ -488,7 +466,7 @@ end
 -- Mouse_enter
 memory_widget:connect_signal("mouse::enter", function()
     naughty.destroy(pop)
-    popup( fgc('Free\n')
+    popup( 'Free'
          , pread("free -tm")
          , 0
          , imgdir..'mem.png'
@@ -504,9 +482,6 @@ function activeram()
         for key, value in string.gmatch(line, "(%w+): +(%d+).+") do
             if key == "MemTotal" then
                 total = tonumber(value)
-                if total <= 0 then --wtf
-                    return ''
-                end
             elseif key == "MemFree" then
                 free = tonumber(value)
             elseif key == "Buffers" then
@@ -524,8 +499,6 @@ function activeram()
     end
     return fgc(used, theme.font_key)..fgc('('..percent..'%)', theme.font_value)
 end
--- 1st Call
-memory_textbox:set_markup(activeram())
 -- }}}
 -- {{{ Swap [Separator+Icon+textbox]
 --------------------------------------------------------------------------------
@@ -535,20 +508,20 @@ swap_icon = createIco('swp.png', terminal..' -e htop')
 swap_textbox = wibox.widget.textbox()
 -- Layout with all the elements
 local swap_layout = wibox.layout.fixed.horizontal()
-swap_layout:add(separator)
-swap_layout:add(swap_icon)
-swap_layout:add(swap_textbox)
+      swap_layout:add(separator)
+      swap_layout:add(swap_icon)
+      swap_layout:add(swap_textbox)
 -- The widget itself
 local swap_widget = wibox.layout.margin(swap_layout)
 -- Hide the widget if we don't have everything
 if not fread('/proc/meminfo') then
-    loglua("(WW) [swap_widget] ]Could not read /proc/meminfo. Hiding the widget.")
+    loglua("(WW) [swap_widget] Could not read /proc/meminfo. Hiding the widget.")
     swap_widget:set_widget(nil) -- hide the widget
 end
 --  mouse_enter
 swap_textbox:connect_signal("mouse::enter", function()
     naughty.destroy(pop)
-    popup( fgc('/proc/meminfo\n')
+    popup( '/proc/meminfo'
          , fread("/proc/meminfo")
          , 0
          , imgdir..'swp.png'
@@ -580,8 +553,6 @@ function activeswap()
     active = total - free
     return fgc(string.format("%.0fMB",(active/1024)), theme.font_key)..fgc('('..string.format("%.0f%%",(active/total)*100)..')', theme.font_value)
 end
--- 1st call
-swap_textbox:set_markup(activeswap())
 -- }}}
 -- {{{ FileSystem [Separator+Icon+extbox]
 --------------------------------------------------------------------------------
@@ -591,21 +562,21 @@ local filesystem_icon = createIco('fs.png', terminal..' -e fdisk -l')
 local filesystem_textbox = wibox.widget.textbox()
 -- Layout with all the elements
 local filesystem_layout = wibox.layout.fixed.horizontal()
-filesystem_layout:add(separator)
-filesystem_layout:add(filesystem_icon)
-filesystem_layout:add(filesystem_textbox)
+      filesystem_layout:add(separator)
+      filesystem_layout:add(filesystem_icon)
+      filesystem_layout:add(filesystem_textbox)
 -- The widget itself
 local filesystem_widget = wibox.layout.margin(filesystem_layout)
 -- Hide the widget if we don't have everything
-if not pread('df') then
+if not pread('LC_ALL=C df') then
     loglua("(WW) [filesystem_widget] Could not execute df Hiding the widget.")
     filesystem_widget:set_widget(nil) -- hide the widget
 end
 -- Mouse_enter
 filesystem_widget:connect_signal("mouse::enter", function()
     naughty.destroy(pop)
-    popup ( fgc('Disk Usage\n')
-          , pread("df -ha")
+    popup ( 'Disk Usage'
+          , pread('LC_ALL=C df -ha')
           , 0
           , imgdir..'fs.png'
           , 'bottom_right'
@@ -616,7 +587,7 @@ filesystem_widget:connect_signal("mouse::leave", function() naughty.destroy(pop)
 -- Parse and show used filesystems from the df output
 function fs_info()
     local result = ''
-    local df = pread("df -x squashfs -x iso9660")
+    local df = pread('LC_ALL=C df -x squashfs -x iso9660')
     if df then
         for percent, mpoint in df:gmatch("(%d+)%%%s+(/.-)%s") do
             local value = mpoint
@@ -634,8 +605,6 @@ function fs_info()
     end
     return result
 end
--- 1st Call
-filesystem_textbox:set_markup(fs_info())
 -- }}}
 -- {{{ Battery [Separator+Icon+Textbox]
 --------------------------------------------------------------------------------
@@ -645,9 +614,9 @@ local battery_icon = createIco('bat.png', terminal..' -e xterm')
 local battery_textbox = wibox.widget.textbox()
 -- Layout with all the elements
 local battery_layout = wibox.layout.fixed.horizontal()
-battery_layout:add(separator)
-battery_layout:add(battery_icon)
-battery_layout:add(battery_textbox)
+      battery_layout:add(separator)
+      battery_layout:add(battery_icon)
+      battery_layout:add(battery_textbox)
 -- The widget itself
 local battery_widget = wibox.layout.margin(battery_layout)
 -- Hide the widget if we got no battery
@@ -673,7 +642,7 @@ function bat_info()
         elseif sta:match("Discharging") then
         dir = "-"
         if tonumber(battery) < 10 then
-            popup( fgc('Battery Warning\n')
+            popup( 'Battery Warning'
                  , "Battery low!"..battery.."% left!"
                  , 10
                  , imgdir..'bat.png'
@@ -684,12 +653,10 @@ function bat_info()
     end
     return battery..dir
 end
--- 1st call
-battery_textbox:set_markup(bat_info())
 -- Mouse_enter
 battery_textbox:connect_signal("mouse::enter",function()
     naughty.destroy(pop)
-    popup( fgc('BAT0/info\n')
+    popup( 'BAT0/info'
          , fread("/proc/acpi/battery/BAT0/info")
          , 0
          , imgdir..'bat.png'
@@ -714,13 +681,13 @@ local network_download_icon = createIco('down.png', terminal..' -e screen -S awe
 local network_download_textbox = wibox.widget.textbox()
 -- Layout with all the elements
 local network_layout = wibox.layout.fixed.horizontal()
-network_layout:add(separator)
-network_layout:add(network_icon)
-network_layout:add(network_textbox)
-network_layout:add(network_upload_icon)
-network_layout:add(network_upload_textbox)
-network_layout:add(network_download_icon)
-network_layout:add(network_download_textbox)
+      network_layout:add(separator)
+      network_layout:add(network_icon)
+      network_layout:add(network_textbox)
+      network_layout:add(network_upload_icon)
+      network_layout:add(network_upload_textbox)
+      network_layout:add(network_download_icon)
+      network_layout:add(network_download_textbox)
 -- The widget itself
 local network_widget = wibox.layout.margin(network_layout)
 if not fread('/proc/net/dev') then
@@ -730,7 +697,7 @@ end
 -- Mouse_enter
 network_textbox:connect_signal("mouse::enter", function()
     naughty.destroy(pop)
-    popup( fgc('Established\n')
+    popup( 'Established'
          , pread("netstat -patun 2>&1 | awk '/ESTABLISHED/{ if ($4 !~ /127.0.0.1|localhost/) print \"(\"$7\")\t\"$5}' | column -t")
          , 0
          , imgdir..'net-wired.png'
@@ -742,7 +709,7 @@ network_textbox:connect_signal("mouse::leave", function() naughty.destroy(pop) e
 -- Mouse_enter_up
 network_upload_textbox:connect_signal("mouse::enter", function()
     naughty.destroy(pop)
-    popup( fgc('Transfer Stats\n')
+    popup( 'Transfer Stats'
          , pread("cat /proc/net/dev | sed -e 's/multicast/multicast\t/g' -e 's/|bytes/bytes/g' | column -t")
          , 0
          , imgdir..'net-wired.png'
@@ -754,7 +721,7 @@ network_upload_textbox:connect_signal("mouse::leave", function() naughty.destroy
 -- Mouse_enter_down
 network_download_textbox:connect_signal("mouse::enter", function()
     naughty.destroy(pop)
-    popup( fgc('Transfer Stats\n')
+    popup( 'Transfer Stats'
          , pread("cat /proc/net/dev | sed -e 's/multicast/multicast\t/g' -e 's/|bytes/bytes/g' | column -t")
          , 0
          , imgdir..'net-wired.png'
@@ -800,43 +767,35 @@ function net_info()
     network_upload_textbox:set_markup(fgc(string.format("%04d%2s",tx,txu), theme.font_value))
     network_download_textbox:set_markup(fgc(string.format("%04d%2s",rx,rxu), theme.font_value))
 end
---  1st Call
-net_info()
 -- }}}
 -- Hooks and Wibox
 -- {{{ Hooks with the widget refresh times.
 --------------------------------------------------------------------------------
--- Hook every sec
-local timer1 = timer { timeout = 1 }
-timer1:connect_signal("timeout", function()
+-- Hook called every 2 secs
+local timer2 = timer { timeout = 2 }
+timer2:connect_signal("timeout", function()
     cpu_textbox:set_markup(cpu_info())
     load_textbox:set_markup(avg_load())
     net_info()
 end)
-timer1:start()
+timer2:start()
 -- Hook called every 5 secs
 local timer5 = timer { timeout = 5 }
 timer5:connect_signal("timeout", function()
-    volume_textbox:set_markup(get_vol())
     memory_textbox:set_markup(activeram())
     activeswap()
+    volume_textbox:set_markup(get_vol())
     mpc_textbox:set_markup(mpc_info())
-end)
-timer5:start()
---  Hook every 30 secs
-local timer30 = timer { timeout = 30 }
-timer30:connect_signal("timeout", function()
-    if mailpass then mail_textbox:set_markup(check_gmail()) end
+    filesystem_textbox.text = fs_info()
     battery_textbox:set_markup(bat_info())
 end)
-timer30:start()
--- Hook called every minute
-local timer60 = timer { timeout = 60 }
-timer60:connect_signal("timeout", function()
-    if mailpass then fetch_gmail() end
-    filesystem_textbox.text = fs_info()
+timer5:start()
+-- Hook called every 307 secs
+local timer307 = timer { timeout = 307 }
+timer307:connect_signal("timeout", function()
+    mail_textbox:set_markup(check_gmail())
 end)
-timer60:start()
+timer307:start()
 -- }}}
 -- {{{ The widgetbar itself (Wibox)
 --------------------------------------------------------------------------------

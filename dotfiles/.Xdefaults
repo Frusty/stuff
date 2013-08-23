@@ -17,8 +17,7 @@ Xft.rgba:      rgb
 !{{{    urxvt*
 !-------------------------------------------------------------------------------
 ! Misc & Matcher
-urxvt*termName:        screen-256color
-!urxvt*termName:        rxvt-256color
+urxvt*termName:        rxvt-256color
 urxvt*loginShell:      true
 urxvt*cutchars:        "()*,<>[]{}|'"
 urxvt*perl-lib:        /usr/lib/urxvt/perl/

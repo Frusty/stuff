@@ -745,7 +745,7 @@ function net_info()
     else
         return "Err: /proc/net/route."
     end
-    --Sacamos cur_rx y cur_tx de /proc/net/dev
+    --we get cur_rx y cur_tx de /proc/net/dev
     file = fread("/proc/net/dev")
     if file then
        cur_rx,cur_tx = file:match(iface..':%s*(%d+)%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+%s+(%d+)%s+')
@@ -753,9 +753,7 @@ function net_info()
         return "Err: /proc/net/dev"
     end
     cur_time = os.time()
-    interval = cur_time - old_time -- diferencia entre mediciones
---    rx = ( cur_rx - old_rx ) / 1024 / interval -- resultado en kb
---    tx = ( cur_tx - old_tx ) / 1024 / interval
+    interval = cur_time - old_time
     if tonumber(interval) > 0 then -- let's be cautious
         rx,rxu = bytestoh( ( cur_rx - old_rx ) / interval )
         tx,txu = bytestoh( ( cur_tx - old_tx ) / interval )
@@ -775,13 +773,13 @@ end
 local timer2 = timer { timeout = 2 }
 timer2:connect_signal("timeout", function()
     cpu_textbox:set_markup(cpu_info())
-    load_textbox:set_markup(avg_load())
     net_info()
 end)
 timer2:start()
 -- Hook called every 5 secs
 local timer5 = timer { timeout = 5 }
 timer5:connect_signal("timeout", function()
+    load_textbox:set_markup(avg_load())
     memory_textbox:set_markup(activeram())
     activeswap()
     volume_textbox:set_markup(get_vol())

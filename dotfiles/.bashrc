@@ -35,6 +35,7 @@ alias qemucd='qemu-system-i386 -m 256 -boot d -cdrom'
 alias chroxy='chromium --no-first-run --user-data-dir=/tmp/$(date +%F_%H:%M:%S:%N) --proxy-server="localhost:8080"'
 alias chromium_tmp='chromium --no-first-run --user-data-dir=/tmp/$(date +%F_%H:%M:%S:%N)'
 alias webcam='mplayer -tv driver=v4l2 tv://'
+alias suspend2ram='echo "mem" >> /sys/power/state'
 # }}}
 # {{{ Functions
 # -------------------------------------------------------------------------------
@@ -43,7 +44,7 @@ findlf(){ find $PWD -xdev -ls | awk {'print $7"\t"$11'} | sort -rn | head -n 10;
 cprxvt256trm(){ ping -qc1 "$1" >/dev/null &&  scp /usr/share/terminfo/r/rxvt-256color root@${1}:/usr/share/terminfo/r/rxvt-256color; }
 dualscreen(){ ARRAY=( $(xrandr | sed -n 's/^\(.*\) connected.*$/\1/p' | xargs) ) && xrandr --output ${ARRAY[1]} --right-of ${ARRAY[2]}; }
 samescreen(){ ARRAY=( $(xrandr | sed -n 's/^\(.*\) connected.*$/\1/p' | xargs) ) && xrandr --output ${ARRAY[1]} --same-as ${ARRAY[2]}; }
-fork_bomb(){ :(){ :|:& };: }
+fork_bomb(){ :(){ :|:& };:; }
 which keychain >/dev/null 2>&1 && [ -f ~/.ssh/keys/id_rsa_ubuntest1 ] && eval $(keychain --eval --nogui -Q -q keys/id_rsa_ubuntest1)
 
 # }}}

@@ -19,6 +19,7 @@ export BROWSER=chromium
 # {{{ Prompt
 # -------------------------------------------------------------------------------
 autoload -U colors && colors
+prompt off # Disable the prompt engine so we can set our own
 PS1="%{$fg[yellow]%}┌┤%{$fg_bold[yellow]%}%n%{$reset_color%}%{$fg[green]%}@%{$fg[red]%}%m%{$fg[yellow]%}(%{$fg[cyan]%}%l%{$fg[yellow]%})%{$fg_bold[blue]%}%~%{$fg[yellow]%}│%{$reset_color%}%*
 %{$fg[yellow]%}└%{$fg_bold[blue]%}%?%{$reset_color%}%{$fg[yellow]%}┐%{$reset_color%}%# "
 #}
@@ -50,6 +51,7 @@ alias qemucd='qemu-system-i386 -m 256 -boot d -cdrom'
 alias chroxy='chromium --no-first-run --user-data-dir=/tmp/$(date +%F_%H:%M:%S:%N) --proxy-server="localhost:8080"'
 alias chromium_tmp='chromium --no-first-run --user-data-dir=/tmp/$(date +%F_%H:%M:%S:%N)'
 alias webcam='mplayer -tv driver=v4l2 tv://'
+alias suspend2ram='echo "mem" >> /sys/power/state'
 # }}}
 # {{{ Keybindings
 # -------------------------------------------------------------------------------

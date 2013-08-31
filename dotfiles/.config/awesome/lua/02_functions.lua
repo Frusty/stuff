@@ -73,7 +73,7 @@ function popup(title,text,timeout,icon,position,fg,gb)
     pop = naughty.notify({ title     = title
                          , text      = text     or "All your base are belong to us."
                          , timeout   = timeout  or 0
-                         , icon      = icon     or imgdir..'awesome.png'
+                         , icon      = icon     or imgdir..'awesome-icon.png'
                          , icon_size = 39 -- 3 times our standard icon size
                          , position  = position or nil
                          , fg        = fg       or beautiful.fg_normal

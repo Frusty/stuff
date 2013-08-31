@@ -254,14 +254,19 @@ local mail_widget = wibox.layout.margin(mail_layout)
 if not fread(homedir..'.netrc') then
     mail_widget:set_widget(nil) -- hide the widget
 end
+--- Fetch a gmail feed on a separated thread, curl blocks.
+local tmpfile = confdir..'.gmail'
+function fetch_gmail()
+    if not mailadd or not tmpfile then end
+    os.execute('curl --connect-timeout 1 -m 3 -fsn "'..mailurl..'" -o "'..tmpfile..'"&')
+end
 -- Fetch and parse a gmail feed
 local mailcount = 0
 function check_gmail()
-    local feed = pread('curl --connect-timeout 1 -m 3 -fsn "'..mailurl..'"')
-    if not feed then return fgc('?', theme.font_value) end
     local lcount = mailcount
-    if feed:match('fullcount>%d+<') then
-        lcount = feed:match('fullcount>(%d+)<')
+    local feed = fread(tmpfile)
+    if feed  then
+        lcount = tonumber(feed:match('fullcount>(%d+)<'))
     end
     if lcount ~= mailcount then
         for title,summary,name,email in feed:gmatch('<entry>\n<title>(.-)</title>\n<summary>(.-)</summary>.-<name>(.-)</name>\n<email>(.-)</email>') do
@@ -273,7 +278,7 @@ function check_gmail()
         end
         mailcount = lcount
     end
-    if tonumber(lcount) > 0 then
+    if lcount > 0 then
         return fgc(bold(lcount), 'red')
     else
         return fgc('0', theme.font_value)
@@ -609,7 +614,7 @@ end
 -- {{{ Battery [Separator+Icon+Textbox]
 --------------------------------------------------------------------------------
 -- Icon
-local battery_icon = createIco('bat.png', terminal..' -e xterm')
+local battery_icon = createIco('bat.png', terminal)
 -- Textbox
 local battery_textbox = wibox.widget.textbox()
 -- Layout with all the elements
@@ -668,15 +673,15 @@ battery_textbox:connect_signal("mouse::leave", function() naughty.destroy(pop) e
 -- {{{ Network [Separator+Icon+Textbox+Icon+Textbox+Icon+Textbox]
 --------------------------------------------------------------------------------
 -- Icon iface
-local network_icon = createIco('net-wired.png', terminal..' -e screen -S awesome watch -n5 "lsof -ni"')
+local network_icon = createIco('net-wired.png', terminal..' -e watch -n5 "lsof -ni"')
 -- Textbox iface
 local network_textbox = wibox.widget.textbox()
 -- Icon upload
-local network_upload_icon = createIco('up.png', terminal..' -e screen -S awesome watch -n5 "lsof -ni"')
+local network_upload_icon = createIco('up.png', terminal..' -e watch -n5 "lsof -ni"')
 -- Textbox upload
 local network_upload_textbox = wibox.widget.textbox()
 -- Icon download
-local network_download_icon = createIco('down.png', terminal..' -e screen -S awesome watch -n5 "lsof -ni"')
+local network_download_icon = createIco('down.png', terminal..' -e watch -n5 "lsof -ni"')
 -- Textbox download
 local network_download_textbox = wibox.widget.textbox()
 -- Layout with all the elements
@@ -786,12 +791,13 @@ timer5:connect_signal("timeout", function()
     mpc_textbox:set_markup(mpc_info())
     filesystem_textbox.text = fs_info()
     battery_textbox:set_markup(bat_info())
+    mail_textbox:set_markup(check_gmail())
 end)
 timer5:start()
 -- Hook called every 307 secs
 local timer307 = timer { timeout = 307 }
 timer307:connect_signal("timeout", function()
-    mail_textbox:set_markup(check_gmail())
+    fetch_gmail()
 end)
 timer307:start()
 -- }}}

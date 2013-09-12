@@ -19,7 +19,7 @@ export BROWSER=chromium
 # {{{ Prompt
 # -------------------------------------------------------------------------------
 autoload -U colors && colors
-prompt off # Disable the prompt engine so we can set our own
+#prompt off # Disable the prompt engine so we can set our own
 PS1="%{$fg[yellow]%}┌┤%{$fg_bold[yellow]%}%n%{$reset_color%}%{$fg[green]%}@%{$fg[red]%}%m%{$fg[yellow]%}(%{$fg[cyan]%}%l%{$fg[yellow]%})%{$fg_bold[blue]%}%~%{$fg[yellow]%}│%{$reset_color%}%*
 %{$fg[yellow]%}└%{$fg_bold[blue]%}%?%{$reset_color%}%{$fg[yellow]%}┐%{$reset_color%}%# "
 #}

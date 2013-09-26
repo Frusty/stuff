@@ -1,4 +1,0 @@
-#
-# Parameters to be passed to TFTPD
-#
-TFTPD_ARGS="-4 -l -s -c /var/tftpboot"

@@ -29,6 +29,7 @@ gparted
 gpm
 gptfdisk
 gtk-engine-murrine
+grub
 vim
 haveged
 hdparm
@@ -40,6 +41,7 @@ iotop
 iperf
 john
 keychain
+laptop-mode-tools
 lftp
 lsof
 lxde-icon-theme
@@ -70,7 +72,9 @@ parted
 partimage
 pcmanfm
 perl-rename
+ppp
 rdesktop
+rfkill
 rsync
 rxvt-unicode
 scrot
@@ -92,6 +96,7 @@ truecrypt
 ttf-droid
 unrar
 unzip
+usb_modeswitch
 wget
 whois
 wicd

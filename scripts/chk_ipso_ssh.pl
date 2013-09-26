@@ -37,7 +37,7 @@ foreach my $host (@ARGV) {
 
     # Check cpu usage
     print STDERR "\n# Checking cpu usage\n\n";
-    my $vmstat = $ssh->capture2("vmstat");
+    my $vmstat = $ssh->capture2("vmstat 1 3");
     $vmstat =~ s/^\n//g;
     print STDERR "$vmstat";
     if (my ($idle) = $vmstat =~ /(\d+)\W+$/s) {

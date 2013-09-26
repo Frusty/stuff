@@ -6,11 +6,11 @@ locale-gen
 
 ln -sf /usr/share/zoneinfo/Europe/Madrid /etc/localtime
 
-usermod -s /bin/zsh root
+usermod -s /usr/bin/zsh root
 cp -aT /etc/skel/ /root/
 sed -i 's/^root:x:/root:U6aMy0wojraho:/g' /etc/passwd
 
-useradd -m -p "" -g users -G "adm,audio,floppy,log,network,rfkill,scanner,storage,optical,power,wheel" -s /bin/zsh arch
+useradd -m -p "" -g users -G "adm,audio,floppy,log,network,rfkill,scanner,storage,optical,power,wheel" -s /usr/bin/zsh arch
 
 chown -R arch:users /home/arch
 find /home/arch -type f -exec chmod 600 {} \;
@@ -26,4 +26,4 @@ chmod 755 /usr/local/sbin/*
 
 sed -i "s/#Server/Server/g" /etc/pacman.d/mirrorlist
 
-systemctl enable multi-user.target pacman-init.service wicd.service mpd.service gpm.service
+systemctl enable multi-user.target pacman-init.service wicd.service mpd.service gpm.service laptop-mode.service

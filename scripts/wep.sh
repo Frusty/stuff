@@ -24,9 +24,13 @@ which screen airmon-ng airodump-ng aireplay-ng aircrack-ng macchanger ifconfig i
 # Esto necesita poderes místicos.
 [ $USER = "root" ] || exit 1
 
+# Usamos la última NIC wifi que pillemos
+WIFACE=$(iwconfig 2>&1 | sed -n 's/\([0-9a-z]\+\) \+IEEE.*/\1/p' | tail -1)
+verde "Esnifaremos en $WIFACE"
+
 # Lanzamos wlan en modo monitor para buscar ESSIDs.
 verde "Iniciamos Adaptador, escribiremos en ${RND}.*"
-airmon-ng start wlan0 || exit 1
+airmon-ng start $WIFACE || exit 1
 time screen -S airodump airodump-ng -w $RND mon0
 
 # Ordenamos el listado de APs detectados por su señal.
@@ -53,16 +57,17 @@ while true; do
     [ $choice -ge 1 ] && [ $choice -le $i ] && break
 done
 
+#airmon-ng stop mon0
+verde "Ponemos la interficie monitor en el canal ${achannel[$choice]}:\n"
+airmon-ng start $WIFACE ${achannel[$choice]}
+
 # Paso de martillear el AP con mi mac adress.
 verde "Falseando MAC:\n"
-ifconfig mon0 down
+#ifconfig mon0 down
 macchanger -A mon0
-MYMAC=$(macchanger -s mon0 | sed -n 's/Current MAC: \([0-9a-f\:]\+\) (.*/\1/p')
+MYMAC=$(macchanger -s mon0 | sed -n 's/Current MAC: *\([0-9a-f\:]\+\) (.*/\1/p')
 verde "Nuestra MAC ahora es $MYMAC"
-airmon-ng stop mon0
-verde "Ponemos la interficie monitor en el canal ${achannel[$choice]}:\n"
-airmon-ng start wlan0 ${achannel[$choice]}
-iwlist mon0 channel
+wlist mon0 channel
 
 # Creamos un fichero .screenrc custom para 'splitear' aireplay/airodump en una sesión de screen.
 cat > ${RND}.screenrc <<EOF

@@ -15,7 +15,7 @@ my $deftask  = 'DEF';    # default description
 my @holidays = qw(24/12/2013 25/12/2013 26/12/2013 31/12/2013); # holidays
 my $holproj  = 'FESTIU'; # holidays project
 my @vacation = qw(12/12/2010); # vacation days
-my $vacproj  = 'VACANC'; # vacacion project
+my $vacproj  = 'VACANC'; # vacation project
 my $sid      = (60 * 60 * 24); # (Seconds In Day) Secs * Mins * Hours
 
 # Ask for user/pass/project if not previously filled

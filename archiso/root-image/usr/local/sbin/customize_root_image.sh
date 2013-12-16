@@ -18,6 +18,8 @@ find /home/arch -type d -exec chmod 700 {} \;
 
 chown -R mpd /var/lib/mpd
 
+chown -R privoxy:privoxy /etc/privoxy
+
 chmod 750 /etc/sudoers.d
 chmod 440 /etc/sudoers.d/g_wheel
 
@@ -26,4 +28,4 @@ chmod 755 /usr/local/sbin/*
 
 sed -i "s/#Server/Server/g" /etc/pacman.d/mirrorlist
 
-systemctl enable multi-user.target pacman-init.service wicd.service mpd.service gpm.service laptop-mode.service
+systemctl enable multi-user.target pacman-init.service wicd.service mpd.service gpm.service laptop-mode.service tor.service privoxy.service

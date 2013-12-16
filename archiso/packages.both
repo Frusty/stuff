@@ -37,6 +37,7 @@ hping
 htop
 icedtea-web-java7
 iftop
+iodine
 iotop
 iperf
 john
@@ -73,6 +74,7 @@ partimage
 pcmanfm
 perl-rename
 ppp
+privoxy
 rdesktop
 rfkill
 rsync
@@ -90,6 +92,7 @@ terminus-font
 testdisk
 tftp-hpa
 tmux
+tor
 traceroute
 tree
 truecrypt

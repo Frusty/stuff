@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 use File::Find; # find()
- 
+
 my @warnings  = ();
 my @criticals = ();
 my %hash      = ();
@@ -28,7 +28,7 @@ sub wanted {
     my $file = $File::Find::name;
     return unless -f $file;
     my @stats = stat($file); # http://perldoc.perl.org/functions/stat.html
-    my $atime = time()-$stats[9]; 
+    my $atime = time()-$stats[9];
     if (my ($path) = $file =~ m<$dir/(.+?)/[^/]+wsp$>) {
         return if $path =~ /graphite/;
         $hash{$path} = $atime if not $hash{$1} or $hash{$1} > $atime;
@@ -46,7 +46,7 @@ foreach my $file (sort keys %hash) {
     push (@warnings, "'$file' not updated since ".&seconds2HR($hash{$file})."\n");
 }
 
-# Check the supervidor processes.
+# Check the supervisor processes.
 print STDERR "\n# Checking processes\n\n";
 my $output = qx(supervisorctl status);
 #chomp($output);

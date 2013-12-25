@@ -19,7 +19,7 @@ export BROWSER=chromium
 # {{{ Prompt
 # -------------------------------------------------------------------------------
 autoload -U colors && colors
-#prompt off # Disable the prompt engine so we can set our own
+prompt off # Disable the prompt engine so we can set our own
 PS1="%{$fg[yellow]%}┌┤%{$fg_bold[yellow]%}%n%{$reset_color%}%{$fg[green]%}@%{$fg[red]%}%m%{$fg[yellow]%}(%{$fg[cyan]%}%l%{$fg[yellow]%})%{$fg_bold[blue]%}%~%{$fg[yellow]%}│%{$reset_color%}%*
 %{$fg[yellow]%}└%{$fg_bold[blue]%}%?%{$reset_color%}%{$fg[yellow]%}┐%{$reset_color%}%# "
 #}
@@ -84,7 +84,8 @@ bindkey "\e[F"   end-of-line
 # {{{ Functions
 # -------------------------------------------------------------------------------
 sshmount(){ [ -d "/tmp/${1}" ] && { echo "# /tmp/${1} Existe\!"; }|| { mkdir /tmp/${1} && sshfs -o umask=333 root@${1}:/ /tmp/$1 && echo "# Ok -> /tmp/${1}" || rmdir /tmp/${1}; }; }
-findlf(){ find $PWD -xdev -ls | awk {'print $7"\t"$11'} | sort -rn | head -n 10; }
+findlf(){ find $PWD -xdev -ls | awk {'print $7"\t"$11'} | sort -rn | less; }
+findlast(){ find $PWD -xdev -type f -printf '%TY-%Tm-%Td %TT %p\n' | sort -r | less; }
 cprxvt256trm(){ ping -qc1 "$1" >/dev/null &&  scp /usr/share/terminfo/r/rxvt-256color root@${1}:/usr/share/terminfo/r/rxvt-256color; }
 dualscreen(){ ARRAY=( $(xrandr | sed -n 's/^\(.*\) connected.*$/\1/p' | xargs) ) && xrandr --output ${ARRAY[1]} --right-of ${ARRAY[2]}; }
 samescreen(){ ARRAY=( $(xrandr | sed -n 's/^\(.*\) connected.*$/\1/p' | xargs) ) && xrandr --output ${ARRAY[1]} --same-as ${ARRAY[2]}; }

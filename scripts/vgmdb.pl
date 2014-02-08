@@ -18,8 +18,8 @@ use Term::ANSIColor qw(:constants);
 $Term::ANSIColor::AUTORESET = 1;
 
 $0 =~ s/.*\///g;
-my $username  = 'XXXXXXXX';
-my $password  = 'XXXXXXXX';
+my $username  = '';
+my $password  = '';
 my $force     = 0;
 my $ktitle    = 0;
 my $id        = 0;
@@ -105,7 +105,6 @@ sub authenticate() {
         , 'POST'
         , "vb_login_username=${username}&cookieuser=1&vb_login_password=${password}&securitytoken=guest&do=login"
         );
-    #print Dumper $cookie_jar;
     $vgmuserid = $cookie_jar->{'COOKIES'}->{'vgmdb.net'}->{'/'}->{'vgmuserid'}->[1];
     if ($vgmuserid) {
         dprint BOLD GREEN "OK!\n";
@@ -144,7 +143,6 @@ sub savefile($$$) {
                                    , 'text/html'  => 'html'
                                    );
             my $headers = $resp->headers;
-            #print Dumper $resp->headers;
             my $content_length = $headers->{'content-length'};
             my $extension = $my_content_types{$headers->{'content-type'}};
             unless ($extension) {
@@ -208,7 +206,6 @@ sub hashfiles(@) {
         my $secsre = $info->{TOTALSAMPLES} / $info->{SAMPLERATE};
         $secsre =~ s/\.\d+$//g;
         my $secs = sprintf ("%.2d:%.2d", $secsre/60%60, $secsre%60);
-#        my $tnumber = $tags->{TRACKNUMBER} || $tags->{tracknumber} || "";
         my $tnumber = "";
         $tnumber = $count unless $tnumber =~ /^\d\d$/;
         $tnumber = sprintf ("%02d", $tnumber) if length($tnumber) == 1;
@@ -241,17 +238,13 @@ sub vgmdbsearch($) {
     dprint YELLOW "\nOur DirName: '$album'\n";
     $album =~ s/^.*?\s-\s\d{4}\s-\s/+/g;
     $album =~ s/\sdis[kc]|ost|cd\w/+/gi;
-#    $album =~ s/\soriginal.soundtrack(?:|s)/+/gi;
     $album =~ s/[\[\{\(].*?[\)\}\]]/+/gi;
-    $album =~ s/\W/+/g;
     $album =~ s/\++/+/g;
     $album =~ s/\+*$//g;
-#    $album = "Valkyrie+profile";
     dprint YELLOW "Parsed Name: '$album'\n";
     dprint BLUE BOLD "\n"."=" x (23+length($album))."\n";
     dprint BLUE BOLD "Querying VGMDB with: '$album'\n";
     dprint BLUE BOLD "=" x (23+length($album))."\n";
-#    my $page = decode_entities(&http('http://vgmdb.net/search?do=results', 'POST', "action=advancedsearch&albumtitles=$album&sortby=release&orderby=ASC",'http://vgmdb.net/search'));
     my $response = &http('http://vgmdb.net/search?do=results', 'POST', "action=advancedsearch&albumtitles=$album&sortby=release&orderby=ASC&childmodifier=1",'http://vgmdb.net/search');
     my $page = decode_entities($response->decoded_content);
     $page = encode('utf-8', $page); # A lo bestia.
@@ -317,27 +310,35 @@ sub vgmdbid(@) {
         $vgm{NOTES} =~ s/[\xa0\xc2]+/\t/g;
     }
     while ($page =~ /<div id="rightfloat"(.*?)<\/div><\/div>/sg){
-#    while ($page =~ /<table id="album_infobit_large"(.*?)<\/table>/sg){
         my $asd = $1;
-        $asd =~ s/<script.*?\/script>//g;   # Noscript
-        $asd =~ s/<[^>]*>//g;   # Fuera tags html.
         $asd =~ s/[\n\r]//g;    # Oneline pls
-        if (my @matches = $asd =~ /(Catalog Number)(.*?)(?:|(Other Printings)(.*?))(Release Date)(.*?)(Publish Format)(.*?)(Release Price)(.*?)(Media Format)(.*?)(Classification)(.*?)(Published by)(.*?)(Composed by)(.*?)(Arranged by)(.*?)(Performed by)(.*?)$/smg) {
-            while (@matches) {
-                if ($matches[0] and $matches[1]) {
-                    dprint BLUE BOLD "$matches[0]:\t";
-                    $matches[1] =~ s/\s+$//g;
-                    dprint "'$matches[1]'\n";
-                    $vgm{$matches[0]}=$matches[1];
-                }
-                shift @matches; # uglyyyyyyyy
-                shift @matches;
-            }
+        $asd =~ s/<script.*?\/script>//g;   # Noscript
+        $asd =~ s/\s*<[^>]+[^b]>//g;   # Fuera tags html excepto b limpiando espacios a la izquierda
+#        print "$asd\n";
+#        print "\n";
+        while ($asd =~ />([^<]+)<\/b>([^<]+)</sg) {
+            dprint BLUE BOLD "$1:\t";
+            dprint "'$2'\n";
+            $vgm{$1} = $2;
         }
+
+
+#        if (my @matches = $asd =~ /(Catalog Number)(.*?)(?:|(Other Printings)(.*?))(Release Date)(.*?)(Publish Format)(.*?)(Release Price)(.*?)(Media Format)(.*?)(Classification)(.*?)(Published by)(.*?)(Composed by)(.*?)(Arranged by)(.*?)(Performed by)(.*?)$/smg) {
+#            while (@matches) {
+#                if ($matches[0] and $matches[1]) {
+#                    dprint BLUE BOLD "$matches[0]:\t";
+#                    $matches[1] =~ s/\s+$//g;
+#                    dprint "'$matches[1]'\n";
+#                    $vgm{$matches[0]}=$matches[1];
+#                }
+#                shift @matches; # uglyyyyyyyy
+#                shift @matches;
+#            }
+#        }
     }
 
     @catnums=();
-    if ($vgm{'Media Format'} =~ /^(\d+).*$/) { ;
+    if ($vgm{'Media Format'} and $vgm{'Media Format'} =~ /^(\d+).*$/) { ;
         $vgm{TOTALDISCS} = $1;
     } else {
         $vgm{TOTALDISCS} = 1;
@@ -360,9 +361,6 @@ sub vgmdbid(@) {
     }
 
     my @result = split('\n', $page);
-#    my @result = split('\r\n', $page);
-#    print Dumper @result;
-#    exit 0;
     my ($disc,$track,$name,$time,$secs)=();
     foreach (@result) {
         if ($_ =~ /<b>Disc\s(\d+)/) {
@@ -389,13 +387,12 @@ sub vgmdbid(@) {
                                       };
             ($track,$name)=(0,0);
         }
-
-        if ( $_ =~ /class="time">([\d:]+)<\/span><\/span>/) {
+        if ( $_ =~ /\s+<span class="time">([\d:]+)<\/span>/) {
             dprint GREEN "=" x 59; dprint YELLOW BOLD " Disc Length = $1\n";
-            last if $disc eq $vgm{TOTALDISCS};
         }
+
+        last if $_ =~ /<\/h4><\/span>/;
     } #foreach @result
-#    exit 0;
 } # sub vgmdbtitle
 #}}}
 #{{{    sub compare
@@ -455,7 +452,6 @@ sub rename($) {
         $cdnum++;
     }
     my $dir   = shift;
-#    my $basedir = "$vgm{ALBUM} [$vgmcd]";
     my $basedir = "$vgm{ALBUM} [$vgm{'Catalog Number'}]";
     $basedir =~ s/[\/:|]/,/g;
     $basedir =~ s/"/'/g;
@@ -508,30 +504,41 @@ sub rename($) {
                 my @genres = map {"VGM($_)"} sort split (', ', $genre);
                 $genre = join ('; ', @genres);
             }
-            my $date   = $vgm{'Release Date'}   || 'XXXX';
+            my $date   = $vgm{'Release Date'} || 'XXXX';
             #$date = $& if $date =~ /\d+$/; # Only year MAN
             my $version = "Type:$vgm{'Publish Format'}, Media:$vgm{'Media Format'}, Price:$vgm{'Release Price'}";
             my $description = "Catalog:$vgm{'Catalog Number'} URL:$vgm{URL}";
             my $aartist = $vgm{'Arranged by'};
             $aartist = $vgm{'Composed by'} unless $aartist;
+            $aartist = "Not Available" unless $aartist;
             $aartist =~ s/,.*$//g;
             $vgm{'Arranged by'} = $aartist unless $vgm{'Arranged by'};
             $aartist =~ s/\s\/.*//g;
-            $tags->{TRACKNUMBER}    = $track                || "Not Available" ; dprint " |-- TRACKNUMBER\t= '$track'\n";
-            $tags->{TOTALTRACKS}    = keys(%cd)             || "Not Available" ; dprint " |-- TOTALTRACKS\t= '".keys(%cd)."'\n";
-            $tags->{ALBUM}          = $albumname            || "Not Available" ; dprint " |-- ALBUM\t\t= '$albumname'\n";
-            $tags->{TITLE}          = $cd{$track}{'NTITLE'} || "Not Available" ; dprint " |-- TITLE\t\t= '$cd{$track}{'NTITLE'}'\n";
-            $tags->{GENRE}          = $genre                || "Not Available" ; dprint " |-- GENRE\t\t= '$genre'\n";
-            $tags->{DATE}           = $date                 || "Not Available" ; dprint " |-- DATE\t\t= '$date'\n";
-            $tags->{'ALBUM ARTIST'} = $aartist              || "Not Available" ; dprint " |-- ALBUM ARTIST\t= '$aartist'\n";
-            $tags->{ARTIST}         = $vgm{'Arranged by'}   || "Not Available" ; dprint " |-- ARTIST\t\t= '$vgm{'Arranged by'}'\n";
-            $tags->{COMPOSER}       = $vgm{'Composed by'}   || "Not Available" ; dprint " |-- COMPOSER\t\t= '$vgm{'Composed by'}'\n";
-            $tags->{PERFORMER}      = $vgm{'Performed by'}  || "Not Available" ; dprint " |-- PERFORMER\t\t= '$vgm{'Performed by'}'\n";
-            $tags->{TOTALDISCS}     = $vgm{TOTALDISCS}      || "Not Available" ; dprint " |-- TOTALDISCS\t\t= '$vgm{TOTALDISCS}'\n";
-            $tags->{DISCNUMBER}     = $cdnum                || "Not Available" ; dprint " |-- DISCNUMBER\t\t= '$cdnum'\n";
-            $tags->{COMMENT}        = $description          || "Not Available" ; dprint " |-- COMMENT\t\t= '$description'\n";
-            $tags->{VERSION}        = $version              || "Not Available" ; dprint " |-- VERSION\t\t= '$version'\n";
-            $tags->{COPYRIGHT}      = $vgm{'Published by'}  || "Not Available" ; dprint " |-- COPYRIGHT\t\t= '$vgm{'Published by'}'\n";
+            $tags->{TRACKNUMBER}    = $track                || "Not Available";
+            $tags->{TOTALTRACKS}    = keys(%cd)             || "Not Available";
+            $tags->{ALBUM}          = $albumname            || "Not Available";
+            $tags->{TITLE}          = $cd{$track}{'NTITLE'} || "Not Available";
+            $tags->{GENRE}          = $genre                || "Not Available";
+            $tags->{DATE}           = $date                 || "Not Available";
+            $tags->{'ALBUM ARTIST'} = $aartist              || "Not Available";
+            $tags->{ARTIST}         = $vgm{'Arranged by'}   || "Not Available";
+            $tags->{COMPOSER}       = $vgm{'Composed by'}   || "Not Available";
+            $tags->{PERFORMER}      = $vgm{'Performed by'}  || "Not Available";
+            $tags->{TOTALDISCS}     = $vgm{TOTALDISCS}      || "Not Available";
+            $tags->{DISCNUMBER}     = $cdnum                || "Not Available";
+            $tags->{COMMENT}        = $description          || "Not Available";
+            $tags->{VERSION}        = $version              || "Not Available";
+            $tags->{COPYRIGHT}      = $vgm{'Published by'}  || "Not Available";
+
+            # Hacemos un resumen de los tags para el log
+            foreach my $key (sort keys $tags) {
+                dprint sprintf (" |-- %-12.12s = '%s'\n", $key, $tags->{$key});
+            }
+
+            # Voy a meter las notas como TAG, pero no quiero logearlo
+            $tags->{NOTES} = $vgm{NOTES} || "Not Available";
+
+            # OK, escribimos!
             $result = $flac->write();
             if ($result) {
                 dprint " \\ "; dprint GREEN BOLD "OK! Tagging done!\n";
@@ -605,7 +612,6 @@ foreach my $dir (@ARGV) {
         my ($dirname) = $dir =~ /([^\/]+)(?:|\/)$/;
         my $ids = {};
         if ($id) {
-#            $results{$3} = {title =>$4, type =>$1};
             $ids->{$id}->{title} = "Forced VGMID";
         } else {
             $ids = &vgmdbsearch($dirname);

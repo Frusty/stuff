@@ -2,7 +2,6 @@
 # This will search for flac files on directories then will try to copy/tag them in the current directory via direct http queries to vgmdb.net, (or not).
 #my $content ="action=advancedsearch&albumtitles=Valkyrie+Profile+Covenant+of+the+Plume+Arrange+Album&catalognum=&composer=&arranger=&performer=&lyricist=&publisher=&game=&trackname=&notes=&anyfield=&releasedatemodifier=is&day=0&month=0&year=0&discsmodifier=is&discs=&albumadded=&albumlastedit=&scanupload=&tracklistadded=&tracklistlastedit=&sortby=albumtitle&orderby=ASC&childmodifier=0&dosearch=Search+Albums+Now";
 
-
 use strict;
 use warnings;
 use utf8;
@@ -18,12 +17,13 @@ use Term::ANSIColor qw(:constants);
 $Term::ANSIColor::AUTORESET = 1;
 
 $0 =~ s/.*\///g;
-my $username  = '';
-my $password  = '';
-my $force     = 0;
-my $ktitle    = 0;
-my $id        = 0;
-my $threshold = 5;
+my $username   = '';
+my $password   = '';
+my $force      = 0;
+my $ktitle     = 0;
+my $id         = 0;
+my $threshold  = 5;
+my $filelength = 255;
 my %cd=();
 my %vgm=();
 my @catnums=();
@@ -229,7 +229,7 @@ sub hashfiles(@) {
         next unless ref($cd{$_}) eq "HASH";
             dprint sprintf ("%-3.3s %-44.44s %5.5s %4.4s %-10.10s %-16s \n", $_, $cd{$_}{TITLE}, $cd{$_}{TIME}, $cd{$_}{DATE}, $cd{$_}{GENRE}, $cd{$_}{ARTIST});
     } # foreach %cd
-     dprint GREEN "=" x (80)."\n";
+    dprint GREEN "=" x (80)."\n";
 } # sub hashfiles
 #}}}
 #{{{   sub vgmdbsearch
@@ -314,27 +314,11 @@ sub vgmdbid(@) {
         $asd =~ s/[\n\r]//g;    # Oneline pls
         $asd =~ s/<script.*?\/script>//g;   # Noscript
         $asd =~ s/\s*<[^>]+[^b]>//g;   # Fuera tags html excepto b limpiando espacios a la izquierda
-#        print "$asd\n";
-#        print "\n";
         while ($asd =~ />([^<]+)<\/b>([^<]+)</sg) {
             dprint BLUE BOLD "$1:\t";
             dprint "'$2'\n";
             $vgm{$1} = $2;
         }
-
-
-#        if (my @matches = $asd =~ /(Catalog Number)(.*?)(?:|(Other Printings)(.*?))(Release Date)(.*?)(Publish Format)(.*?)(Release Price)(.*?)(Media Format)(.*?)(Classification)(.*?)(Published by)(.*?)(Composed by)(.*?)(Arranged by)(.*?)(Performed by)(.*?)$/smg) {
-#            while (@matches) {
-#                if ($matches[0] and $matches[1]) {
-#                    dprint BLUE BOLD "$matches[0]:\t";
-#                    $matches[1] =~ s/\s+$//g;
-#                    dprint "'$matches[1]'\n";
-#                    $vgm{$matches[0]}=$matches[1];
-#                }
-#                shift @matches; # uglyyyyyyyy
-#                shift @matches;
-#            }
-#        }
     }
 
     @catnums=();
@@ -470,16 +454,30 @@ sub rename($) {
     }
 
     foreach my $track (sort keys %cd) {
+        # Header
+        dprint "\n / Inside "; dprint BLUE BOLD "'$cddir'\n";
+
+        # Prepare/sanitize our title name
         $cd{$track}{NTITLE} = $cd{$track}{TITLE} if $ktitle and $cd{$track}{TITLE};
         $cd{$track}{NTITLE} = &escapename($cd{$track}{NTITLE}, '-');
         $cd{$track}{NTITLE} =~ s/[\/:|]/, /g; # and proper
-        $cd{$track}{NTITLE} =~ s/\s+/ /g;      # formatting
+        $cd{$track}{NTITLE} =~ s/\s+/ /g;     # formatting
+
+        # Check if the file is short enough, trim if necessary
+        my $titlelength = length($cd{$track}{NTITLE}) + (9);
+        if ($titlelength > $filelength) {
+            my $excess = ($titlelength - $filelength + 9);
+            dprint " | "; dprint YELLOW BOLD "We will be adding up to 9 extra chars: 'XXX <name>.flac' so the length will be $titlelength chars, longer than (filelength).\n";
+            dprint " | "; dprint YELLOW BOLD "The song's name needs to be shortened $excess characters.\n";
+            $cd{$track}{NTITLE} = substr($cd{$track}{NTITLE}, 0, $titlelength - $excess);
+        }
+
         my $destfile = "$cddir/$track $cd{$track}{NTITLE}.flac";
         $destfile =~ s/[\:*?<>|]//g; # NTFS Valid file?
         my $bytes=-s $cd{$track}{FNAME};
-        dprint "\n / Inside "; dprint BLUE BOLD "'$cddir'\n";
         dprint " | We will copy "; dprint YELLOW "'$cd{$track}{NTITLE}.flac' ($bytes bytes)\n";
         dprint " | as "; dprint YELLOW "'$track $cd{$track}{NTITLE}.flac'\n";
+
         if (-B $destfile) {
             dprint " | "; dprint YELLOW BOLD "WARNING! File already exists, skipping!\n";
         } else {
@@ -487,16 +485,19 @@ sub rename($) {
             $bytes=-s $destfile;
             dprint " | "; dprint BOLD GREEN "OK! ($bytes bytes).\n";
         }
+
         if (-B $destfile) {
             dprint " | "; dprint "Now we will tag it:\n";
             my $flac = Audio::FLAC::Header->new($destfile);
             my $tags = $flac->tags();
             %{$tags} = ();
             my $result = $flac->write();
+
             unless ($result) {
                 dprint RED "Unable to clean tags on $cd{$track}{NTITLE}.flac\n";
                 return 0;
             }
+
             my $genre = $vgm{'Classification'} || 'VGM';
             if ($vgm{'TYPE'} and $vgm{'TYPE'} eq "album-anime") {
                 $genre="Anime";
@@ -504,6 +505,7 @@ sub rename($) {
                 my @genres = map {"VGM($_)"} sort split (', ', $genre);
                 $genre = join ('; ', @genres);
             }
+
             my $date   = $vgm{'Release Date'} || 'XXXX';
             #$date = $& if $date =~ /\d+$/; # Only year MAN
             my $version = "Type:$vgm{'Publish Format'}, Media:$vgm{'Media Format'}, Price:$vgm{'Release Price'}";
@@ -514,6 +516,7 @@ sub rename($) {
             $aartist =~ s/,.*$//g;
             $vgm{'Arranged by'} = $aartist unless $vgm{'Arranged by'};
             $aartist =~ s/\s\/.*//g;
+
             $tags->{TRACKNUMBER}    = $track                || "Not Available";
             $tags->{TOTALTRACKS}    = keys(%cd)             || "Not Available";
             $tags->{ALBUM}          = $albumname            || "Not Available";
@@ -536,7 +539,8 @@ sub rename($) {
             }
 
             # Voy a meter las notas como TAG, pero no quiero logearlo
-            $tags->{NOTES} = $vgm{NOTES} || "Not Available";
+#            $vgm{NOTES} = encode('utf-8', $vgm{NOTES});
+#            $tags->{NOTES} = $vgm{NOTES} || "Not Available";
 
             # OK, escribimos!
             $result = $flac->write();

@@ -8,7 +8,7 @@ use POSIX;
 use Storable;# store, retrieve
 use Cwd 'abs_path';
 
-my $fullpath = abs_path($0);
+my $fullpath  = abs_path($0);
 my $critdirs  = 60000;
 my @criticals = ();
 my $warndirs  = 50000;
